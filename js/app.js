@@ -583,7 +583,7 @@ document.getElementById('btn-remove-image').addEventListener('click', () => {
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 
 document.getElementById('btn-open-settings').addEventListener('click', () => {
-    document.getElementById('input-api-key').value = localStorage.getItem('gemini_api_key') || '';
+    document.getElementById('input-api-key').value = localStorage.getItem('openrouter_api_key') || '';
     document.getElementById('modal-settings').style.display = 'flex';
 });
 
@@ -594,9 +594,9 @@ document.getElementById('btn-cancel-settings').addEventListener('click', () => {
 document.getElementById('btn-save-settings').addEventListener('click', () => {
     const key = document.getElementById('input-api-key').value.trim();
     if (key) {
-        localStorage.setItem('gemini_api_key', key);
+        localStorage.setItem('openrouter_api_key', key);
     } else {
-        localStorage.removeItem('gemini_api_key');
+        localStorage.removeItem('openrouter_api_key');
     }
     document.getElementById('modal-settings').style.display = 'none';
 });
@@ -625,9 +625,9 @@ document.body.addEventListener('drop', async (e) => {
     
     const file = e.dataTransfer.files[0];
     if (file && file.type === 'application/pdf') {
-        const apiKey = localStorage.getItem('gemini_api_key');
+        const apiKey = localStorage.getItem('openrouter_api_key');
         if (!apiKey) {
-            showToast("Please set your Gemini API key in Settings first!");
+            showToast("Please set your OpenRouter API key in Settings first!");
             document.getElementById('btn-open-settings').click();
             return;
         }
@@ -647,30 +647,37 @@ document.body.addEventListener('drop', async (e) => {
                 fullText += pageText + '\n';
             }
             
-            dropzone.innerHTML = `<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling Gemini AI...</p>`;
+            dropzone.innerHTML = `<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling OpenRouter AI...</p>`;
             
             const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 30000)}`;
             
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
+            const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey 
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { response_mime_type: "application/json" }
+                    model: "google/gemini-flash-1.5-8b",
+                    response_format: { type: "json_object" },
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
+                        { role: "user", content: prompt }
+                    ]
                 })
             });
             
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("Gemini API Error details:", errorData);
+                console.error("OpenRouter API Error details:", errorData);
                 throw new Error(errorData.error?.message || "Unknown API Error");
             }
             const data = await response.json();
-            const textResult = data.candidates[0].content.parts[0].text;
-            const flashcards = JSON.parse(textResult);
+            const textResult = data.choices[0].message.content;
+            
+            // Clean markdown JSON formatting if present
+            const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+            const flashcards = JSON.parse(cleanText);
             
             if (flashcards && flashcards.length > 0) {
                 const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
