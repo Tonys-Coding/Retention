@@ -281,7 +281,7 @@ button.icon-btn:active {
 }
 
 /* Forms */
-input[type="text"], input[type="file"] {
+input[type="text"], input[type="file"], textarea {
     width: 100%;
     border: 2px solid var(--border-color);
     padding: 8px;
@@ -453,4 +453,9 @@ input[type="text"], input[type="file"] {
 .dropzone-loading {
     border-style: solid !important;
     animation: brutal-border-throb 0.3s infinite alternate cubic-bezier(0.8, 0, 0.2, 1) !important;
+}
+
+textarea {
+    resize: vertical;
+    font-family: inherit;
 }
