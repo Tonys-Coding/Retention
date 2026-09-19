@@ -658,8 +658,7 @@ document.body.addEventListener('drop', async (e) => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "google/gemini-1.5-pro:free",
-                    response_format: { type: "json_object" },
+                    model: "openrouter/free",
                     messages: [
                         { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
                         { role: "user", content: prompt }
