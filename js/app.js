@@ -638,16 +638,23 @@ document.body.addEventListener('drop', async (e) => {
             
             const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 30000)}`;
             
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey 
+                },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: { response_mime_type: "application/json" }
                 })
             });
             
-            if (!response.ok) throw new Error("API Error");
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Gemini API Error details:", errorData);
+                throw new Error(errorData.error?.message || "Unknown API Error");
+            }
             const data = await response.json();
             const textResult = data.candidates[0].content.parts[0].text;
             const flashcards = JSON.parse(textResult);
