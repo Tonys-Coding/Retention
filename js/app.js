@@ -296,7 +296,6 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
         await addCard({
             deckId: currentDeckId,
             term,
-            partOfSpeech: pos,
             definition: def,
             example: ex,
             status: 'new',
@@ -306,6 +305,7 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
         document.getElementById('input-term').value = '';
         document.getElementById('input-def').value = '';
         document.getElementById('input-ex').value = '';
+        document.getElementById('input-image-paste').value = '';
         
         currentPastedImage = null;
         document.getElementById('image-preview').src = '';
@@ -462,7 +462,7 @@ document.getElementById('btn-study-skip').addEventListener('click', () => {
     if (studyIndex >= studyCards.length) {
         showStudyComplete();
     } else {
-        renderStudyCard();
+        updateStudyView();
     }
 });
 document.getElementById('btn-study-know').addEventListener('click', () => handleStudyResult(true));

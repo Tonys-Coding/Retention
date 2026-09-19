@@ -59,11 +59,13 @@
                 <input type="text" id="input-term" placeholder="Term">
                 <input type="text" id="input-def" placeholder="Definition">
                 <input type="text" id="input-ex" placeholder="Example Sentence">
-<input type="file" id="input-image" accept="image/*" style="display: none;">
-<button id="btn-add-image" class="secondary" style="margin-bottom: 12px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-    Upload Image
-</button>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                    <button id="btn-add-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </button>
+                    <input type="file" id="input-image" accept="image/*" style="display: none;">
+                </div>
 
                 <div id="image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
                     <img id="image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
