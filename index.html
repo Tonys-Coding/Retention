@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retention Flashcards</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="js/pdf.min.js"></script>
 </head>
 <body>
     <div class="maze-bg"></div>
@@ -17,8 +18,16 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
                 </button>
             </div>
-            <button id="btn-import-csv" title="Import CSV">Import</button>
-            <input type="file" id="file-import" accept=".csv" style="display: none;">
+            <div style="display: flex; gap: 8px;">
+                <button class="icon-btn" id="btn-open-settings" title="Settings" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button class="icon-btn" id="btn-view-stats" title="View Stats" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-4"></path></svg>
+                </button>
+                <button id="btn-import-csv" title="Import CSV">Import</button>
+                <input type="file" id="file-import" accept=".csv" style="display: none;">
+            </div>
         </div>
         <div class="list-container">
             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -35,7 +44,10 @@
             <button class="icon-btn" id="btn-back-decks" style="flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             </button>
-            <h2 id="deck-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; margin: 0; min-width: 0;" title="Deck">Deck</h2>
+            <div style="flex: 1; min-width: 0;">
+                <h2 id="deck-title" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0;" title="Deck">Deck</h2>
+                <div id="deck-accuracy" style="font-size: 12px; color: var(--text-secondary);">0% Mastery</div>
+            </div>
             <div style="display: flex; gap: 8px; flex-shrink: 0;">
                 <button id="btn-export-csv" title="Export CSV">Exp</button>
                 <button id="btn-start-study" class="primary">Study</button>
@@ -48,6 +60,13 @@
                 <input type="text" id="input-pos" placeholder="Part of Speech (e.g. noun)">
                 <input type="text" id="input-def" placeholder="Definition">
                 <input type="text" id="input-ex" placeholder="Example Sentence">
+                <div id="image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
+                    <img id="image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
+                    <button id="btn-remove-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <p style="font-size: 10px; color: var(--text-secondary); margin-top: 0;">(Tip: Paste an image from your clipboard)</p>
                 <button id="btn-add-card" class="primary" style="width: 100%;">Add Card</button>
             </div>
             <div id="cards-list"></div>
@@ -68,18 +87,23 @@
         <div class="study-container">
             <div class="flashcard" id="flashcard">
                 <div class="flashcard-inner">
-                    <div class="flashcard-front">
+                    <div class="flashcard-front" id="flashcard-front-content">
                         <span class="pill" id="study-pos" style="position: absolute; top: 16px; left: 16px;">noun</span>
-                        <h2 id="study-term" style="font-size: 28px; margin: 0;">Term</h2>
-                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">(Tap to flip)</p>
+                        <img id="study-image-front" src="" style="max-height: 120px; max-width: 100%; border: 2px solid var(--border-color); margin-bottom: 16px; display: none;">
+                        <h2 id="study-term" style="font-size: 24px; margin: 0;">Term</h2>
+                        <div id="cloze-input-container" style="display: none; margin-top: 16px; width: 100%;">
+                            <input type="text" id="input-cloze" placeholder="Type answer..." style="text-align: center; margin-bottom: 8px;">
+                            <button id="btn-submit-cloze" class="primary" style="width: 100%;">Check</button>
+                        </div>
+                        <p id="study-hint-tap" style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">(Tap to flip)</p>
                     </div>
-                    <div class="flashcard-back">
+                    <div class="flashcard-back" id="flashcard-back-content">
                         <h3 id="study-def" style="font-size: 20px; margin: 0 0 16px 0;">Definition</h3>
                         <p id="study-ex" style="font-size: 14px; font-style: italic;">Example</p>
                     </div>
                 </div>
             </div>
-            <div class="study-actions">
+            <div class="study-actions" id="study-actions-container">
                 <button id="btn-study-forgot" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Forgot
                 </button>
@@ -112,7 +136,6 @@
             <h2 style="margin-top: 0;">How to Import CSV</h2>
             <p>Your CSV should have the following headers (order doesn't matter, but having them makes it clearer, or just provide the data in this order):</p>
             <p style="font-weight: bold; font-family: monospace; font-size: 12px; background: var(--hover-bg); padding: 8px; border: 1px solid var(--border-color);">Term, Part of Speech, Definition, Example, Status</p>
-            <p>At minimum, include the <strong>Term</strong> and <strong>Definition</strong>.</p>
             <label style="display: flex; align-items: center; gap: 8px; margin: 24px 0 16px 0; cursor: pointer; font-size: 14px;">
                 <input type="checkbox" id="checkbox-dont-show-import" style="width: auto; margin: 0;">
                 Don't show this again
@@ -136,6 +159,51 @@
         </div>
     </div>
 
+
+    <!-- Stats View -->
+    <div id="view-stats" class="view">
+        <div class="header">
+            <button class="icon-btn" id="btn-back-stats" style="display: flex; align-items: center; justify-content: center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <h2>Your Stats</h2>
+        </div>
+        <div class="list-container" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
+                <h3 style="margin-top: 0;">Daily Streak</h3>
+                <h1 style="font-size: 48px; margin: 0;" id="stat-streak">0</h1>
+                <p style="margin-bottom: 0; color: var(--text-secondary);">days in a row</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
+                <h3 style="margin-top: 0;">Overall Accuracy</h3>
+                <h1 style="font-size: 48px; margin: 0;" id="stat-accuracy">0%</h1>
+            </div>
+            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
+                <h3 style="margin-top: 0;">Cards Mastered</h3>
+                <h1 style="font-size: 48px; margin: 0;" id="stat-mastered">0</h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="view" style="position: absolute; z-index: 10; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px 32px 24px 24px; flex-direction: column; justify-content: center; align-items: center;">
+        <div style="border: 4px solid var(--border-color); background: var(--bg-secondary); padding: 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 320px;">
+            <h2 style="margin-top: 0;">Settings</h2>
+            <p style="font-size: 12px; margin-bottom: 8px;">To generate flashcards from PDFs, you need a free Gemini API Key.</p>
+            <input type="text" id="input-api-key" placeholder="Paste your Gemini API Key..." style="margin-bottom: 16px;">
+            <p style="font-size: 10px; color: var(--text-secondary); margin-top: 0;"><a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: inherit;">Get a key from Google AI Studio</a></p>
+            <div style="display: flex; gap: 16px;">
+                <button id="btn-cancel-settings" style="flex: 1;">Cancel</button>
+                <button id="btn-save-settings" class="primary" style="flex: 1;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Dropzone Overlay -->
+    <div id="dropzone-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; border: 4px dashed var(--text-primary); margin: 8px;">
+        <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
+        <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use your Gemini API Key to extract terms and definitions automatically.</p>
+    </div>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
