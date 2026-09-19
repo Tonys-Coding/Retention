@@ -1,5 +1,5 @@
 const DB_NAME = 'RetentionDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let db;
 
@@ -29,15 +29,70 @@ export const initDB = () => {
             if (!db.objectStoreNames.contains('stats')) {
                 db.createObjectStore('stats', { keyPath: 'date' });
             }
+            
+            if (!db.objectStoreNames.contains('folders')) {
+                const folderStore = db.createObjectStore('folders', { keyPath: 'id', autoIncrement: true });
+                folderStore.createIndex('parentId', 'parentId', { unique: false });
+            }
         };
     });
 };
 
-export const addDeck = (name) => {
+export const addFolder = (name, color, parentId = null) => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['folders'], 'readwrite');
+        const store = transaction.objectStore('folders');
+        const request = store.add({ name, color, parentId, createdAt: new Date().toISOString() });
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const getFolders = () => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['folders'], 'readonly');
+        const store = transaction.objectStore('folders');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const updateFolder = (id, newName, newColor, newParentId = undefined) => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['folders'], 'readwrite');
+        const store = transaction.objectStore('folders');
+        const request = store.get(id);
+        request.onsuccess = () => {
+            const folder = request.result;
+            if (newName !== undefined) folder.name = newName;
+            if (newColor !== undefined) folder.color = newColor;
+            if (newParentId !== undefined) folder.parentId = newParentId;
+            const putReq = store.put(folder);
+            putReq.onsuccess = () => resolve();
+            putReq.onerror = () => reject(putReq.error);
+        };
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const deleteFolder = (id) => {
+    // Note: deleting a folder shouldn't automatically delete all nested decks and folders unless explicitly handled.
+    // For now we just delete the folder itself. We'll handle moving children to root in app.js
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['folders'], 'readwrite');
+        const store = transaction.objectStore('folders');
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+};
+
+export const addDeck = (name, folderId = null) => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['decks'], 'readwrite');
         const store = transaction.objectStore('decks');
-        const request = store.add({ name, createdAt: new Date().toISOString() });
+        const request = store.add({ name, folderId, createdAt: new Date().toISOString() });
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
@@ -53,14 +108,15 @@ export const getDecks = () => {
     });
 };
 
-export const updateDeck = (id, newName) => {
+export const updateDeck = (id, newName, folderId = undefined) => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['decks'], 'readwrite');
         const store = transaction.objectStore('decks');
         const request = store.get(id);
         request.onsuccess = () => {
             const deck = request.result;
-            deck.name = newName;
+            if (newName !== undefined) deck.name = newName;
+            if (folderId !== undefined) deck.folderId = folderId;
             const putReq = store.put(deck);
             putReq.onsuccess = () => resolve();
             putReq.onerror = () => reject(putReq.error);
