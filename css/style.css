@@ -402,3 +402,33 @@ input[type="text"], input[type="file"] {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Brutalist Loading Animation */
+.brutalist-loader {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.brutalist-loader .block {
+    width: 24px;
+    height: 32px;
+    background: var(--text-primary);
+    border: 3px solid var(--border-color);
+    box-shadow: 4px 4px 0px var(--shadow-color);
+    animation: brutal-bounce 0.6s infinite alternate cubic-bezier(0.8, 0, 0.2, 1);
+}
+
+.brutalist-loader .block:nth-child(2) {
+    animation-delay: 0.2s;
+    background: var(--bg-secondary);
+}
+
+.brutalist-loader .block:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes brutal-bounce {
+    0% { transform: translateY(0); box-shadow: 4px 4px 0px var(--shadow-color); }
+    100% { transform: translateY(-16px); box-shadow: 8px 20px 0px var(--shadow-color); }
+}

@@ -205,9 +205,15 @@ document.getElementById('btn-continue-import').addEventListener('click', () => {
     document.getElementById('file-import').click();
 });
 
-document.getElementById('file-import').addEventListener('change', (e) => {
+document.getElementById('file-import').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    if (file.type === 'application/pdf') {
+        await handlePDFUpload(file);
+        e.target.value = '';
+        return;
+    }
     
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -253,7 +259,7 @@ const loadCards = async () => {
         const el = document.createElement('div');
         el.className = 'card-item';
         el.innerHTML = `
-            <div class="term">${card.term} ${card.partOfSpeech ? `<span class="pill">${card.partOfSpeech}</span>` : ''} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ' 🖼️' : ''}</div>
+            <div class="term">${card.term} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
             <div class="definition">${card.definition}</div>
             ${card.example ? `<div class="example">"${card.example}"</div>` : ''}
             <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${card.status.toUpperCase()}</div>
@@ -280,7 +286,6 @@ document.getElementById('btn-back-decks').addEventListener('click', () => {
 
 document.getElementById('btn-add-card').addEventListener('click', async () => {
     const term = document.getElementById('input-term').value.trim();
-    const pos = document.getElementById('input-pos').value.trim();
     const def = document.getElementById('input-def').value.trim();
     const ex = document.getElementById('input-ex').value.trim();
     
@@ -299,7 +304,6 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
             type: isCloze ? 'cloze' : 'standard'
         });
         document.getElementById('input-term').value = '';
-        document.getElementById('input-pos').value = '';
         document.getElementById('input-def').value = '';
         document.getElementById('input-ex').value = '';
         
@@ -349,13 +353,6 @@ const updateStudyView = () => {
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
     document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
     
-    const posEl = document.getElementById('study-pos');
-    if (card.partOfSpeech) {
-        posEl.textContent = card.partOfSpeech;
-        posEl.style.display = 'inline-block';
-    } else {
-        posEl.style.display = 'none';
-    }
     
     const exEl = document.getElementById('study-ex');
     if (card.example) {
@@ -460,6 +457,14 @@ const handleStudyResult = async (know) => {
 };
 
 document.getElementById('btn-study-forgot').addEventListener('click', () => handleStudyResult(false));
+document.getElementById('btn-study-skip').addEventListener('click', () => {
+    studyIndex++;
+    if (studyIndex >= studyCards.length) {
+        showStudyComplete();
+    } else {
+        renderStudyCard();
+    }
+});
 document.getElementById('btn-study-know').addEventListener('click', () => handleStudyResult(true));
 
 document.getElementById('btn-back-details').addEventListener('click', () => {
@@ -646,88 +651,116 @@ document.body.addEventListener('drop', async (e) => {
     
     if (!views.decks.classList.contains('active')) return;
     
-    const file = e.dataTransfer.files[0];
-    if (file && file.type === 'application/pdf') {
-        const apiKey = localStorage.getItem('openrouter_api_key');
-        if (!apiKey) {
-            showToast("Please set your OpenRouter API key in Settings first!");
-            document.getElementById('btn-open-settings').click();
-            return;
+const brutalistLoaderHtml = `<div class="brutalist-loader"><div class="block"></div><div class="block"></div><div class="block"></div></div>`;
+
+const handlePDFUpload = async (file) => {
+    const apiKey = localStorage.getItem('openrouter_api_key');
+    if (!apiKey) {
+        showToast("Please set your OpenRouter API key in Settings first!");
+        document.getElementById('btn-open-settings').click();
+        return;
+    }
+    
+    try {
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
+        dropzone.style.display = 'flex';
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        const pagesToExtract = Math.min(pdf.numPages, 50); 
+        for (let i = 1; i <= pagesToExtract; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
         }
         
-        try {
-            dropzone.innerHTML = `<span class="loader"></span><h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
-            dropzone.style.display = 'flex';
-            
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = '';
-            const pagesToExtract = Math.min(pdf.numPages, 50); 
-            for (let i = 1; i <= pagesToExtract; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n';
-            }
-            
-            dropzone.innerHTML = `<span class="loader"></span><h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling OpenRouter AI...</p>`;
-            
-            const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
-            
-            const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: "openrouter/free",
-                    messages: [
-                        { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
-                        { role: "user", content: prompt }
-                    ]
-                })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("OpenRouter API Error details:", errorData);
-                throw new Error(errorData.error?.message || "Unknown API Error");
-            }
-            const data = await response.json();
-            const textResult = data.choices[0].message.content;
-            
-            // Clean markdown JSON formatting if present
-            const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-            const flashcards = JSON.parse(cleanText);
-            
-            if (flashcards && flashcards.length > 0) {
-                const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
-                const deckId = await addDeck(deckName);
-                for (const card of flashcards) {
-                    await addCard({
-                        deckId: deckId,
-                        term: card.term,
-                        definition: card.definition,
-                        status: 'new',
-                        type: 'standard'
-                    });
-                }
-                loadDecks();
-                showToast(`Successfully generated ${flashcards.length} cards from PDF!`);
-            } else {
-                showToast("No cards could be generated from this document.");
-            }
-            
-        } catch (error) {
-            console.error(error);
-            showToast("Error generating cards: " + error.message);
-        } finally {
-            dropzone.style.display = 'none';
-            dropzone.innerHTML = `
-                <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
-                <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use your Gemini API Key to extract terms and definitions automatically.</p>
-            `;
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
+        
+        const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
+        
+        const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: "openrouter/free",
+                messages: [
+                    { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
+                    { role: "user", content: prompt }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("OpenRouter API Error details:", errorData);
+            throw new Error(errorData.error?.message || "Unknown API Error");
         }
+        const data = await response.json();
+        const textResult = data.choices[0].message.content;
+        
+        const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+        const flashcards = JSON.parse(cleanText);
+        
+        if (flashcards && flashcards.length > 0) {
+            const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
+            const deckId = await addDeck(deckName);
+            for (const card of flashcards) {
+                await addCard({
+                    deckId: deckId,
+                    term: card.term,
+                    definition: card.definition,
+                    status: 'new',
+                    type: 'standard'
+                });
+            }
+            loadDecks();
+            showToast(`Successfully generated ${flashcards.length} cards from PDF!`);
+        } else {
+            showToast("No cards could be generated from this document.");
+        }
+        
+    } catch (error) {
+        console.error(error);
+        showToast("Error generating cards: " + error.message);
+    } finally {
+        dropzone.style.display = 'none';
+        dropzone.innerHTML = `
+            <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
+            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use your OpenRouter API Key to extract terms and definitions automatically.</p>
+        `;
     }
+};
+
+document.body.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropzone.style.display = 'none';
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') {
+        await handlePDFUpload(file);
+    }
+});
+
+document.getElementById('btn-add-image').addEventListener('click', () => {
+    document.getElementById('input-image').click();
+});
+
+document.getElementById('input-image').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type.indexOf('image') === 0) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            currentPastedImage = event.target.result;
+            document.getElementById('image-preview').src = currentPastedImage;
+            document.getElementById('image-preview-container').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = '';
 });
