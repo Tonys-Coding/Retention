@@ -120,11 +120,11 @@ button:active {
 }
 
 button.primary {
-    background: var(--text-primary);
+    background: var(--bg-secondary);
     color: var(--bg-secondary);
 }
 button.primary:hover {
-    background: var(--text-primary);
+    background: var(--bg-secondary);
     opacity: 0.9;
 }
 
@@ -415,7 +415,7 @@ input[type="text"], input[type="file"] {
 .brutalist-loader .block {
     width: 24px;
     height: 32px;
-    background: var(--text-primary);
+    background: var(--bg-secondary);
     border: 3px solid var(--border-color);
     box-shadow: 4px 4px 0px var(--shadow-color);
     animation: brutal-bounce 0.6s infinite alternate cubic-bezier(0.8, 0, 0.2, 1);
@@ -433,4 +433,14 @@ input[type="text"], input[type="file"] {
 @keyframes brutal-bounce {
     0% { transform: translateY(0); box-shadow: 4px 4px 0px var(--shadow-color); }
     100% { transform: translateY(-16px); box-shadow: 8px 20px 0px var(--shadow-color); }
+}
+
+@keyframes brutal-border-throb {
+    0% { border-width: 4px; border-style: solid; border-color: var(--text-primary); }
+    100% { border-width: 12px; border-style: solid; border-color: var(--text-primary); }
+}
+
+.dropzone-loading {
+    border-style: solid !important;
+    animation: brutal-border-throb 0.3s infinite alternate cubic-bezier(0.8, 0, 0.2, 1) !important;
 }

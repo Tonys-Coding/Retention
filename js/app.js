@@ -643,6 +643,7 @@ document.body.addEventListener('dragover', (e) => {
     e.preventDefault();
     if (views.decks.classList.contains('active')) {
         dropzone.style.display = 'flex';
+        dropzone.classList.add('dropzone-loading');
     }
 });
 
@@ -650,6 +651,7 @@ document.body.addEventListener('dragleave', (e) => {
     e.preventDefault();
     if (e.target === dropzone) {
         dropzone.style.display = 'none';
+        dropzone.classList.remove('dropzone-loading');
     }
 });
 
@@ -666,6 +668,7 @@ const handlePDFUpload = async (file) => {
     try {
         dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
         dropzone.style.display = 'flex';
+        dropzone.classList.add('dropzone-loading');
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -731,6 +734,7 @@ const handlePDFUpload = async (file) => {
         showToast("Error generating cards: " + error.message);
     } finally {
         dropzone.style.display = 'none';
+        dropzone.classList.remove('dropzone-loading');
         dropzone.innerHTML = `
             <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
             <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use your OpenRouter API Key to extract terms and definitions automatically.</p>
@@ -741,6 +745,7 @@ const handlePDFUpload = async (file) => {
 document.body.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropzone.style.display = 'none';
+        dropzone.classList.remove('dropzone-loading');
     
     if (!views.decks.classList.contains('active')) return;
     const file = e.dataTransfer.files[0];
