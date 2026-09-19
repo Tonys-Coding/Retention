@@ -345,18 +345,20 @@ input[type="text"], input[type="file"] {
 
 .study-actions {
     display: flex;
-    gap: 16px;
+    gap: 8px;
     margin-top: 24px;
 }
 
 .study-actions button {
     flex: 1;
-    padding: 16px;
-    font-size: 16px;
+    min-width: 0;
+    padding: 12px 4px;
+    font-size: 13px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 4px;
 }
 
 .progress-bar {
