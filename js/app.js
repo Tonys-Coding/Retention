@@ -24,6 +24,29 @@ const showToast = (message) => {
     }, 3000);
 };
 
+const showConfirm = (message) => {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modal-confirm');
+        document.getElementById('confirm-message').textContent = message;
+        modal.style.display = 'flex';
+        
+        const btnOk = document.getElementById('btn-ok-confirm');
+        const btnCancel = document.getElementById('btn-cancel-confirm');
+        
+        const cleanup = () => {
+            modal.style.display = 'none';
+            btnOk.removeEventListener('click', onOk);
+            btnCancel.removeEventListener('click', onCancel);
+        };
+        
+        const onOk = () => { cleanup(); resolve(true); };
+        const onCancel = () => { cleanup(); resolve(false); };
+        
+        btnOk.addEventListener('click', onOk);
+        btnCancel.addEventListener('click', onCancel);
+    });
+};
+
 const views = {
     decks: document.getElementById('view-decks'),
     deckDetails: document.getElementById('view-deck-details'),
@@ -103,7 +126,7 @@ const loadDecks = async () => {
         const menuBtn = el.querySelector('.btn-deck-menu');
         const dropdown = el.querySelector('.dropdown');
         
-        menuBtn.addEventListener('click', (e) => {
+        menuBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             document.querySelectorAll('.dropdown.show').forEach(d => {
                 if (d !== dropdown) d.classList.remove('show');
@@ -111,7 +134,7 @@ const loadDecks = async () => {
             dropdown.classList.toggle('show');
         });
 
-        el.querySelector('.btn-deck-edit').addEventListener('click', (e) => {
+        el.querySelector('.btn-deck-edit').addEventListener('click', async (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');
             openDeck(deck.id, deck.name);
@@ -120,7 +143,7 @@ const loadDecks = async () => {
         el.querySelector('.btn-deck-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');
-            if (confirm(`Delete deck "${deck.name}"?`)) {
+            if (await showConfirm(`Delete deck "${deck.name}"?`)) {
                 await deleteDeck(deck.id);
                 loadDecks();
             }
@@ -240,7 +263,7 @@ const loadCards = async () => {
         `;
         
         el.querySelector('.btn-delete-card').addEventListener('click', async () => {
-            if (confirm(`Delete card "${card.term}"?`)) {
+            if (await showConfirm(`Delete card "${card.term}"?`)) {
                 await deleteCard(card.id);
                 loadCards();
             }
