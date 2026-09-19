@@ -11,6 +11,19 @@ let studyStats = { know: 0, forgot: 0 };
 let deckToRenameId = null;
 let studySourceView = 'decks';
 
+const showToast = (message) => {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    toast.style.opacity = '1';
+    
+    if (toast.timeoutId) clearTimeout(toast.timeoutId);
+    toast.timeoutId = setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+        toast.style.opacity = '0';
+    }, 3000);
+};
+
 const views = {
     decks: document.getElementById('view-decks'),
     deckDetails: document.getElementById('view-deck-details'),
@@ -79,7 +92,7 @@ const loadDecks = async () => {
             currentDeckName = deck.name;
             currentCards = await getCardsByDeck(deck.id);
             if (currentCards.length === 0) {
-                alert("This deck is empty! Taking you to Edit mode to add cards.");
+                showToast("This deck is empty! Taking you to Edit mode to add cards.");
                 openDeck(deck.id, deck.name);
             } else {
                 document.getElementById('deck-title').textContent = deck.name;
@@ -127,7 +140,7 @@ const loadDecks = async () => {
             e.stopPropagation();
             dropdown.classList.remove('show');
             if (cards.length === 0) {
-                alert("No cards to export.");
+                showToast("No cards to export.");
             } else {
                 exportDeckToCSV(deck.name, cards);
             }
@@ -185,9 +198,9 @@ document.getElementById('file-import').addEventListener('change', (e) => {
                 await addCard(card);
             }
             loadDecks();
-            alert(`Imported ${cards.length} cards into "${deckName}"`);
+            showToast(`Imported ${cards.length} cards into "${deckName}"`);
         } else {
-            alert("No cards found or invalid CSV format.");
+            showToast("No cards found or invalid CSV format.");
         }
         e.target.value = '';
     };
@@ -273,13 +286,13 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
         
         loadCards();
     } else {
-        alert("Term and Definition are required.");
+        showToast("Term and Definition are required.");
     }
 });
 
 document.getElementById('btn-export-csv').addEventListener('click', () => {
     if (currentCards.length === 0) {
-        alert("No cards to export.");
+        showToast("No cards to export.");
         return;
     }
     exportDeckToCSV(currentDeckName, currentCards);
@@ -289,7 +302,7 @@ const startStudySession = (source) => {
     studySourceView = source || 'deckDetails';
     
     if (currentCards.length === 0) {
-        alert("Add some cards to study first!");
+        showToast("Add some cards to study first!");
         return;
     }
     
@@ -614,7 +627,7 @@ document.body.addEventListener('drop', async (e) => {
     if (file && file.type === 'application/pdf') {
         const apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
-            alert("Please set your Gemini API key in Settings first!");
+            showToast("Please set your Gemini API key in Settings first!");
             document.getElementById('btn-open-settings').click();
             return;
         }
@@ -672,14 +685,14 @@ document.body.addEventListener('drop', async (e) => {
                     });
                 }
                 loadDecks();
-                alert(`Successfully generated ${flashcards.length} cards from PDF!`);
+                showToast(`Successfully generated ${flashcards.length} cards from PDF!`);
             } else {
-                alert("No cards could be generated from this document.");
+                showToast("No cards could be generated from this document.");
             }
             
         } catch (error) {
             console.error(error);
-            alert("Error generating cards: " + error.message);
+            showToast("Error generating cards: " + error.message);
         } finally {
             dropzone.style.display = 'none';
             dropzone.innerHTML = `
