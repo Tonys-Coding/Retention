@@ -1,5 +1,5 @@
 const DB_NAME = 'RetentionDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let db;
 
@@ -24,6 +24,10 @@ export const initDB = () => {
             if (!db.objectStoreNames.contains('cards')) {
                 const cardStore = db.createObjectStore('cards', { keyPath: 'id', autoIncrement: true });
                 cardStore.createIndex('deckId', 'deckId', { unique: false });
+            }
+            
+            if (!db.objectStoreNames.contains('stats')) {
+                db.createObjectStore('stats', { keyPath: 'date' });
             }
         };
     });
@@ -124,3 +128,30 @@ export const deleteCard = (id) => {
         request.onerror = () => reject(request.error);
     });
 }
+
+export const recordStudyResult = (know) => {
+    return new Promise((resolve, reject) => {
+        const dateStr = new Date().toISOString().split('T')[0];
+        const transaction = db.transaction(['stats'], 'readwrite');
+        const store = transaction.objectStore('stats');
+        const request = store.get(dateStr);
+        request.onsuccess = () => {
+            const data = request.result || { date: dateStr, know: 0, forgot: 0 };
+            if (know) data.know++;
+            else data.forgot++;
+            store.put(data);
+        };
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+    });
+};
+
+export const getStats = () => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['stats'], 'readonly');
+        const store = transaction.objectStore('stats');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+};
