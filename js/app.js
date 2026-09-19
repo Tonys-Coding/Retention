@@ -110,7 +110,7 @@ const loadDecks = async () => {
             </div>
         `;
         
-        el.querySelector('.deck-item-info').addEventListener('click', async () => {
+        el.addEventListener('click', async () => {
             currentDeckId = deck.id;
             currentDeckName = deck.name;
             currentCards = await getCardsByDeck(deck.id);
@@ -484,6 +484,14 @@ const showStudyComplete = () => {
         <strong>${studyStats.forgot}</strong> to Review
     `;
     showView('studyComplete');
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 }
+        });
+    }
+
 };
 
 document.getElementById('btn-back-details-complete').addEventListener('click', () => {
@@ -756,6 +764,18 @@ document.getElementById('input-image').addEventListener('change', (e) => {
             document.getElementById('image-preview-container').style.display = 'block';
         };
         reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+});
+
+document.getElementById('btn-ai-pdf').addEventListener('click', () => {
+    document.getElementById('file-ai-pdf').click();
+});
+
+document.getElementById('file-ai-pdf').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+        await handlePDFUpload(file);
     }
     e.target.value = '';
 });

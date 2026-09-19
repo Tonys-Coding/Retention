@@ -153,7 +153,7 @@ button.icon-btn:active {
     background: var(--bg-overlay);
 }
 
-.card-item, .deck-item {
+.card-item, .deck-item { cursor: pointer;
     border: 3px solid var(--border-color);
     padding: 12px;
     margin-bottom: 12px;
@@ -168,11 +168,11 @@ button.icon-btn:active {
     box-shadow: 6px 6px 0px 0px var(--shadow-color);
 }
 
-.deck-item {
+.deck-item { cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: default;
+    
 }
 
 .deck-item-info {
