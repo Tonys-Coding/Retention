@@ -639,7 +639,7 @@ document.body.addEventListener('drop', async (e) => {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             let fullText = '';
-            const pagesToExtract = Math.min(pdf.numPages, 10); 
+            const pagesToExtract = Math.min(pdf.numPages, 50); 
             for (let i = 1; i <= pagesToExtract; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
@@ -649,7 +649,7 @@ document.body.addEventListener('drop', async (e) => {
             
             dropzone.innerHTML = `<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling OpenRouter AI...</p>`;
             
-            const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 30000)}`;
+            const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
             
             const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
                 method: 'POST',
@@ -658,7 +658,7 @@ document.body.addEventListener('drop', async (e) => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    model: "google/gemini-flash-1.5-8b",
+                    model: "google/gemini-1.5-pro:free",
                     response_format: { type: "json_object" },
                     messages: [
                         { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
