@@ -645,12 +645,6 @@ document.body.addEventListener('dragleave', (e) => {
     }
 });
 
-document.body.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    dropzone.style.display = 'none';
-    
-    if (!views.decks.classList.contains('active')) return;
-    
 const brutalistLoaderHtml = `<div class="brutalist-loader"><div class="block"></div><div class="block"></div><div class="block"></div></div>`;
 
 const handlePDFUpload = async (file) => {
@@ -740,6 +734,7 @@ document.body.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropzone.style.display = 'none';
     
+    if (!views.decks.classList.contains('active')) return;
     const file = e.dataTransfer.files[0];
     if (file && file.type === 'application/pdf') {
         await handlePDFUpload(file);
