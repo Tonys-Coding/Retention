@@ -221,6 +221,57 @@
     <!-- Toast Notification -->
     <div id="toast" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-primary); padding: 12px 24px; border-radius: 24px; font-weight: bold; font-size: 14px; z-index: 1000; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">Message</div>
 
+    <!-- Edit Card Modal -->
+    <div id="modal-edit-card" class="view" style="position: absolute; z-index: 2000; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px; flex-direction: column; justify-content: center; align-items: center;">
+        <div style="border: 4px solid var(--border-color); background: var(--bg-secondary); padding: 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 8px;">
+            <h3 style="margin-top: 0;">Edit Card</h3>
+            <input type="text" id="edit-input-term" placeholder="Term">
+            <input type="text" id="edit-input-def" placeholder="Definition">
+            <input type="text" id="edit-input-ex" placeholder="Example Sentence">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" id="edit-input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                <button id="btn-edit-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </button>
+                <input type="file" id="edit-input-image" accept="image/*" style="display: none;">
+            </div>
+            <div id="edit-image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
+                <img id="edit-image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
+                <button id="btn-remove-edit-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div style="display: flex; gap: 16px; margin-top: 16px;">
+                <button id="btn-cancel-edit-card" style="flex: 1;">Cancel</button>
+                <button id="btn-save-edit-card" class="primary" style="flex: 1;">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Card Modal -->
+    <div id="modal-preview-card" class="view" style="position: absolute; z-index: 2000; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px; flex-direction: column; justify-content: center; align-items: center;">
+        <div style="width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 16px; flex: 1; justify-content: center;">
+            <div class="flashcard" id="preview-flashcard" style="flex: none; height: 360px;">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front" id="preview-flashcard-front-content">
+                        <img id="preview-image-front" src="" style="flex: 1; min-height: 0; width: 100%; object-fit: contain; border: 2px solid var(--border-color); margin-bottom: 16px; display: none;">
+                        <h2 id="preview-term" style="font-size: 24px; margin: 0;">Term</h2>
+                        <div id="preview-cloze-container" style="display: none; margin-top: 16px; width: 100%;">
+                            <input type="text" placeholder="Type answer..." style="text-align: center; margin-bottom: 8px;" disabled>
+                            <button class="primary" style="width: 100%;" disabled>Check</button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">(Tap to flip)</p>
+                    </div>
+                    <div class="flashcard-back" id="preview-flashcard-back-content">
+                        <h3 id="preview-def" style="font-size: 20px; margin: 0 0 16px 0;">Definition</h3>
+                        <p id="preview-ex" style="font-size: 14px; font-style: italic;">Example</p>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-close-preview" class="secondary" style="width: 100%;">Close Preview</button>
+        </div>
+    </div>
+
     <!-- Confirm Modal -->
     <div id="modal-confirm" class="view" style="position: absolute; z-index: 2000; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px; flex-direction: column; justify-content: center; align-items: center;">
         <div style="border: 4px solid var(--border-color); background: var(--bg-secondary); padding: 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 320px; text-align: center;">

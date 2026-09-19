@@ -258,17 +258,35 @@ const loadCards = async () => {
     currentCards.forEach(card => {
         const el = document.createElement('div');
         el.className = 'card-item';
+        el.style.display = 'flex';
+        el.style.gap = '12px';
+        el.style.justifyContent = 'space-between';
+        
         el.innerHTML = `
-            <div class="term">${card.term} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
-            <div class="definition">${card.definition}</div>
-            ${card.example ? `<div class="example">"${card.example}"</div>` : ''}
-            <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${card.status.toUpperCase()}</div>
-            <div class="card-actions">
-                <button class="btn-delete-card" data-id="${card.id}">Delete</button>
+            <div class="card-content-area" style="cursor: pointer; flex: 1; min-width: 0;">
+                <div class="term" style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.term} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
+                <div class="definition" style="color: var(--text-secondary); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.definition}</div>
+                <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${card.status.toUpperCase()}</div>
+            </div>
+            <div class="card-actions" style="display: flex; gap: 8px; flex-direction: column; justify-content: center;">
+                <button class="icon-btn btn-preview-card" data-id="${card.id}" title="Preview Card" style="border: 2px solid var(--border-color); background: var(--bg-secondary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+                <button class="icon-btn btn-delete-card" data-id="${card.id}" title="Delete Card" style="border: 2px solid #ff4444; color: #ff4444; background: var(--bg-secondary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
             </div>
         `;
         
-        el.querySelector('.btn-delete-card').addEventListener('click', async () => {
+        el.querySelector('.card-content-area').addEventListener('click', () => openEditCardModal(card));
+        
+        el.querySelector('.btn-preview-card').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPreviewModal(card);
+        });
+        
+        el.querySelector('.btn-delete-card').addEventListener('click', async (e) => {
+            e.stopPropagation();
             if (await showConfirm(`Delete card "${card.term}"?`)) {
                 await deleteCard(card.id);
                 loadCards();
@@ -783,4 +801,141 @@ document.getElementById('file-ai-pdf').addEventListener('change', async (e) => {
         await handlePDFUpload(file);
     }
     e.target.value = '';
+});
+
+// Edit Card Modal Logic
+let currentEditCardId = null;
+let currentEditPastedImage = null;
+
+const openEditCardModal = (card) => {
+    currentEditCardId = card.id;
+    currentEditPastedImage = card.image || null;
+    
+    document.getElementById('edit-input-term').value = card.term || '';
+    document.getElementById('edit-input-def').value = card.definition || '';
+    document.getElementById('edit-input-ex').value = card.example || '';
+    document.getElementById('edit-input-image-paste').value = '';
+    
+    if (card.image) {
+        document.getElementById('edit-image-preview').src = card.image;
+        document.getElementById('edit-image-preview-container').style.display = 'block';
+    } else {
+        document.getElementById('edit-image-preview').src = '';
+        document.getElementById('edit-image-preview-container').style.display = 'none';
+    }
+    
+    document.getElementById('modal-edit-card').style.display = 'flex';
+};
+
+document.getElementById('btn-cancel-edit-card').addEventListener('click', () => {
+    document.getElementById('modal-edit-card').style.display = 'none';
+});
+
+document.getElementById('btn-save-edit-card').addEventListener('click', async () => {
+    if (!currentEditCardId) return;
+    const term = document.getElementById('edit-input-term').value.trim();
+    const def = document.getElementById('edit-input-def').value.trim();
+    const ex = document.getElementById('edit-input-ex').value.trim();
+    const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
+    
+    if (term && def) {
+        await updateCard({
+            id: currentEditCardId,
+            deckId: currentDeckId,
+            term,
+            definition: def,
+            example: ex,
+            status: 'new',
+            image: currentEditPastedImage,
+            type: isCloze ? 'cloze' : 'standard'
+        });
+        document.getElementById('modal-edit-card').style.display = 'none';
+        loadCards();
+    } else {
+        showToast("Term and Definition are required!");
+    }
+});
+
+document.getElementById('btn-edit-image').addEventListener('click', () => {
+    document.getElementById('edit-input-image').click();
+});
+
+document.getElementById('edit-input-image').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type.indexOf('image') === 0) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            currentEditPastedImage = event.target.result;
+            document.getElementById('edit-image-preview').src = currentEditPastedImage;
+            document.getElementById('edit-image-preview-container').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+});
+
+document.getElementById('btn-remove-edit-image').addEventListener('click', () => {
+    currentEditPastedImage = null;
+    document.getElementById('edit-image-preview').src = '';
+    document.getElementById('edit-image-preview-container').style.display = 'none';
+});
+
+// Preview Modal Logic
+const openPreviewModal = (card) => {
+    document.getElementById('preview-term').textContent = card.type === 'cloze' ? card.term.replace(/{{(.*?)}}/g, '[___]') : card.term;
+    document.getElementById('preview-def').textContent = card.definition;
+    
+    const exEl = document.getElementById('preview-ex');
+    if (card.example) {
+        exEl.textContent = `"${card.example}"`;
+        exEl.style.display = 'block';
+    } else {
+        exEl.style.display = 'none';
+    }
+    
+    const imgEl = document.getElementById('preview-image-front');
+    if (card.image) {
+        imgEl.src = card.image;
+        imgEl.style.display = 'block';
+    } else {
+        imgEl.style.display = 'none';
+    }
+    
+    const clozeContainer = document.getElementById('preview-cloze-container');
+    if (card.type === 'cloze') {
+        clozeContainer.style.display = 'block';
+    } else {
+        clozeContainer.style.display = 'none';
+    }
+    
+    document.getElementById('preview-flashcard').classList.remove('flipped');
+    document.getElementById('modal-preview-card').style.display = 'flex';
+};
+
+document.getElementById('preview-flashcard').addEventListener('click', () => {
+    document.getElementById('preview-flashcard').classList.toggle('flipped');
+});
+
+document.getElementById('btn-close-preview').addEventListener('click', () => {
+    document.getElementById('modal-preview-card').style.display = 'none';
+});
+
+// Bind paste event for the edit modal as well
+document.addEventListener('paste', (e) => {
+    if (document.getElementById('modal-edit-card').style.display === 'flex') {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+            if (item.type.indexOf('image') === 0) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    currentEditPastedImage = event.target.result;
+                    document.getElementById('edit-image-preview').src = currentEditPastedImage;
+                    document.getElementById('edit-image-preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
+    }
 });
