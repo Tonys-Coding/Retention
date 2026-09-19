@@ -633,7 +633,7 @@ document.body.addEventListener('drop', async (e) => {
         }
         
         try {
-            dropzone.innerHTML = `<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
+            dropzone.innerHTML = `<span class="loader"></span><h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
             dropzone.style.display = 'flex';
             
             const arrayBuffer = await file.arrayBuffer();
@@ -647,7 +647,7 @@ document.body.addEventListener('drop', async (e) => {
                 fullText += pageText + '\n';
             }
             
-            dropzone.innerHTML = `<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling OpenRouter AI...</p>`;
+            dropzone.innerHTML = `<span class="loader"></span><h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Calling OpenRouter AI...</p>`;
             
             const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
             
