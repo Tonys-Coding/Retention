@@ -282,7 +282,7 @@ button.icon-btn:active {
 }
 
 /* Forms */
-input[type="text"], input[type="file"], textarea {
+input[type="text"], input[type="search"], input[type="file"], textarea {
     width: 100%;
     border: 2px solid var(--border-color);
     padding: 8px;
@@ -291,6 +291,13 @@ input[type="text"], input[type="file"], textarea {
     font-family: inherit;
     background: var(--input-bg);
     color: var(--text-primary);
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+}
+input[type="text"]:focus, input[type="search"]:focus, textarea:focus {
+    box-shadow: 4px 4px 0 var(--text-primary);
 }
 
 /* Flashcard Study View */
