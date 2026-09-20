@@ -64,13 +64,18 @@ const showView = (viewName) => {
 
 const saveStudySession = () => {
     if (studyCards && studyCards.length > 0 && studyIndex < studyCards.length) {
-        localStorage.setItem('activeStudySession', JSON.stringify({
-            deckName: currentDeckName,
-            cards: studyCards,
-            index: studyIndex,
-            stats: studyStats,
-            sourceView: studySourceView
-        }));
+        try {
+            localStorage.setItem('activeStudySession', JSON.stringify({
+                deckId: currentDeckId,
+                deckName: currentDeckName,
+                cardIds: studyCards.map(c => c.id),
+                index: studyIndex,
+                stats: studyStats,
+                sourceView: studySourceView
+            }));
+        } catch(e) {
+            console.error("Failed to save session:", e);
+        }
     } else {
         clearStudySession();
     }
@@ -85,26 +90,27 @@ const checkSavedSession = async () => {
     if (saved) {
         try {
             const session = JSON.parse(saved);
-            if (session.deckName && session.cards && session.index < session.cards.length) {
+            if (session.deckId && session.deckName && session.cards && session.index < session.cards.length) {
+                currentDeckId = session.deckId;
                 currentDeckName = session.deckName;
                 studyCards = session.cards;
                 studyIndex = session.index;
                 studyStats = session.stats || { know: 0, forgot: 0 };
                 studySourceView = session.sourceView || 'deckDetails';
                 
-                const deck = await getDeck(currentDeckName);
-                if (deck) {
-                    currentCards = deck.cards || [];
-                    document.getElementById('traditional-actions-container').style.display = 'flex';
-                    updateStudyView();
-                    showView('study');
-                    return true;
-                }
+                currentCards = await getCardsByDeck(currentDeckId);
+                document.getElementById('traditional-actions-container').style.display = 'flex';
+                updateStudyView();
+                showView('study');
+                return true;
+            } else {
+                clearStudySession(); // Clear invalid/old schema sessions
             }
         } catch (e) {
             clearStudySession();
         }
     }
+    } else { console.log("No saved session found in localStorage"); }
     return false;
 };
 
