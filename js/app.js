@@ -560,7 +560,7 @@ const updateStudyView = () => {
         exEl.style.display = 'none';
     }
     
-    document.getElementById('flashcard').className = 'card-item';
+    document.getElementById('flashcard').className = 'flashcard';
     
     // Reset UI
     document.getElementById('cloze-input-container').style.display = 'none';
