@@ -893,8 +893,7 @@ const handlePDFUpload = async (file) => {
         return;
     }
     
-    try {
-                dropzone.innerHTML = `
+    dropzone.innerHTML = `
             <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
             <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px; margin-bottom: 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
             <select id="ai-focus-select" style="padding: 8px; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 80%; max-width: 250px;">
@@ -904,7 +903,6 @@ const handlePDFUpload = async (file) => {
                 <option value="language">Focus on Language Translation</option>
             </select>
         `;
-    }
 };
 
 document.body.addEventListener('drop', async (e) => {
