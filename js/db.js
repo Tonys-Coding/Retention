@@ -148,6 +148,11 @@ export const addCard = (card) => {
         const transaction = db.transaction(['cards'], 'readwrite');
         const store = transaction.objectStore('cards');
         if (!card.status) card.status = 'new';
+        if (card.interval === undefined) card.interval = 0;
+        if (card.repetition === undefined) card.repetition = 0;
+        if (card.efactor === undefined) card.efactor = 2.5;
+        if (card.nextReviewDate === undefined) card.nextReviewDate = Date.now();
+        
         const request = store.add(card);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);

@@ -1,5 +1,6 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
+import { uploadToDrive, downloadFromDrive } from './drive.js';
 
 // State
 let currentDeckId = null;
@@ -110,13 +111,19 @@ document.getElementById('workspace-title').textContent = getWorkspaceName();
 
 let folderPath = []; // Array of {id, name} for breadcrumbs
 
-const loadDecks = async () => {
+const loadDecks = async (searchQuery = '') => {
     let allDecks = await getDecks();
     let allFolders = await getFolders();
     
     // Filter to current folder
-    const decks = allDecks.filter(d => (d.folderId || null) === currentFolderId);
-    const folders = allFolders.filter(f => (f.parentId || null) === currentFolderId);
+    let decks = allDecks.filter(d => (d.folderId || null) === currentFolderId);
+    let folders = allFolders.filter(f => (f.parentId || null) === currentFolderId);
+    
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        decks = allDecks.filter(d => d.name.toLowerCase().includes(q));
+        folders = allFolders.filter(f => f.name.toLowerCase().includes(q));
+    }
     
     const list = document.getElementById('decks-list');
     list.innerHTML = '';
@@ -480,7 +487,33 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
     exportDeckToCSV(currentDeckName, currentCards);
 });
 
-const startStudySession = (source) => {
+
+const calculateSM2 = (card, q) => {
+    let interval = card.interval || 0;
+    let repetition = card.repetition || 0;
+    let efactor = card.efactor || 2.5;
+
+    if (q < 3) {
+        repetition = 0;
+        interval = 1;
+    } else {
+        efactor = Math.max(1.3, efactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+        if (repetition === 0) interval = 1;
+        else if (repetition === 1) interval = 6;
+        else interval = Math.round(interval * efactor);
+        repetition++;
+    }
+    return { interval, repetition, efactor };
+};
+
+const formatInterval = (days) => {
+    if (days < 1) return '< 1d';
+    if (days < 30) return `${days}d`;
+    if (days < 365) return `${Math.round(days/30)}mo`;
+    return `${Math.round(days/365)}y`;
+};
+
+const startStudySession = (source, isCram = false) => {
     studySourceView = source || 'deckDetails';
     
     if (currentCards.length === 0) {
@@ -488,7 +521,17 @@ const startStudySession = (source) => {
         return;
     }
     
-    studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+    if (isCram) {
+        studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+    } else {
+        const now = Date.now();
+        studyCards = currentCards.filter(c => (c.nextReviewDate || 0) <= now).sort(() => Math.random() - 0.5);
+        if (studyCards.length === 0) {
+            showToast("You're all caught up! Use Cram to study anyway.");
+            return;
+        }
+    }
+    
     studyIndex = 0;
     studyStats = { know: 0, forgot: 0 };
     
@@ -496,7 +539,8 @@ const startStudySession = (source) => {
     showView('study');
 };
 
-document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails'));
+document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails', false));
+document.getElementById('btn-custom-study').addEventListener('click', () => startStudySession('deckDetails', true));
 
 const updateStudyView = () => {
     if (studyIndex >= studyCards.length) {
@@ -508,24 +552,22 @@ const updateStudyView = () => {
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
     document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
     
-    
     const exEl = document.getElementById('study-ex');
     if (card.example) {
-        exEl.textContent = `"${card.example}"`;
+        exEl.innerHTML = marked.parse(`> "${card.example}"`);
         exEl.style.display = 'block';
     } else {
         exEl.style.display = 'none';
     }
     
-    const flashcard = document.getElementById('flashcard');
-    flashcard.classList.remove('flipped');
+    document.getElementById('flashcard').className = 'card-item';
     
     // Reset UI
     document.getElementById('cloze-input-container').style.display = 'none';
     document.getElementById('study-hint-tap').style.display = 'block';
     document.getElementById('input-cloze').value = '';
-    flashcard.style.pointerEvents = 'auto'; 
-    document.getElementById('study-actions-container') ? document.getElementById('study-actions-container').style.display = 'flex' : null;
+    document.getElementById('flashcard').style.pointerEvents = 'auto'; 
+    if (document.getElementById('study-actions-container')) document.getElementById('study-actions-container').style.display = 'flex';
     
     // Image support
     const imgEl = document.getElementById('study-image-front');
@@ -535,68 +577,81 @@ const updateStudyView = () => {
     } else {
         imgEl.style.display = 'none';
     }
-
+    
     if (card.type === 'cloze') {
-        let frontText = card.term;
-        let backText = card.definition;
+        const parts = card.term.split(/({[^}]+})/);
+        let frontText = '';
+        let backText = '';
         let clozeAnswer = '';
         
-        const termMatch = card.term.match(/\{\{(.*?)\}\}/);
-        const defMatch = card.definition.match(/\{\{(.*?)\}\}/);
+        parts.forEach(p => {
+            if (p.startsWith('{') && p.endsWith('}')) {
+                clozeAnswer = p.slice(1, -1);
+                frontText += `<span class="cloze-blank"></span>`;
+                backText += `<span class="cloze-revealed">${clozeAnswer}</span>`;
+            } else {
+                frontText += p;
+                backText += p;
+            }
+        });
         
-        if (termMatch) {
-            clozeAnswer = termMatch[1];
-            frontText = card.term.replace(/\{\{.*?\}\}/g, '[...]');
-            backText = card.term.replace(/\{\{(.*?)\}\}/g, `<span style="text-decoration: underline;">$1</span>`);
-        } else if (defMatch) {
-            clozeAnswer = defMatch[1];
-            frontText = card.definition.replace(/\{\{.*?\}\}/g, '[...]');
-            backText = card.definition.replace(/\{\{(.*?)\}\}/g, `<span style="text-decoration: underline;">$1</span>`);
+        if (card.example) {
+            frontText += '<br><br><i>' + card.example + '</i>';
+            backText += '<br><br><i>' + card.example + '</i>';
         }
         
-        document.getElementById('study-term').innerHTML = frontText;
-        document.getElementById('study-def').innerHTML = backText;
+        document.getElementById('study-term').innerHTML = marked.parse(frontText);
+        document.getElementById('study-def').innerHTML = marked.parse(backText);
         
         document.getElementById('cloze-input-container').style.display = 'block';
         document.getElementById('study-hint-tap').style.display = 'none';
-        flashcard.style.pointerEvents = 'none'; 
+        document.getElementById('flashcard').style.pointerEvents = 'none'; 
         document.getElementById('study-actions-container').style.display = 'none'; 
         
         const submitBtn = document.getElementById('btn-submit-cloze');
         submitBtn.dataset.answer = clozeAnswer;
         submitBtn.onclick = (e) => {
             e.stopPropagation();
-            const guess = document.getElementById('input-cloze').value.trim();
-            const correct = guess.toLowerCase() === clozeAnswer.toLowerCase().trim();
-            
-            flashcard.classList.add('flipped');
+            const guess = document.getElementById('input-cloze').value.trim().toLowerCase();
+            const correct = guess === clozeAnswer.toLowerCase();
+            if (correct) {
+                document.getElementById('input-cloze').style.borderColor = '#4CAF50';
+            } else {
+                document.getElementById('input-cloze').style.borderColor = '#ff4444';
+            }
+            document.getElementById('flashcard').classList.add('flipped');
             setTimeout(() => {
-                handleStudyResult(correct);
-            }, 1500); // Wait for them to see the back of the card before moving on
+                handleStudyResult(correct ? 4 : 1);
+            }, 1500);
         };
         
-        // Enter key to submit
         document.getElementById('input-cloze').onkeypress = (e) => {
             if (e.key === 'Enter') submitBtn.click();
         };
         
     } else {
-        document.getElementById('study-term').textContent = card.term;
-        document.getElementById('study-def').textContent = card.definition;
+        document.getElementById('study-term').innerHTML = marked.parse(card.term);
+        document.getElementById('study-def').innerHTML = marked.parse(card.definition);
+        
+        // Update SRS labels for basic card
+        document.getElementById('label-hard').textContent = formatInterval(calculateSM2(card, 3).interval);
+        document.getElementById('label-good').textContent = formatInterval(calculateSM2(card, 4).interval);
+        document.getElementById('label-easy').textContent = formatInterval(calculateSM2(card, 5).interval);
     }
 };
 
 document.getElementById('flashcard').addEventListener('click', () => {
-    // Only flip on click if it's not a cloze card
     const card = studyCards[studyIndex];
     if (card && card.type !== 'cloze') {
         document.getElementById('flashcard').classList.toggle('flipped');
     }
 });
 
-const handleStudyResult = async (know) => {
+const handleStudyResult = async (q) => {
     const card = studyCards[studyIndex];
-    if (know) {
+    
+    // Update stats
+    if (q >= 3) {
         studyStats.know++;
         card.status = 'mastered';
     } else {
@@ -604,23 +659,27 @@ const handleStudyResult = async (know) => {
         card.status = 'learning';
     }
     
+    // Calculate SM2
+    const { interval, repetition, efactor } = calculateSM2(card, q);
+    card.interval = interval;
+    card.repetition = repetition;
+    card.efactor = efactor;
+    // Set nextReviewDate
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    card.nextReviewDate = now.getTime() + interval * 24 * 60 * 60 * 1000;
+    
     await updateCard(card);
-    await recordStudyResult(know);
+    await recordStudyResult(q >= 3);
     
     studyIndex++;
     updateStudyView();
 };
 
-document.getElementById('btn-study-forgot').addEventListener('click', () => handleStudyResult(false));
-document.getElementById('btn-study-skip').addEventListener('click', () => {
-    studyIndex++;
-    if (studyIndex >= studyCards.length) {
-        showStudyComplete();
-    } else {
-        updateStudyView();
-    }
-});
-document.getElementById('btn-study-know').addEventListener('click', () => handleStudyResult(true));
+document.getElementById('btn-study-again').addEventListener('click', () => handleStudyResult(1));
+document.getElementById('btn-study-hard').addEventListener('click', () => handleStudyResult(3));
+document.getElementById('btn-study-good').addEventListener('click', () => handleStudyResult(4));
+document.getElementById('btn-study-easy').addEventListener('click', () => handleStudyResult(5));
 
 document.getElementById('btn-back-details').addEventListener('click', () => {
     if (studySourceView === 'decks') {
@@ -830,78 +889,15 @@ const handlePDFUpload = async (file) => {
     }
     
     try {
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
-        dropzone.style.display = 'flex';
-        dropzone.classList.add('dropzone-loading');
-        
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        const pagesToExtract = Math.min(pdf.numPages, 50); 
-        for (let i = 1; i <= pagesToExtract; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
-        }
-        
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
-        
-        const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
-        
-        const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: "openrouter/free",
-                messages: [
-                    { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
-                    { role: "user", content: prompt }
-                ]
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("OpenRouter API Error details:", errorData);
-            throw new Error(errorData.error?.message || "Unknown API Error");
-        }
-        const data = await response.json();
-        const textResult = data.choices[0].message.content;
-        
-        const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-        const flashcards = JSON.parse(cleanText);
-        
-        if (flashcards && flashcards.length > 0) {
-            const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
-            const deckId = await addDeck(deckName);
-            for (const card of flashcards) {
-                await addCard({
-                    deckId: deckId,
-                    term: card.term,
-                    definition: card.definition,
-                    status: 'new',
-                    type: 'standard'
-                });
-            }
-            loadDecks();
-            showToast(`Successfully generated ${flashcards.length} cards from PDF!`);
-        } else {
-            showToast("No cards could be generated from this document.");
-        }
-        
-    } catch (error) {
-        console.error(error);
-        showToast("Error generating cards: " + error.message);
-    } finally {
-        dropzone.style.display = 'none';
-        dropzone.classList.remove('dropzone-loading');
-        dropzone.innerHTML = `
+                dropzone.innerHTML = `
             <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
-            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
+            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px; margin-bottom: 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
+            <select id="ai-focus-select" style="padding: 8px; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 80%; max-width: 250px;">
+                <option value="default">Default (Key Terms & Definitions)</option>
+                <option value="dates">Focus on Dates & Historical Events</option>
+                <option value="code">Focus on Code Snippets & Syntax</option>
+                <option value="language">Focus on Language Translation</option>
+            </select>
         `;
     }
 };
@@ -1027,12 +1023,12 @@ document.getElementById('btn-remove-edit-image').addEventListener('click', () =>
 
 // Preview Modal Logic
 const openPreviewModal = (card) => {
-    document.getElementById('preview-term').textContent = card.type === 'cloze' ? card.term.replace(/{{(.*?)}}/g, '[___]') : card.term;
-    document.getElementById('preview-def').textContent = card.definition;
+    document.getElementById('preview-term').innerHTML = marked.parse(card.type === 'cloze' ? card.term.replace(/{{(.*?)}}/g, '[___]') : card.term);
+    document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
     
     const exEl = document.getElementById('preview-ex');
     if (card.example) {
-        exEl.textContent = `"${card.example}"`;
+        exEl.innerHTML = marked.parse(`> "${card.example}"`);
         exEl.style.display = 'block';
     } else {
         exEl.style.display = 'none';
@@ -1160,4 +1156,37 @@ document.getElementById('btn-save-add-item').addEventListener('click', async () 
     document.getElementById('modal-add-item').style.display = 'none';
     editingFolderId = null;
     loadDecks(); // reload workspace
+});
+
+
+document.getElementById('input-search').addEventListener('input', (e) => {
+    loadDecks(e.target.value.trim());
+});
+
+
+document.getElementById('btn-sync-upload').addEventListener('click', async () => {
+    try {
+        const btn = document.getElementById('btn-sync-upload');
+        btn.textContent = 'Uploading...';
+        await uploadToDrive();
+        showToast("Successfully backed up to Google Drive!");
+    } catch (e) {
+        showToast("Error: " + e.message);
+    } finally {
+        document.getElementById('btn-sync-upload').textContent = 'Upload to Drive';
+    }
+});
+
+document.getElementById('btn-sync-download').addEventListener('click', async () => {
+    try {
+        const btn = document.getElementById('btn-sync-download');
+        btn.textContent = 'Downloading...';
+        await downloadFromDrive();
+        showToast("Successfully restored from Google Drive!");
+        loadDecks();
+    } catch (e) {
+        showToast("Error: " + e.message);
+    } finally {
+        document.getElementById('btn-sync-download').textContent = 'Download from Drive';
+    }
 });
