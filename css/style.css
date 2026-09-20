@@ -459,3 +459,8 @@ textarea {
     resize: vertical;
     font-family: inherit;
 }
+
+.deck-item.drag-over {
+    background-color: var(--border-color) !important;
+    transform: scale(1.02);
+}

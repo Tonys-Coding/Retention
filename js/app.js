@@ -135,6 +135,28 @@ const loadDecks = async () => {
             </div>
         `;
         
+        // Folder Drop Target
+        el.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            el.classList.add('drag-over');
+        });
+        el.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            el.classList.remove('drag-over');
+        });
+        el.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            el.classList.remove('drag-over');
+            const deckId = e.dataTransfer.getData('text/plain');
+            if (deckId) {
+                const deckToMove = allDecks.find(d => d.id == deckId);
+                if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
+                    await updateDeck(deckToMove.id, deckToMove.name, folder.id);
+                    loadDecks();
+                }
+            }
+        });
+        
         el.querySelector('.deck-item-info').addEventListener('click', () => {
             currentFolderId = folder.id;
             folderPath.push({id: folder.id, name: folder.name});
@@ -184,7 +206,7 @@ const loadDecks = async () => {
         el.className = 'deck-item';
         el.innerHTML = `
             <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--bg-secondary)" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="4" y="8" width="16" height="12" rx="2" ry="2"></rect><path d="M8 4h8a2 2 0 0 1 2 2v2" fill="none"></path></svg>
+                <svg width="32" height="24" viewBox="0 0 96 32" style="flex-shrink: 0; overflow: visible;"><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect><rect x="36" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect><rect x="72" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect></svg>
                 <div style="min-width: 0;">
                     <div class="deck-title-text">${deck.name}</div>
                     <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
@@ -202,6 +224,13 @@ const loadDecks = async () => {
                 </div>
             </div>
         `;
+        
+        // Make Deck Draggable
+        el.draggable = true;
+        el.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', deck.id);
+            e.dataTransfer.effectAllowed = 'move';
+        });
         
         el.querySelector('.deck-item-info').addEventListener('click', async () => {
             currentDeckId = deck.id;
