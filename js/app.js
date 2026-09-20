@@ -90,27 +90,42 @@ const checkSavedSession = async () => {
     if (saved) {
         try {
             const session = JSON.parse(saved);
-            if (session.deckId && session.deckName && session.cards && session.index < session.cards.length) {
+            const hasCards = session.cardIds || session.cards;
+            
+            if (session.deckId !== undefined && session.deckName && hasCards && session.index !== undefined) {
                 currentDeckId = session.deckId;
                 currentDeckName = session.deckName;
-                studyCards = session.cards;
                 studyIndex = session.index;
                 studyStats = session.stats || { know: 0, forgot: 0 };
                 studySourceView = session.sourceView || 'deckDetails';
                 
-                currentCards = await getCardsByDeck(currentDeckId);
+                document.getElementById('deck-title').textContent = currentDeckName;
+                
+                const allCards = await getCardsByDeck(currentDeckId);
+                currentCards = allCards;
+                
+                if (session.cardIds) {
+                    studyCards = session.cardIds.map(id => allCards.find(c => c.id === id)).filter(c => c);
+                } else {
+                    studyCards = session.cards;
+                }
+                
+                if (studyCards.length === 0 || studyIndex >= studyCards.length) {
+                    clearStudySession();
+                    return false;
+                }
+                
                 document.getElementById('traditional-actions-container').style.display = 'flex';
                 updateStudyView();
                 showView('study');
                 return true;
             } else {
-                clearStudySession(); // Clear invalid/old schema sessions
+                clearStudySession();
             }
         } catch (e) {
             clearStudySession();
         }
     }
-    } else { console.log("No saved session found in localStorage"); }
     return false;
 };
 
