@@ -1019,11 +1019,11 @@ let addItemType = 'deck'; // 'deck' or 'folder'
 
 document.getElementById('btn-add-menu').addEventListener('click', (e) => {
     e.stopPropagation();
-    document.getElementById('dropdown-add-menu').classList.toggle('show');
+    document.getElementById('add-dropdown-container').classList.toggle('show');
 });
 
 document.addEventListener('click', () => {
-    document.getElementById('dropdown-add-menu').classList.remove('show');
+    document.getElementById('add-dropdown-container').classList.remove('show');
 });
 
 const openAddItemModal = (type) => {
