@@ -1,7 +1,7 @@
 const DB_NAME = 'RetentionDB';
 const DB_VERSION = 3;
 
-let db;
+export let db;
 
 export const initDB = () => {
     return new Promise((resolve, reject) => {
