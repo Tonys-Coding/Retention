@@ -488,57 +488,21 @@ document.getElementById('btn-export-csv').addEventListener('click', () => {
 });
 
 
-const calculateSM2 = (card, q) => {
-    let interval = card.interval || 0;
-    let repetition = card.repetition || 0;
-    let efactor = card.efactor || 2.5;
 
-    if (q < 3) {
-        repetition = 0;
-        interval = 1;
-    } else {
-        efactor = Math.max(1.3, efactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
-        if (repetition === 0) interval = 1;
-        else if (repetition === 1) interval = 6;
-        else interval = Math.round(interval * efactor);
-        repetition++;
-    }
-    return { interval, repetition, efactor };
-};
-
-const formatInterval = (days) => {
-    if (days < 1) return '< 1d';
-    if (days < 30) return `${days}d`;
-    if (days < 365) return `${Math.round(days/30)}mo`;
-    return `${Math.round(days/365)}y`;
-};
 
 let currentStudyMode = 'traditional';
 
-const startStudySession = (source, mode = 'traditional') => {
+const startStudySession = (source) => {
     studySourceView = source || 'deckDetails';
-    currentStudyMode = mode;
+    currentStudyMode = 'traditional';
     
     if (currentCards.length === 0) {
         showToast("Add some cards to study first!");
         return;
     }
     
-    if (mode === 'traditional') {
-        studyCards = [...currentCards].sort(() => Math.random() - 0.5);
-        document.getElementById('traditional-actions-container').style.display = 'flex';
-        document.getElementById('study-actions-container').style.display = 'none';
-        document.getElementById('traditional-actions-container').style.display = 'none';
-    } else {
-        const now = Date.now();
-        studyCards = currentCards.filter(c => (c.nextReviewDate || 0) <= now).sort(() => Math.random() - 0.5);
-        if (studyCards.length === 0) {
-            showToast("You're all caught up! Use Traditional Study to review anyway.");
-            return;
-        }
-        document.getElementById('traditional-actions-container').style.display = 'none';
-        document.getElementById('study-actions-container').style.display = 'flex';
-    }
+    studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+    document.getElementById('traditional-actions-container').style.display = 'flex';
     
     studyIndex = 0;
     studyStats = { know: 0, forgot: 0 };
@@ -547,8 +511,7 @@ const startStudySession = (source, mode = 'traditional') => {
     showView('study');
 };
 
-document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails', 'traditional'));
-if(document.getElementById('btn-srs-study')) document.getElementById('btn-srs-study').addEventListener('click', () => startStudySession('deckDetails', 'srs'));
+document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails'));
 
 const updateStudyView = () => {
     if (studyIndex >= studyCards.length) {
@@ -575,8 +538,7 @@ const updateStudyView = () => {
     document.getElementById('study-hint-tap').style.display = 'block';
     document.getElementById('input-cloze').value = '';
     document.getElementById('flashcard').style.pointerEvents = 'auto'; 
-    if (document.getElementById('study-actions-container') && currentStudyMode === 'srs') document.getElementById('study-actions-container').style.display = 'flex';
-    if (document.getElementById('traditional-actions-container') && currentStudyMode === 'traditional') document.getElementById('traditional-actions-container').style.display = 'flex';
+    document.getElementById('traditional-actions-container').style.display = 'flex';
     
     // Image support
     const imgEl = document.getElementById('study-image-front');
@@ -630,11 +592,7 @@ const updateStudyView = () => {
             }
             document.getElementById('flashcard').classList.add('flipped');
             setTimeout(() => {
-                if (currentStudyMode === 'traditional') {
-                    handleTraditionalResult(correct);
-                } else {
-                    handleStudyResult(correct ? 4 : 1);
-                }
+                handleTraditionalResult(correct);
             }, 1500);
         };
         
@@ -646,10 +604,7 @@ const updateStudyView = () => {
         document.getElementById('study-term').innerHTML = marked.parse(card.term);
         document.getElementById('study-def').innerHTML = marked.parse(card.definition);
         
-        // Update SRS labels for basic card
-        document.getElementById('label-hard').textContent = formatInterval(calculateSM2(card, 3).interval);
-        document.getElementById('label-good').textContent = formatInterval(calculateSM2(card, 4).interval);
-        document.getElementById('label-easy').textContent = formatInterval(calculateSM2(card, 5).interval);
+        
     }
 };
 
@@ -660,44 +615,7 @@ document.getElementById('flashcard').addEventListener('click', () => {
     }
 });
 
-const handleStudyResult = async (q) => {
-    try {
-    const card = studyCards[studyIndex];
-    
-    // Update stats
-    if (q >= 3) {
-        studyStats.know++;
-        card.status = 'mastered';
-    } else {
-        studyStats.forgot++;
-        card.status = 'learning';
-    }
-    
-    // Calculate SM2
-    const { interval, repetition, efactor } = calculateSM2(card, q);
-    card.interval = interval;
-    card.repetition = repetition;
-    card.efactor = efactor;
-    // Set nextReviewDate
-    const now = new Date();
-    now.setHours(0,0,0,0);
-    card.nextReviewDate = now.getTime() + interval * 24 * 60 * 60 * 1000;
-    
-    await updateCard(card);
-    await recordStudyResult(q >= 3);
-    
-    studyIndex++;
-    updateStudyView();
-    } catch (err) {
-        showToast("Study Error: " + (err.message || err));
-        console.error("Study Error:", err);
-    }
-};
 
-document.getElementById('btn-study-again').addEventListener('click', () => handleStudyResult(1));
-document.getElementById('btn-study-hard').addEventListener('click', () => handleStudyResult(3));
-document.getElementById('btn-study-good').addEventListener('click', () => handleStudyResult(4));
-document.getElementById('btn-study-easy').addEventListener('click', () => handleStudyResult(5));
 
 const handleTraditionalResult = async (know) => {
     try {
