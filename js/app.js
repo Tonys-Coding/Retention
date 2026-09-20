@@ -61,6 +61,53 @@ const showView = (viewName) => {
     views[viewName].classList.add('active');
 };
 
+
+const saveStudySession = () => {
+    if (studyCards && studyCards.length > 0 && studyIndex < studyCards.length) {
+        localStorage.setItem('activeStudySession', JSON.stringify({
+            deckName: currentDeckName,
+            cards: studyCards,
+            index: studyIndex,
+            stats: studyStats,
+            sourceView: studySourceView
+        }));
+    } else {
+        clearStudySession();
+    }
+};
+
+const clearStudySession = () => {
+    localStorage.removeItem('activeStudySession');
+};
+
+const checkSavedSession = async () => {
+    const saved = localStorage.getItem('activeStudySession');
+    if (saved) {
+        try {
+            const session = JSON.parse(saved);
+            if (session.deckName && session.cards && session.index < session.cards.length) {
+                currentDeckName = session.deckName;
+                studyCards = session.cards;
+                studyIndex = session.index;
+                studyStats = session.stats || { know: 0, forgot: 0 };
+                studySourceView = session.sourceView || 'deckDetails';
+                
+                const deck = await getDeck(currentDeckName);
+                if (deck) {
+                    currentCards = deck.cards || [];
+                    document.getElementById('traditional-actions-container').style.display = 'flex';
+                    updateStudyView();
+                    showView('study');
+                    return true;
+                }
+            }
+        } catch (e) {
+            clearStudySession();
+        }
+    }
+    return false;
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
@@ -69,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await initDB();
     await loadDecks();
+    await checkSavedSession();
 });
 
 document.getElementById('btn-toggle-theme').addEventListener('click', () => {
@@ -512,6 +560,7 @@ const updateStudyView = () => {
         showStudyComplete();
         return;
     }
+    saveStudySession();
     
     const card = studyCards[studyIndex];
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
@@ -638,6 +687,7 @@ document.getElementById('btn-study-skip-trad').addEventListener('click', () => {
 });
 
 document.getElementById('btn-back-details').addEventListener('click', () => {
+    clearStudySession();
     if (studySourceView === 'decks') {
         loadDecks();
         showView('decks');
@@ -648,6 +698,7 @@ document.getElementById('btn-back-details').addEventListener('click', () => {
 });
 
 const showStudyComplete = () => {
+    clearStudySession();
     document.getElementById('study-progress-fill').style.width = '100%';
     document.getElementById('study-results').innerHTML = `
         <strong>${studyStats.know}</strong> Known <br>
