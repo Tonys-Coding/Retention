@@ -86,13 +86,23 @@ let currentFolderId = null;
 const getWorkspaceName = () => localStorage.getItem('workspace_name') || 'My Workspace';
 
 document.getElementById('btn-edit-workspace').addEventListener('click', () => {
-    const current = getWorkspaceName();
-    const newName = prompt('Enter workspace name:', current);
-    if (newName && newName.trim()) {
-        localStorage.setItem('workspace_name', newName.trim());
-        document.getElementById('workspace-title').textContent = newName.trim();
+    document.getElementById('edit-workspace-name').value = getWorkspaceName();
+    document.getElementById('modal-edit-workspace').style.display = 'flex';
+    document.getElementById('edit-workspace-name').focus();
+});
+
+document.getElementById('btn-cancel-edit-workspace').addEventListener('click', () => {
+    document.getElementById('modal-edit-workspace').style.display = 'none';
+});
+
+document.getElementById('btn-save-edit-workspace').addEventListener('click', () => {
+    const newName = document.getElementById('edit-workspace-name').value.trim();
+    if (newName) {
+        localStorage.setItem('workspace_name', newName);
+        document.getElementById('workspace-title').textContent = newName;
         loadDecks();
     }
+    document.getElementById('modal-edit-workspace').style.display = 'none';
 });
 
 // Initialize workspace title
