@@ -648,6 +648,7 @@ document.getElementById('flashcard').addEventListener('click', () => {
 });
 
 const handleStudyResult = async (q) => {
+    try {
     const card = studyCards[studyIndex];
     
     // Update stats
@@ -674,6 +675,10 @@ const handleStudyResult = async (q) => {
     
     studyIndex++;
     updateStudyView();
+    } catch (err) {
+        showToast("Study Error: " + (err.message || err));
+        console.error("Study Error:", err);
+    }
 };
 
 document.getElementById('btn-study-again').addEventListener('click', () => handleStudyResult(1));
