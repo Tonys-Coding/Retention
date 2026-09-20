@@ -157,7 +157,7 @@ const loadDecks = async () => {
             }
         });
         
-        el.querySelector('.deck-item-info').addEventListener('click', () => {
+        el.addEventListener('click', () => {
             currentFolderId = folder.id;
             folderPath.push({id: folder.id, name: folder.name});
             loadDecks();
@@ -206,7 +206,7 @@ const loadDecks = async () => {
         el.className = 'deck-item';
         el.innerHTML = `
             <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <svg width="32" height="24" viewBox="0 0 96 32" style="flex-shrink: 0; overflow: visible;"><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect><rect x="36" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect><rect x="72" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="4"></rect></svg>
+                <svg width="20" height="24" viewBox="0 0 28 36" style="flex-shrink: 0; overflow: visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>
                 <div style="min-width: 0;">
                     <div class="deck-title-text">${deck.name}</div>
                     <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
@@ -232,7 +232,7 @@ const loadDecks = async () => {
             e.dataTransfer.effectAllowed = 'move';
         });
         
-        el.querySelector('.deck-item-info').addEventListener('click', async () => {
+        el.addEventListener('click', async () => {
             currentDeckId = deck.id;
             currentDeckName = deck.name;
             currentCards = await getCardsByDeck(deck.id);
@@ -772,6 +772,7 @@ const dropzone = document.getElementById('dropzone-overlay');
 
 document.body.addEventListener('dragover', (e) => {
     e.preventDefault();
+    if (!e.dataTransfer.types.includes('Files')) return;
     if (views.decks.classList.contains('active')) {
         dropzone.style.display = 'flex';
         dropzone.classList.add('dropzone-loading');
