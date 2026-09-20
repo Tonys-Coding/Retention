@@ -7,7 +7,7 @@ export const initDB = () => {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        request.onerror = (event) => reject(event.target.error);
+        request.onerror = (event) => { event.preventDefault(); reject(event.target.error); };
 
         request.onsuccess = (event) => {
             db = event.target.result;
@@ -44,7 +44,7 @@ export const addFolder = (name, color, parentId = null) => {
         const store = transaction.objectStore('folders');
         const request = store.add({ name, color, parentId, createdAt: new Date().toISOString() });
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -54,7 +54,7 @@ export const getFolders = () => {
         const store = transaction.objectStore('folders');
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -72,7 +72,7 @@ export const updateFolder = (id, newName, newColor, newParentId = undefined) => 
             putReq.onsuccess = () => resolve();
             putReq.onerror = () => reject(putReq.error);
         };
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -84,7 +84,7 @@ export const deleteFolder = (id) => {
         const store = transaction.objectStore('folders');
         const request = store.delete(id);
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -94,7 +94,7 @@ export const addDeck = (name, folderId = null) => {
         const store = transaction.objectStore('decks');
         const request = store.add({ name, folderId, createdAt: new Date().toISOString() });
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -104,7 +104,7 @@ export const getDecks = () => {
         const store = transaction.objectStore('decks');
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -121,7 +121,7 @@ export const updateDeck = (id, newName, folderId = undefined) => {
             putReq.onsuccess = () => resolve();
             putReq.onerror = () => reject(putReq.error);
         };
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -139,7 +139,7 @@ export const deleteDeck = (id) => {
         };
         
         transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 }
 
@@ -155,7 +155,7 @@ export const addCard = (card) => {
         
         const request = store.add(card);
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -165,7 +165,7 @@ export const updateCard = (card) => {
         const store = transaction.objectStore('cards');
         const request = store.put(card);
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -176,7 +176,7 @@ export const getCardsByDeck = (deckId) => {
         const index = store.index('deckId');
         const request = index.getAll(deckId);
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
 
@@ -186,7 +186,7 @@ export const deleteCard = (id) => {
         const store = transaction.objectStore('cards');
         const request = store.delete(id);
         request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 }
 
@@ -203,7 +203,7 @@ export const recordStudyResult = (know) => {
             store.put(data);
         };
         transaction.oncomplete = resolve;
-        transaction.onerror = () => reject(transaction.error);
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -213,6 +213,6 @@ export const getStats = () => {
         const store = transaction.objectStore('stats');
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
