@@ -45,6 +45,7 @@ export const addFolder = (name, color, parentId = null) => {
         const request = store.add({ name, color, parentId, createdAt: new Date().toISOString() });
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -55,6 +56,7 @@ export const getFolders = () => {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -73,6 +75,7 @@ export const updateFolder = (id, newName, newColor, newParentId = undefined) => 
             putReq.onerror = () => reject(putReq.error);
         };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -95,6 +98,7 @@ export const addDeck = (name, folderId = null) => {
         const request = store.add({ name, folderId, createdAt: new Date().toISOString() });
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -105,6 +109,7 @@ export const getDecks = () => {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -122,6 +127,7 @@ export const updateDeck = (id, newName, folderId = undefined) => {
             putReq.onerror = () => reject(putReq.error);
         };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -166,6 +172,7 @@ export const updateCard = (card) => {
         const request = store.put(card);
         request.onsuccess = () => resolve();
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -177,6 +184,7 @@ export const getCardsByDeck = (deckId) => {
         const request = index.getAll(deckId);
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
 
@@ -214,5 +222,6 @@ export const getStats = () => {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
