@@ -770,18 +770,26 @@ document.getElementById('btn-save-settings').addEventListener('click', () => {
 
 const dropzone = document.getElementById('dropzone-overlay');
 
-document.body.addEventListener('dragover', (e) => {
+let dragCounter = 0;
+document.body.addEventListener('dragenter', (e) => {
     e.preventDefault();
     if (!e.dataTransfer.types.includes('Files')) return;
+    dragCounter++;
     if (views.decks.classList.contains('active')) {
         dropzone.style.display = 'flex';
-        dropzone.classList.add('dropzone-loading');
+        dropzone.classList.remove('dropzone-loading');
     }
+});
+
+document.body.addEventListener('dragover', (e) => {
+    e.preventDefault();
 });
 
 document.body.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    if (e.target === dropzone) {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    dragCounter--;
+    if (dragCounter === 0) {
         dropzone.style.display = 'none';
         dropzone.classList.remove('dropzone-loading');
     }
@@ -869,12 +877,13 @@ const handlePDFUpload = async (file) => {
         dropzone.classList.remove('dropzone-loading');
         dropzone.innerHTML = `
             <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
-            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use your OpenRouter API Key to extract terms and definitions automatically.</p>
+            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
         `;
     }
 };
 
 document.body.addEventListener('drop', async (e) => {
+    dragCounter = 0;
     e.preventDefault();
     dropzone.style.display = 'none';
         dropzone.classList.remove('dropzone-loading');
