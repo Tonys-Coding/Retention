@@ -513,23 +513,31 @@ const formatInterval = (days) => {
     return `${Math.round(days/365)}y`;
 };
 
-const startStudySession = (source, isCram = false) => {
+let currentStudyMode = 'traditional';
+
+const startStudySession = (source, mode = 'traditional') => {
     studySourceView = source || 'deckDetails';
+    currentStudyMode = mode;
     
     if (currentCards.length === 0) {
         showToast("Add some cards to study first!");
         return;
     }
     
-    if (isCram) {
+    if (mode === 'traditional') {
         studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+        document.getElementById('traditional-actions-container').style.display = 'flex';
+        document.getElementById('study-actions-container').style.display = 'none';
+        document.getElementById('traditional-actions-container').style.display = 'none';
     } else {
         const now = Date.now();
         studyCards = currentCards.filter(c => (c.nextReviewDate || 0) <= now).sort(() => Math.random() - 0.5);
         if (studyCards.length === 0) {
-            showToast("You're all caught up! Use Cram to study anyway.");
+            showToast("You're all caught up! Use Traditional Study to review anyway.");
             return;
         }
+        document.getElementById('traditional-actions-container').style.display = 'none';
+        document.getElementById('study-actions-container').style.display = 'flex';
     }
     
     studyIndex = 0;
@@ -539,8 +547,8 @@ const startStudySession = (source, isCram = false) => {
     showView('study');
 };
 
-document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails', false));
-document.getElementById('btn-custom-study').addEventListener('click', () => startStudySession('deckDetails', true));
+document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails', 'traditional'));
+if(document.getElementById('btn-srs-study')) document.getElementById('btn-srs-study').addEventListener('click', () => startStudySession('deckDetails', 'srs'));
 
 const updateStudyView = () => {
     if (studyIndex >= studyCards.length) {
@@ -567,7 +575,8 @@ const updateStudyView = () => {
     document.getElementById('study-hint-tap').style.display = 'block';
     document.getElementById('input-cloze').value = '';
     document.getElementById('flashcard').style.pointerEvents = 'auto'; 
-    if (document.getElementById('study-actions-container')) document.getElementById('study-actions-container').style.display = 'flex';
+    if (document.getElementById('study-actions-container') && currentStudyMode === 'srs') document.getElementById('study-actions-container').style.display = 'flex';
+    if (document.getElementById('traditional-actions-container') && currentStudyMode === 'traditional') document.getElementById('traditional-actions-container').style.display = 'flex';
     
     // Image support
     const imgEl = document.getElementById('study-image-front');
@@ -621,7 +630,11 @@ const updateStudyView = () => {
             }
             document.getElementById('flashcard').classList.add('flipped');
             setTimeout(() => {
-                handleStudyResult(correct ? 4 : 1);
+                if (currentStudyMode === 'traditional') {
+                    handleTraditionalResult(correct);
+                } else {
+                    handleStudyResult(correct ? 4 : 1);
+                }
             }, 1500);
         };
         
@@ -685,6 +698,33 @@ document.getElementById('btn-study-again').addEventListener('click', () => handl
 document.getElementById('btn-study-hard').addEventListener('click', () => handleStudyResult(3));
 document.getElementById('btn-study-good').addEventListener('click', () => handleStudyResult(4));
 document.getElementById('btn-study-easy').addEventListener('click', () => handleStudyResult(5));
+
+const handleTraditionalResult = async (know) => {
+    try {
+        const card = studyCards[studyIndex];
+        if (know) {
+            studyStats.know++;
+            card.status = 'mastered';
+        } else {
+            studyStats.forgot++;
+            card.status = 'learning';
+        }
+        await updateCard(card);
+        await recordStudyResult(know);
+        
+        studyIndex++;
+        updateStudyView();
+    } catch(err) {
+        console.error(err);
+    }
+};
+
+document.getElementById('btn-study-forgot-trad').addEventListener('click', () => handleTraditionalResult(false));
+document.getElementById('btn-study-know-trad').addEventListener('click', () => handleTraditionalResult(true));
+document.getElementById('btn-study-skip-trad').addEventListener('click', () => {
+    studyIndex++;
+    updateStudyView();
+});
 
 document.getElementById('btn-back-details').addEventListener('click', () => {
     if (studySourceView === 'decks') {
