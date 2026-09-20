@@ -893,16 +893,72 @@ const handlePDFUpload = async (file) => {
         return;
     }
     
-    dropzone.innerHTML = `
-            <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
-            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px; margin-bottom: 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
-            <select id="ai-focus-select" style="padding: 8px; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 80%; max-width: 250px;">
-                <option value="default">Default (Key Terms & Definitions)</option>
-                <option value="dates">Focus on Dates & Historical Events</option>
-                <option value="code">Focus on Code Snippets & Syntax</option>
-                <option value="language">Focus on Language Translation</option>
-            </select>
-        `;
+    try {
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
+        dropzone.style.display = 'flex';
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        const pagesToExtract = Math.min(pdf.numPages, 50); 
+        for (let i = 1; i <= pagesToExtract; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(' ');
+            fullText += pageText + '\n';
+        }
+        
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
+        
+        const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
+        
+        const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: "openrouter/free",
+                messages: [
+                    { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
+                    { role: "user", content: prompt }
+                ]
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || "Unknown API Error");
+        }
+        const data = await response.json();
+        const textResult = data.choices[0].message.content;
+        
+        const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+        const flashcards = JSON.parse(cleanText);
+        
+        if (flashcards && flashcards.length > 0) {
+            const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
+            const deckId = await addDeck(deckName, currentFolderId);
+            for (const card of flashcards) {
+                await addCard({
+                    deckId: deckId,
+                    term: card.term,
+                    definition: card.definition,
+                    status: 'new'
+                });
+            }
+            dropzone.style.display = 'none';
+            showToast(`Generated ${flashcards.length} cards from PDF!`);
+            loadDecks();
+        } else {
+            throw new Error("No flashcards could be generated from this text.");
+        }
+    } catch (err) {
+        dropzone.style.display = 'none';
+        showToast("PDF Error: " + err.message);
+        console.error(err);
+    }
 };
 
 document.body.addEventListener('drop', async (e) => {
