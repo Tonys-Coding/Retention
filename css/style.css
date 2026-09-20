@@ -483,3 +483,42 @@ textarea {
 .flashcard-front > * > p:last-child, .flashcard-front > p:last-child {
     margin-bottom: 0;
 }
+
+/* Markdown Typography */
+.flashcard-inner code {
+    font-family: monospace;
+    background-color: var(--bg-primary);
+    padding: 2px 4px;
+    border: 2px solid var(--border-color);
+    font-size: 0.9em;
+}
+
+.flashcard-inner pre {
+    background-color: var(--bg-primary);
+    border: 3px solid var(--border-color);
+    padding: 12px;
+    overflow-x: auto;
+    text-align: left;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+    margin: 16px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.flashcard-inner pre code {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+}
+
+.flashcard-inner ul, .flashcard-inner ol {
+    text-align: left;
+    margin: 8px 0;
+    padding-left: 24px;
+    width: 100%;
+}
+
+.flashcard-inner li {
+    margin-bottom: 4px;
+}
