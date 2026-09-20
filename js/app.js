@@ -1,4 +1,4 @@
-import { initDB, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
+import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
 
 // State
@@ -81,7 +81,7 @@ document.addEventListener('click', () => {
     });
 });
 
-
+let currentFolderId = null;
 let folderPath = []; // Array of {id, name} for breadcrumbs
 
 const loadDecks = async () => {
@@ -120,8 +120,8 @@ const loadDecks = async () => {
         el.className = 'deck-item';
         el.style.borderLeft = `8px solid ${folder.color || 'var(--border-color)'}`;
         el.innerHTML = `
-            <div class="deck-item-info" title="Open Folder" style="display: flex; align-items: center; gap: 12px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <div class="deck-item-info" title="Open Folder" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                 <div class="deck-title-text">${folder.name}</div>
             </div>
             <div class="dropdown">
@@ -134,7 +134,7 @@ const loadDecks = async () => {
             </div>
         `;
         
-        el.addEventListener('click', () => {
+        el.querySelector('.deck-item-info').addEventListener('click', () => {
             currentFolderId = folder.id;
             folderPath.push({id: folder.id, name: folder.name});
             loadDecks();
@@ -153,7 +153,6 @@ const loadDecks = async () => {
         el.querySelector('.btn-folder-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (await showConfirm(`Delete folder "${folder.name}"? Decks inside will be moved to workspace.`)) {
-                // Move children to root
                 const childrenDecks = allDecks.filter(d => d.folderId === folder.id);
                 for (let d of childrenDecks) {
                     await updateDeck(d.id, d.name, null);
@@ -178,9 +177,12 @@ const loadDecks = async () => {
         const el = document.createElement('div');
         el.className = 'deck-item';
         el.innerHTML = `
-            <div class="deck-item-info" title="Click to Study">
-                <div class="deck-title-text">${deck.name}</div>
-                <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
+            <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <div style="min-width: 0;">
+                    <div class="deck-title-text">${deck.name}</div>
+                    <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
+                </div>
             </div>
             <div class="dropdown">
                 <button class="icon-btn btn-deck-menu" data-id="${deck.id}" style="display: flex; align-items: center; justify-content: center;">
@@ -195,7 +197,7 @@ const loadDecks = async () => {
             </div>
         `;
         
-        el.addEventListener('click', async () => {
+        el.querySelector('.deck-item-info').addEventListener('click', async () => {
             currentDeckId = deck.id;
             currentDeckName = deck.name;
             currentCards = await getCardsByDeck(deck.id);
@@ -218,42 +220,499 @@ const loadDecks = async () => {
             });
             dropdown.classList.toggle('show');
         });
-        
-        el.querySelector('.btn-deck-edit').addEventListener('click', (e) => {
+
+        el.querySelector('.btn-deck-edit').addEventListener('click', async (e) => {
             e.stopPropagation();
+            dropdown.classList.remove('show');
             openDeck(deck.id, deck.name);
         });
-        
-        el.querySelector('.btn-deck-rename').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const newName = prompt('New deck name:', deck.name);
-            if (newName && newName.trim()) {
-                await updateDeck(deck.id, newName.trim(), deck.folderId);
-                loadDecks();
-            }
-        });
-        
-        el.querySelector('.btn-deck-export').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const cards = await getCardsByDeck(deck.id);
-            if (cards.length === 0) {
-                showToast("No cards to export.");
-                return;
-            }
-            exportDeckToCSV(deck.name, cards);
-        });
-        
+
         el.querySelector('.btn-deck-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
+            dropdown.classList.remove('show');
             if (await showConfirm(`Delete deck "${deck.name}"?`)) {
                 await deleteDeck(deck.id);
                 loadDecks();
+            }
+        });
+
+        el.querySelector('.btn-deck-rename').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            deckToRenameId = deck.id;
+            const renameInput = document.getElementById('input-rename-deck');
+            renameInput.value = deck.name;
+            document.getElementById('modal-rename-deck').style.display = 'flex';
+            renameInput.focus();
+        });
+
+        el.querySelector('.btn-deck-export').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            if (cards.length === 0) {
+                showToast("No cards to export.");
+            } else {
+                exportDeckToCSV(deck.name, cards);
             }
         });
         
         list.appendChild(el);
     }
 };
+
+
+document.getElementById('btn-import-csv').addEventListener('click', () => {
+    const hideInstructions = localStorage.getItem('hideImportInstructions');
+    if (hideInstructions === 'true') {
+        document.getElementById('file-import').click();
+    } else {
+        document.getElementById('modal-import-instructions').style.display = 'flex';
+    }
+});
+
+document.getElementById('btn-cancel-import').addEventListener('click', () => {
+    document.getElementById('modal-import-instructions').style.display = 'none';
+});
+
+document.getElementById('btn-continue-import').addEventListener('click', () => {
+    const dontShowAgain = document.getElementById('checkbox-dont-show-import').checked;
+    if (dontShowAgain) {
+        localStorage.setItem('hideImportInstructions', 'true');
+    }
+    document.getElementById('modal-import-instructions').style.display = 'none';
+    document.getElementById('file-import').click();
+});
+
+document.getElementById('file-import').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (file.type === 'application/pdf') {
+        await handlePDFUpload(file);
+        e.target.value = '';
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const csvText = event.target.result;
+        const cards = parseCSV(csvText);
+        if (cards.length > 0) {
+            const deckName = file.name.replace('.csv', '') || 'Imported Deck';
+            const deckId = await addDeck(deckName);
+            for (const card of cards) {
+                card.deckId = deckId;
+                await addCard(card);
+            }
+            loadDecks();
+            showToast(`Imported ${cards.length} cards into "${deckName}"`);
+        } else {
+            showToast("No cards found or invalid CSV format.");
+        }
+        e.target.value = '';
+    };
+    reader.readAsText(file);
+});
+
+const openDeck = async (id, name) => {
+    currentDeckId = id;
+    currentDeckName = name;
+    document.getElementById('deck-title').textContent = name;
+    await loadCards();
+    showView('deckDetails');
+};
+
+const loadCards = async () => {
+    currentCards = await getCardsByDeck(currentDeckId);
+    
+    const mastered = currentCards.filter(c => c.status === 'mastered').length;
+    const total = currentCards.length;
+    const mastery = total > 0 ? Math.round((mastered / total) * 100) : 0;
+    document.getElementById('deck-accuracy').textContent = `${mastery}% Mastery (${mastered}/${total})`;
+    
+    const list = document.getElementById('cards-list');
+    list.innerHTML = '';
+    
+    currentCards.forEach(card => {
+        const el = document.createElement('div');
+        el.className = 'card-item';
+        el.style.display = 'flex';
+        el.style.gap = '12px';
+        el.style.justifyContent = 'space-between';
+        
+        el.innerHTML = `
+            <div class="card-content-area" style="cursor: pointer; flex: 1; min-width: 0;">
+                <div class="term" style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.term} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
+                <div class="definition" style="color: var(--text-secondary); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.definition}</div>
+                <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${card.status.toUpperCase()}</div>
+            </div>
+            <div class="card-actions" style="display: flex; gap: 8px; flex-direction: column; justify-content: center;">
+                <button class="icon-btn btn-preview-card" data-id="${card.id}" title="Preview Card" style="border: 2px solid var(--border-color); background: var(--bg-secondary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+                <button class="icon-btn btn-delete-card" data-id="${card.id}" title="Delete Card" style="border: 2px solid #ff4444; color: #ff4444; background: var(--bg-secondary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+        `;
+        
+        el.querySelector('.card-content-area').addEventListener('click', () => openEditCardModal(card));
+        
+        el.querySelector('.btn-preview-card').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPreviewModal(card);
+        });
+        
+        el.querySelector('.btn-delete-card').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (await showConfirm(`Delete card "${card.term}"?`)) {
+                await deleteCard(card.id);
+                loadCards();
+            }
+        });
+        
+        list.appendChild(el);
+    });
+};
+
+document.getElementById('btn-back-decks').addEventListener('click', () => {
+    loadDecks();
+    showView('decks');
+});
+
+document.getElementById('btn-add-card').addEventListener('click', async () => {
+    const term = document.getElementById('input-term').value.trim();
+    const def = document.getElementById('input-def').value.trim();
+    const ex = document.getElementById('input-ex').value.trim();
+    
+    // Check if card is cloze
+    const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
+    
+    if (term && def) {
+        await addCard({
+            deckId: currentDeckId,
+            term,
+            definition: def,
+            example: ex,
+            status: 'new',
+            image: currentPastedImage,
+            type: isCloze ? 'cloze' : 'standard'
+        });
+        document.getElementById('input-term').value = '';
+        document.getElementById('input-def').value = '';
+        document.getElementById('input-ex').value = '';
+        document.getElementById('input-image-paste').value = '';
+        
+        currentPastedImage = null;
+        document.getElementById('image-preview').src = '';
+        document.getElementById('image-preview-container').style.display = 'none';
+        
+        loadCards();
+    } else {
+        showToast("Term and Definition are required.");
+    }
+});
+
+document.getElementById('btn-export-csv').addEventListener('click', () => {
+    if (currentCards.length === 0) {
+        showToast("No cards to export.");
+        return;
+    }
+    exportDeckToCSV(currentDeckName, currentCards);
+});
+
+const startStudySession = (source) => {
+    studySourceView = source || 'deckDetails';
+    
+    if (currentCards.length === 0) {
+        showToast("Add some cards to study first!");
+        return;
+    }
+    
+    studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+    studyIndex = 0;
+    studyStats = { know: 0, forgot: 0 };
+    
+    updateStudyView();
+    showView('study');
+};
+
+document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails'));
+
+const updateStudyView = () => {
+    if (studyIndex >= studyCards.length) {
+        showStudyComplete();
+        return;
+    }
+    
+    const card = studyCards[studyIndex];
+    document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
+    document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
+    
+    
+    const exEl = document.getElementById('study-ex');
+    if (card.example) {
+        exEl.textContent = `"${card.example}"`;
+        exEl.style.display = 'block';
+    } else {
+        exEl.style.display = 'none';
+    }
+    
+    const flashcard = document.getElementById('flashcard');
+    flashcard.classList.remove('flipped');
+    
+    // Reset UI
+    document.getElementById('cloze-input-container').style.display = 'none';
+    document.getElementById('study-hint-tap').style.display = 'block';
+    document.getElementById('input-cloze').value = '';
+    flashcard.style.pointerEvents = 'auto'; 
+    document.getElementById('study-actions-container') ? document.getElementById('study-actions-container').style.display = 'flex' : null;
+    
+    // Image support
+    const imgEl = document.getElementById('study-image-front');
+    if (card.image) {
+        imgEl.src = card.image;
+        imgEl.style.display = 'block';
+    } else {
+        imgEl.style.display = 'none';
+    }
+
+    if (card.type === 'cloze') {
+        let frontText = card.term;
+        let backText = card.definition;
+        let clozeAnswer = '';
+        
+        const termMatch = card.term.match(/\{\{(.*?)\}\}/);
+        const defMatch = card.definition.match(/\{\{(.*?)\}\}/);
+        
+        if (termMatch) {
+            clozeAnswer = termMatch[1];
+            frontText = card.term.replace(/\{\{.*?\}\}/g, '[...]');
+            backText = card.term.replace(/\{\{(.*?)\}\}/g, `<span style="text-decoration: underline;">$1</span>`);
+        } else if (defMatch) {
+            clozeAnswer = defMatch[1];
+            frontText = card.definition.replace(/\{\{.*?\}\}/g, '[...]');
+            backText = card.definition.replace(/\{\{(.*?)\}\}/g, `<span style="text-decoration: underline;">$1</span>`);
+        }
+        
+        document.getElementById('study-term').innerHTML = frontText;
+        document.getElementById('study-def').innerHTML = backText;
+        
+        document.getElementById('cloze-input-container').style.display = 'block';
+        document.getElementById('study-hint-tap').style.display = 'none';
+        flashcard.style.pointerEvents = 'none'; 
+        document.getElementById('study-actions-container').style.display = 'none'; 
+        
+        const submitBtn = document.getElementById('btn-submit-cloze');
+        submitBtn.dataset.answer = clozeAnswer;
+        submitBtn.onclick = (e) => {
+            e.stopPropagation();
+            const guess = document.getElementById('input-cloze').value.trim();
+            const correct = guess.toLowerCase() === clozeAnswer.toLowerCase().trim();
+            
+            flashcard.classList.add('flipped');
+            setTimeout(() => {
+                handleStudyResult(correct);
+            }, 1500); // Wait for them to see the back of the card before moving on
+        };
+        
+        // Enter key to submit
+        document.getElementById('input-cloze').onkeypress = (e) => {
+            if (e.key === 'Enter') submitBtn.click();
+        };
+        
+    } else {
+        document.getElementById('study-term').textContent = card.term;
+        document.getElementById('study-def').textContent = card.definition;
+    }
+};
+
+document.getElementById('flashcard').addEventListener('click', () => {
+    // Only flip on click if it's not a cloze card
+    const card = studyCards[studyIndex];
+    if (card && card.type !== 'cloze') {
+        document.getElementById('flashcard').classList.toggle('flipped');
+    }
+});
+
+const handleStudyResult = async (know) => {
+    const card = studyCards[studyIndex];
+    if (know) {
+        studyStats.know++;
+        card.status = 'mastered';
+    } else {
+        studyStats.forgot++;
+        card.status = 'learning';
+    }
+    
+    await updateCard(card);
+    await recordStudyResult(know);
+    
+    studyIndex++;
+    updateStudyView();
+};
+
+document.getElementById('btn-study-forgot').addEventListener('click', () => handleStudyResult(false));
+document.getElementById('btn-study-skip').addEventListener('click', () => {
+    studyIndex++;
+    if (studyIndex >= studyCards.length) {
+        showStudyComplete();
+    } else {
+        updateStudyView();
+    }
+});
+document.getElementById('btn-study-know').addEventListener('click', () => handleStudyResult(true));
+
+document.getElementById('btn-back-details').addEventListener('click', () => {
+    if (studySourceView === 'decks') {
+        loadDecks();
+        showView('decks');
+    } else {
+        loadCards();
+        showView('deckDetails');
+    }
+});
+
+const showStudyComplete = () => {
+    document.getElementById('study-progress-fill').style.width = '100%';
+    document.getElementById('study-results').innerHTML = `
+        <strong>${studyStats.know}</strong> Known <br>
+        <strong>${studyStats.forgot}</strong> to Review
+    `;
+    showView('studyComplete');
+    if (typeof confetti === 'function') {
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.6 }
+        });
+    }
+
+};
+
+document.getElementById('btn-back-details-complete').addEventListener('click', () => {
+    if (studySourceView === 'decks') {
+        loadDecks();
+        showView('decks');
+    } else {
+        loadCards();
+        showView('deckDetails');
+    }
+});
+
+document.getElementById('btn-restart-study').addEventListener('click', () => {
+    document.getElementById('btn-start-study').click();
+});
+
+// Rename Modal Logic
+document.getElementById('btn-cancel-rename').addEventListener('click', () => {
+    document.getElementById('modal-rename-deck').style.display = 'none';
+    deckToRenameId = null;
+});
+
+document.getElementById('btn-save-rename').addEventListener('click', async () => {
+    if (!deckToRenameId) return;
+    
+    const newName = document.getElementById('input-rename-deck').value.trim();
+    if (newName) {
+        await updateDeck(deckToRenameId, newName);
+        document.getElementById('modal-rename-deck').style.display = 'none';
+        deckToRenameId = null;
+        loadDecks();
+    }
+});
+
+document.getElementById('input-rename-deck').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('btn-save-rename').click();
+    }
+});
+
+const loadStats = async () => {
+    const stats = await getStats();
+    let totalKnow = 0;
+    let totalForgot = 0;
+    let streak = 0;
+    
+    if (stats.length > 0) {
+        stats.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        for (const stat of stats) {
+            totalKnow += stat.know;
+            totalForgot += stat.forgot;
+        }
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        let currentCheck = new Date(today);
+        
+        const hasToday = stats.some(s => s.date === today.toISOString().split('T')[0]);
+        if (!hasToday) {
+            currentCheck.setDate(currentCheck.getDate() - 1);
+        }
+        
+        for (let i = 0; i < stats.length; i++) {
+            const statDateStr = currentCheck.toISOString().split('T')[0];
+            const found = stats.find(s => s.date === statDateStr);
+            if (found) {
+                streak++;
+                currentCheck.setDate(currentCheck.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+    }
+    
+    const accuracy = totalKnow + totalForgot > 0 ? Math.round((totalKnow / (totalKnow + totalForgot)) * 100) : 0;
+    
+    const decks = await getDecks();
+    let masteredCount = 0;
+    for (const deck of decks) {
+        const cards = await getCardsByDeck(deck.id);
+        masteredCount += cards.filter(c => c.status === 'mastered').length;
+    }
+    
+    document.getElementById('stat-streak').textContent = streak;
+    document.getElementById('stat-accuracy').textContent = accuracy + '%';
+    document.getElementById('stat-mastered').textContent = masteredCount;
+};
+
+document.getElementById('btn-view-stats').addEventListener('click', async () => {
+    await loadStats();
+    showView('stats');
+});
+
+document.getElementById('btn-back-stats').addEventListener('click', () => {
+    showView('decks');
+});
+
+let currentPastedImage = null;
+
+document.addEventListener('paste', (e) => {
+    if (!views.deckDetails.classList.contains('active')) return;
+    
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (let item of items) {
+        if (item.type.indexOf('image') === 0) {
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                currentPastedImage = event.target.result;
+                document.getElementById('image-preview').src = currentPastedImage;
+                document.getElementById('image-preview-container').style.display = 'block';
+            };
+            reader.readAsDataURL(blob);
+        }
+    }
+});
+
+document.getElementById('btn-remove-image').addEventListener('click', () => {
+    currentPastedImage = null;
+    document.getElementById('image-preview').src = '';
+    document.getElementById('image-preview-container').style.display = 'none';
+});
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 
 document.getElementById('btn-open-settings').addEventListener('click', () => {
     document.getElementById('input-api-key').value = localStorage.getItem('openrouter_api_key') || '';
@@ -556,8 +1015,6 @@ document.addEventListener('paste', (e) => {
     }
 });
 
-// Workspace & Folder Logic
-let currentFolderId = null; // null means root
 let addItemType = 'deck'; // 'deck' or 'folder'
 
 document.getElementById('btn-add-menu').addEventListener('click', (e) => {
@@ -608,4 +1065,3 @@ document.getElementById('btn-save-add-item').addEventListener('click', async () 
     document.getElementById('modal-add-item').style.display = 'none';
     loadDecks(); // reload workspace
 });
-
