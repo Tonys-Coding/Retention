@@ -82,6 +82,22 @@ document.addEventListener('click', () => {
 });
 
 let currentFolderId = null;
+
+const getWorkspaceName = () => localStorage.getItem('workspace_name') || 'My Workspace';
+
+document.getElementById('btn-edit-workspace').addEventListener('click', () => {
+    const current = getWorkspaceName();
+    const newName = prompt('Enter workspace name:', current);
+    if (newName && newName.trim()) {
+        localStorage.setItem('workspace_name', newName.trim());
+        document.getElementById('workspace-title').textContent = newName.trim();
+        loadDecks();
+    }
+});
+
+// Initialize workspace title
+document.getElementById('workspace-title').textContent = getWorkspaceName();
+
 let folderPath = []; // Array of {id, name} for breadcrumbs
 
 const loadDecks = async () => {
@@ -100,11 +116,9 @@ const loadDecks = async () => {
         const backEl = document.createElement('div');
         backEl.className = 'deck-item';
         backEl.style.cursor = 'pointer';
-        backEl.style.background = 'var(--text-primary)';
-        backEl.style.color = 'var(--bg-primary)';
         backEl.innerHTML = `<div style="font-weight: bold; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back to ${folderPath.length > 1 ? folderPath[folderPath.length-2].name : 'Workspace'}
+            Back to ${folderPath.length > 1 ? folderPath[folderPath.length-2].name : getWorkspaceName()}
         </div>`;
         backEl.addEventListener('click', () => {
             folderPath.pop();
@@ -1084,6 +1098,7 @@ document.getElementById('add-folder-color').addEventListener('input', (e) => {
 const openAddItemModal = (type, editFolder = null) => {
     addItemType = type;
     editingFolderId = editFolder ? editFolder.id : null;
+    document.getElementById('btn-save-add-item').textContent = editFolder ? 'Save' : 'Create';
     
     document.getElementById('add-item-name').value = editFolder ? editFolder.name : '';
     
