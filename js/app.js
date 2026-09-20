@@ -121,7 +121,7 @@ const loadDecks = async () => {
         el.style.borderLeft = `8px solid ${folder.color || 'var(--border-color)'}`;
         el.innerHTML = `
             <div class="deck-item-info" title="Open Folder" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="${folder.color || 'var(--bg-secondary)'}" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                 <div class="deck-title-text">${folder.name}</div>
             </div>
             <div class="dropdown">
@@ -129,6 +129,7 @@ const loadDecks = async () => {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                 </button>
                 <div class="dropdown-content" id="dropdown-folder-${folder.id}">
+                    <button class="btn-folder-edit" data-id="${folder.id}">Edit</button>
                     <button class="btn-folder-delete" data-id="${folder.id}">Delete</button>
                 </div>
             </div>
@@ -150,6 +151,11 @@ const loadDecks = async () => {
             dropdown.classList.toggle('show');
         });
         
+        el.querySelector('.btn-folder-edit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openAddItemModal('folder', folder);
+        });
+
         el.querySelector('.btn-folder-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
             if (await showConfirm(`Delete folder "${folder.name}"? Decks inside will be moved to workspace.`)) {
@@ -178,7 +184,7 @@ const loadDecks = async () => {
         el.className = 'deck-item';
         el.innerHTML = `
             <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--bg-secondary)" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><rect x="4" y="8" width="16" height="12" rx="2" ry="2"></rect><path d="M8 4h8a2 2 0 0 1 2 2v2" fill="none"></path></svg>
                 <div style="min-width: 0;">
                     <div class="deck-title-text">${deck.name}</div>
                     <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
@@ -1026,14 +1032,34 @@ document.addEventListener('click', () => {
     document.getElementById('add-dropdown-container').classList.remove('show');
 });
 
-const openAddItemModal = (type) => {
+let editingFolderId = null;
+
+document.getElementById('add-folder-color').addEventListener('input', (e) => {
+    const preview = document.getElementById('preview-folder-icon');
+    if (preview) {
+        preview.setAttribute('fill', e.target.value);
+        preview.setAttribute('stroke', e.target.value);
+    }
+});
+
+const openAddItemModal = (type, editFolder = null) => {
     addItemType = type;
-    document.getElementById('add-item-name').value = '';
-    document.getElementById('add-item-title').textContent = type === 'folder' ? 'New Folder' : 'New Deck';
+    editingFolderId = editFolder ? editFolder.id : null;
+    
+    document.getElementById('add-item-name').value = editFolder ? editFolder.name : '';
     
     if (type === 'folder') {
+        document.getElementById('add-item-title').textContent = editFolder ? 'Edit Folder' : 'New Folder';
         document.getElementById('add-folder-color-picker').style.display = 'flex';
+        const color = editFolder ? (editFolder.color || '#4488ff') : '#4488ff';
+        document.getElementById('add-folder-color').value = color;
+        const preview = document.getElementById('preview-folder-icon');
+        if (preview) {
+            preview.setAttribute('fill', color);
+            preview.setAttribute('stroke', color);
+        }
     } else {
+        document.getElementById('add-item-title').textContent = 'New Deck';
         document.getElementById('add-folder-color-picker').style.display = 'none';
     }
     
@@ -1049,6 +1075,7 @@ document.getElementById('btn-menu-add-pdf').addEventListener('click', () => {
 
 document.getElementById('btn-cancel-add-item').addEventListener('click', () => {
     document.getElementById('modal-add-item').style.display = 'none';
+    editingFolderId = null;
 });
 
 document.getElementById('btn-save-add-item').addEventListener('click', async () => {
@@ -1057,11 +1084,16 @@ document.getElementById('btn-save-add-item').addEventListener('click', async () 
     
     if (addItemType === 'folder') {
         const color = document.getElementById('add-folder-color').value;
-        await addFolder(name, color, currentFolderId);
+        if (editingFolderId) {
+            await updateFolder(editingFolderId, name, color);
+        } else {
+            await addFolder(name, color, currentFolderId);
+        }
     } else {
         await addDeck(name, currentFolderId);
     }
     
     document.getElementById('modal-add-item').style.display = 'none';
+    editingFolderId = null;
     loadDecks(); // reload workspace
 });
