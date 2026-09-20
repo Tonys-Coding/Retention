@@ -479,13 +479,7 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('btn-export-csv').addEventListener('click', () => {
-    if (currentCards.length === 0) {
-        showToast("No cards to export.");
-        return;
-    }
-    exportDeckToCSV(currentDeckName, currentCards);
-});
+
 
 
 
@@ -577,7 +571,6 @@ const updateStudyView = () => {
         document.getElementById('cloze-input-container').style.display = 'block';
         document.getElementById('study-hint-tap').style.display = 'none';
         document.getElementById('flashcard').style.pointerEvents = 'none'; 
-        document.getElementById('study-actions-container').style.display = 'none'; 
         
         const submitBtn = document.getElementById('btn-submit-cloze');
         submitBtn.dataset.answer = clozeAnswer;
