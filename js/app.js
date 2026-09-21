@@ -211,6 +211,40 @@ const loadDecks = async (searchQuery = '') => {
             currentFolderId = folderPath.length > 0 ? folderPath[folderPath.length-1].id : null;
             loadDecks();
         });
+        
+        backEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            backEl.classList.add('drag-over');
+        });
+        backEl.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            backEl.classList.remove('drag-over');
+        });
+        backEl.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            backEl.classList.remove('drag-over');
+            
+            const targetParentId = folderPath.length > 1 ? folderPath[folderPath.length-2].id : null;
+            const targetName = folderPath.length > 1 ? folderPath[folderPath.length-2].name : getWorkspaceName();
+            
+            try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                if (data.type === 'deck') {
+                    const deckToMove = allDecks.find(d => d.id == data.id);
+                    if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${targetName}"?`)) {
+                        await updateDeck(deckToMove.id, deckToMove.name, targetParentId);
+                        loadDecks();
+                    }
+                } else if (data.type === 'folder') {
+                    const folderToMove = allFolders.find(f => f.id == data.id);
+                    if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${targetName}"?`)) {
+                        await updateFolder(folderToMove.id, undefined, undefined, targetParentId);
+                        loadDecks();
+                    }
+                }
+            } catch (err) {}
+        });
+        
         list.appendChild(backEl);
     }
     
@@ -235,6 +269,13 @@ const loadDecks = async (searchQuery = '') => {
             </div>
         `;
         
+        // Make Folder Draggable
+        el.draggable = true;
+        el.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('application/json', JSON.stringify({ type: 'folder', id: folder.id }));
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
         // Folder Drop Target
         el.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -247,14 +288,48 @@ const loadDecks = async (searchQuery = '') => {
         el.addEventListener('drop', async (e) => {
             e.preventDefault();
             el.classList.remove('drag-over');
-            const deckId = e.dataTransfer.getData('text/plain');
-            if (deckId) {
-                const deckToMove = allDecks.find(d => d.id == deckId);
-                if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
-                    await updateDeck(deckToMove.id, deckToMove.name, folder.id);
-                    loadDecks();
+            try {
+                // Try JSON parsing first
+                const dataStr = e.dataTransfer.getData('application/json');
+                if (dataStr) {
+                    const data = JSON.parse(dataStr);
+                    if (data.type === 'deck') {
+                        const deckToMove = allDecks.find(d => d.id == data.id);
+                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
+                            await updateDeck(deckToMove.id, deckToMove.name, folder.id);
+                            loadDecks();
+                        }
+                    } else if (data.type === 'folder') {
+                        if (data.id == folder.id) return;
+                        
+                        let current = folder;
+                        while (current.parentId) {
+                            if (current.parentId == data.id) {
+                                showToast("Cannot move a folder into its own subfolder.");
+                                return;
+                            }
+                            current = allFolders.find(f => f.id == current.parentId);
+                            if (!current) break;
+                        }
+                        
+                        const folderToMove = allFolders.find(f => f.id == data.id);
+                        if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${folder.name}"?`)) {
+                            await updateFolder(folderToMove.id, undefined, undefined, folder.id);
+                            loadDecks();
+                        }
+                    }
+                } else {
+                    // Fallback for old text/plain deck drags if any
+                    const deckId = e.dataTransfer.getData('text/plain');
+                    if (deckId) {
+                        const deckToMove = allDecks.find(d => d.id == deckId);
+                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
+                            await updateDeck(deckToMove.id, deckToMove.name, folder.id);
+                            loadDecks();
+                        }
+                    }
                 }
-            }
+            } catch (err) {}
         });
         
         el.addEventListener('click', () => {
@@ -328,6 +403,8 @@ const loadDecks = async (searchQuery = '') => {
         // Make Deck Draggable
         el.draggable = true;
         el.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('application/json', JSON.stringify({ type: 'deck', id: deck.id }));
+            // Also set text/plain as fallback if needed elsewhere
             e.dataTransfer.setData('text/plain', deck.id);
             e.dataTransfer.effectAllowed = 'move';
         });
