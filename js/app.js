@@ -711,7 +711,7 @@ const updateStudyView = () => {
                 if (p.startsWith('{{') && p.endsWith('}}')) {
                     const clozeAnswer = p.slice(2, -2);
                     if (isFront) {
-                        result += `<span class="cloze-blank">[...]</span>`;
+                        result += `<span class="cloze-blank">[ . . . ]</span>`;
                     } else {
                         result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
                     }
@@ -1185,8 +1185,45 @@ document.getElementById('btn-remove-edit-image').addEventListener('click', () =>
 
 // Preview Modal Logic
 const openPreviewModal = (card) => {
-    document.getElementById('preview-term').innerHTML = marked.parse(card.type === 'cloze' ? card.term.replace(/{{(.*?)}}/g, '[___]') : card.term);
-    document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
+    
+    if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
+        const parseCloze = (text, isFront) => {
+            if (!text) return '';
+            const parts = text.split(/(\{\{.*?\}\})/g);
+            let result = '';
+            parts.forEach(p => {
+                if (p.startsWith('{{') && p.endsWith('}}')) {
+                    const clozeAnswer = p.slice(2, -2);
+                    if (isFront) {
+                        result += `<span class="cloze-blank">[ . . . ]</span>`;
+                    } else {
+                        result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
+                    }
+                } else {
+                    result += p;
+                }
+            });
+            return result;
+        };
+        
+        let frontTerm = parseCloze(card.term, true);
+        let frontDef = parseCloze(card.definition, true);
+        
+        let backTerm = parseCloze(card.term, false);
+        let backDef = parseCloze(card.definition, false);
+        
+        let frontHTML = frontTerm ? `<h3>${frontTerm}</h3>` : '';
+        frontHTML += frontDef;
+        
+        let backHTML = backTerm ? `<h3>${backTerm}</h3>` : '';
+        backHTML += backDef;
+        
+        document.getElementById('preview-term').innerHTML = marked.parse(frontHTML);
+        document.getElementById('preview-def').innerHTML = marked.parse(backHTML);
+    } else {
+        document.getElementById('preview-term').innerHTML = marked.parse(card.term);
+        document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
+    }
     
     const exEl = document.getElementById('preview-ex');
     if (card.example) {
@@ -1204,12 +1241,9 @@ const openPreviewModal = (card) => {
         imgEl.style.display = 'none';
     }
     
+    // Hide the legacy cloze container if it exists
     const clozeContainer = document.getElementById('preview-cloze-container');
-    if (card.type === 'cloze') {
-        clozeContainer.style.display = 'block';
-    } else {
-        clozeContainer.style.display = 'none';
-    }
+    if (clozeContainer) clozeContainer.style.display = 'none';
     
     document.getElementById('preview-flashcard').classList.remove('flipped');
     document.getElementById('modal-preview-card').style.display = 'flex';
