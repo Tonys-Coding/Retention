@@ -1,25 +1,78 @@
 # Retention - Chrome Extension
 
-Retention is a minimalistic, high-contrast flashcard study system built as a Chrome Extension. 
+Retention is a powerful, minimalistic flashcard study system built directly into your browser as a Chrome Extension. Featuring a sleek, brutalist high-contrast aesthetic, Retention is designed for deep focus and efficient learning without distractions.
 
-## Features
-- **Custom Study Decks**: Organize terms and concepts into individual decks.
-- **Flashcard Quizzes**: Study your decks with a built-in spaced-repetition-lite quiz feature.
-- **Progress Tracking**: Cards are marked as 'learning' or 'mastered' based on your quiz performance.
-- **CSV Import/Export**: Easily backup or share your decks using standard CSV files.
-- **Offline Mode**: Fully functional without an internet connection using IndexedDB for local storage.
-- **High-Contrast Aesthetic**: Sleek black and white design with a geometric pattern for minimal distractions.
+## 🚀 Features
 
-## Installation
-1. Open Google Chrome and go to `chrome://extensions/`.
+### 🗂️ Organization & Workspace
+*   **Decks & Nested Folders:** Organize your flashcards into custom decks. Group related decks into folders, and even nest folders within other folders for infinite organization.
+*   **Intuitive Drag & Drop:** Effortlessly reorganize your workspace. Drag decks into folders, drop folders into other folders, or drag items to the breadcrumb navigation at the top to move them back to the parent directory.
+
+### 🧠 Study Mode
+*   **Traditional Study Flow:** Shuffle and study your decks using a simple, effective 3-button self-assessment interface: *Forgot*, *Skip*, and *Know*.
+*   **Seamless Session Resuming:** Life happens. If you accidentally close the popup or click away in the middle of a study session, Retention silently saves your exact place. Reopen the extension, and you'll be dropped right back to the exact flashcard you were on.
+*   **Progress Tracking:** Cards dynamically update their status to track your Mastery percentage. 
+
+### 📝 Rich Flashcard Editing
+*   **Markdown Support:** Flashcards support rich Markdown formatting. Easily add `code blocks`, lists, **bold**, and *italic* text to format complex subjects efficiently.
+*   **Image Support:** Drag and drop or paste images directly into your flashcards.
+
+### 🤖 AI Integration & PDF Extraction
+*   **Generate from PDF:** Instantly create flashcard decks from your study materials. Select a local PDF, and the extension will parse the text.
+*   **OpenRouter AI API:** Powered by your custom OpenRouter API key, the extension automatically processes your documents and intelligently generates high-quality flashcards for you.
+
+### ☁️ Import, Export, & Cloud Sync
+*   **CSV Import/Export:** Easily backup or share individual decks using standard CSV files.
+*   **Google Drive Sync:** Securely back up and restore your entire workspace directly to/from your Google Drive.
+*   **Offline First:** Your workspace is stored entirely locally on your device via IndexedDB, making it lightning-fast and fully functional without an internet connection (aside from AI generation and Drive syncs).
+
+### 🎨 Theming
+*   **Light & Dark Modes:** Toggle seamlessly between a crisp Light Mode and an eye-friendly Dark Mode.
+*   **Brutalist UI:** A distraction-free, high-contrast aesthetic with thick borders and drop shadows designed for high readability. Expanded UI dimensions comfortably fit longer text and code snippets.
+
+---
+
+## 🛠️ Installation
+
+1. Open Google Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** in the top right corner.
 3. Click on **Load unpacked**.
 4. Select the directory containing this extension (`Retention Flashcard Chrome Extension`).
+5. *Optional:* Pin the extension to your Chrome toolbar for easy access.
 
-## Usage
-- Click the extension icon in your toolbar to open the Retention popup.
-- Create a new deck or import an existing one via CSV.
-- Add cards to your deck with a term, optional part of speech, definition, and example.
-- Click **Study** to begin a quiz session for a deck.
-- Tap a flashcard to flip it and view the definition.
-- Mark whether you knew the answer or forgot it to track your progress.
+---
+
+## ⚙️ Integrations Setup
+
+### OpenRouter API (AI Flashcard Generation)
+To use the "Generate from PDF" feature:
+1. Open the Retention extension.
+2. Click the **Settings (Gear)** icon in the top right.
+3. Paste your [OpenRouter API Key](https://openrouter.ai/) into the API Key field and save.
+
+### Google Drive Sync
+To enable cloud backups for your entire workspace, you must provide a Google Client ID in the extension's `manifest.json`.
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project and enable the **Google Drive API**.
+3. Configure the OAuth Consent Screen (add your email as a test user).
+4. Create **OAuth 2.0 Client ID** credentials (choose "Chrome App" and provide the Extension ID found in `chrome://extensions/`).
+5. Copy the generated **Client ID**.
+6. Open `manifest.json` and add the following block:
+   ```json
+   "oauth2": {
+     "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
+     "scopes": ["https://www.googleapis.com/auth/drive.file"]
+   },
+   "key": "YOUR_OPTIONAL_FIXED_EXTENSION_KEY"
+   ```
+*(For a more detailed walkthrough, refer to the included Google Drive Setup instructions in the project documentation).*
+
+---
+
+## 💻 Usage Guide
+
+*   **Creating Items:** Use the **+ New Deck** or **+ New Folder** buttons on the dashboard to build your workspace.
+*   **Editing Cards:** Click a deck, then click the **Edit (Pencil)** icon to add new cards. Fill out the Term, Definition, and Example fields. 
+*   **Formatting:** Use standard Markdown syntax in the Definition/Example boxes.
+*   **Studying:** Click a deck and press **Start Study**. Tap the flashcard to flip it and reveal the answer, then honestly rate your memory using the bottom buttons.
+*   **Navigating:** Use the breadcrumb trail at the top of the app to navigate backward through nested folders.
