@@ -803,28 +803,19 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
     const userAnswer = inputEl.value.trim().toLowerCase();
     const correctAnswer = card.definition.toLowerCase();
     
-    // Clean up old feedback
+    // Clean up old feedback just in case it existed
     const oldFeedback = document.getElementById('cloze-feedback-msg');
     if (oldFeedback) oldFeedback.remove();
-    
-    const feedbackEl = document.createElement('div');
-    feedbackEl.id = 'cloze-feedback-msg';
     
     const highlightEl = document.getElementById('study-cloze-highlight');
     
     if (userAnswer === correctAnswer) {
         inputEl.className = 'cloze-input-correct cloze-correct';
-        feedbackEl.className = 'cloze-feedback cloze-feedback-correct';
-        feedbackEl.textContent = 'RIGHT';
         if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-correct';
     } else {
         inputEl.className = 'cloze-input-wrong cloze-wrong';
-        feedbackEl.className = 'cloze-feedback cloze-feedback-wrong';
-        feedbackEl.textContent = 'WRONG';
         if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-wrong';
     }
-    
-    document.getElementById('cloze-input-container').appendChild(feedbackEl);
     
     // Flip the card to reveal the highlight
     document.getElementById('flashcard').classList.add('flipped');
