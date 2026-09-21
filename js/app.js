@@ -1338,7 +1338,7 @@ document.getElementById('btn-sync-upload').addEventListener('click', async () =>
         await uploadToDrive();
         showToast("Successfully backed up to Google Drive!");
     } catch (e) {
-        showToast("Error: " + e.message);
+        showToast("Error: " + (e.message || e));
     } finally {
         document.getElementById('btn-sync-upload').textContent = 'Upload to Drive';
     }
@@ -1352,7 +1352,7 @@ document.getElementById('btn-sync-download').addEventListener('click', async () 
         showToast("Successfully restored from Google Drive!");
         loadDecks();
     } catch (e) {
-        showToast("Error: " + e.message);
+        showToast("Error: " + (e.message || e));
     } finally {
         document.getElementById('btn-sync-download').textContent = 'Download from Drive';
     }
