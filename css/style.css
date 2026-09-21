@@ -427,16 +427,16 @@ input[type="text"]:focus, input[type="search"]:focus, textarea:focus {
 /* Brutalist Loading Animation */
 .brutalist-loader {
     display: flex;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 24px;
+    margin-bottom: 48px;
 }
 
 .brutalist-loader .block {
-    width: 24px;
-    height: 32px;
+    width: 56px;
+    height: 76px;
     background: var(--bg-secondary);
-    border: 3px solid var(--border-color);
-    box-shadow: 4px 4px 0px var(--shadow-color);
+    border: 6px solid var(--border-color);
+    box-shadow: 8px 8px 0px var(--shadow-color);
     animation: brutal-bounce 0.6s infinite alternate cubic-bezier(0.8, 0, 0.2, 1);
 }
 
@@ -450,12 +450,26 @@ input[type="text"]:focus, input[type="search"]:focus, textarea:focus {
 }
 
 @keyframes brutal-bounce {
-    0% { transform: translateY(0); box-shadow: 4px 4px 0px var(--shadow-color); }
-    100% { transform: translateY(-16px); box-shadow: 8px 20px 0px var(--shadow-color); }
+    0% { transform: translateY(0); box-shadow: 8px 8px 0px var(--shadow-color); }
+    100% { transform: translateY(-32px); box-shadow: 16px 40px 0px var(--shadow-color); }
 }
 
 @keyframes brutal-border-throb {
-    0% { border-width: 4px; border-style: solid; border-color: var(--text-primary); }
+    0% { border-width: 8px; border-style: solid; border-color: var(--text-primary); }
+    100% { border-width: 24px; border-style: solid; border-color: var(--text-primary); }
+}
+
+.animated-dots::after {
+    content: '';
+    animation: dots 1.5s infinite steps(1, end);
+}
+
+@keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+}
     100% { border-width: 12px; border-style: solid; border-color: var(--text-primary); }
 }
 

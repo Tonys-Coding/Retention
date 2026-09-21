@@ -1002,8 +1002,9 @@ const handlePDFUpload = async (file) => {
     }
     
     try {
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Processing PDF...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 32px;">Processing PDF<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 18px;">Extracting text...</p>`;
         dropzone.style.display = 'flex';
+        dropzone.classList.add('dropzone-loading');
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1016,7 +1017,7 @@ const handlePDFUpload = async (file) => {
             fullText += pageText + '\n';
         }
         
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 8px;">Generating Cards...</h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 32px;">Generating Cards<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 18px;">Looking for terms and definitions...</p>`;
         
         const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
         
