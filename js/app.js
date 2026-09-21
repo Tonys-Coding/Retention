@@ -701,16 +701,6 @@ const updateStudyView = () => {
     
     if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
         
-        // Extract the first cloze answer for the input check
-        let clozeAnswer = '';
-        const extractAnswer = (text) => {
-            if (!text) return;
-            const match = text.match(/\{\{(.*?)\}\}/);
-            if (match && !clozeAnswer) clozeAnswer = match[1];
-        };
-        extractAnswer(card.term);
-        extractAnswer(card.definition);
-        
         const parseCloze = (text, isFront) => {
             if (!text) return '';
             const parts = text.split(/(\{\{.*?\}\})/g);
@@ -719,7 +709,7 @@ const updateStudyView = () => {
                 if (p.startsWith('{{') && p.endsWith('}}')) {
                     const answer = p.slice(2, -2);
                     if (isFront) {
-                        result += `<span class="cloze-blank">_____</span>`;
+                        result += `<span class="cloze-blank"></span>`;
                     } else {
                         result += `<span class="cloze-highlight">${answer}</span>`;
                     }
@@ -742,82 +732,6 @@ const updateStudyView = () => {
         
         document.getElementById('study-term').innerHTML = marked.parse(frontHTML);
         document.getElementById('study-def').innerHTML = marked.parse(backHTML);
-        
-        // Show cloze input, hide tap hint, disable card flipping
-        document.getElementById('cloze-input-container').style.display = 'block';
-        document.getElementById('study-hint-tap').style.display = 'none';
-        document.getElementById('flashcard').style.pointerEvents = 'none';
-        document.getElementById('traditional-actions-container').style.display = 'none';
-        
-        // Reset input styling
-        const clozeInput = document.getElementById('input-cloze');
-        clozeInput.className = '';
-        clozeInput.style.borderColor = '';
-        clozeInput.style.backgroundColor = '';
-        clozeInput.style.color = '';
-        clozeInput.style.pointerEvents = 'auto';
-        
-        // Remove old feedback if any
-        const oldFeedback = document.getElementById('cloze-feedback-msg');
-        if (oldFeedback) oldFeedback.remove();
-        
-        const submitBtn = document.getElementById('btn-submit-cloze');
-        submitBtn.textContent = 'Check';
-        submitBtn.disabled = false;
-        
-        submitBtn.onclick = (e) => {
-            e.stopPropagation();
-            const guess = document.getElementById('input-cloze').value.trim();
-            const correct = guess.toLowerCase() === clozeAnswer.toLowerCase();
-            
-            const flashcardEl = document.getElementById('flashcard');
-            const inputEl = document.getElementById('input-cloze');
-            
-            // Remove old feedback
-            const existingFeedback = document.getElementById('cloze-feedback-msg');
-            if (existingFeedback) existingFeedback.remove();
-            
-            // Create feedback element
-            const feedbackEl = document.createElement('div');
-            feedbackEl.id = 'cloze-feedback-msg';
-            feedbackEl.classList.add('cloze-feedback');
-            
-            if (correct) {
-                inputEl.classList.add('cloze-input-correct');
-                flashcardEl.classList.add('cloze-correct');
-                feedbackEl.classList.add('cloze-feedback-correct');
-                feedbackEl.textContent = '✓ Correct';
-                submitBtn.textContent = 'Next →';
-            } else {
-                inputEl.classList.add('cloze-input-wrong');
-                flashcardEl.classList.add('cloze-wrong');
-                feedbackEl.classList.add('cloze-feedback-wrong');
-                feedbackEl.textContent = '✗ ' + clozeAnswer;
-                submitBtn.textContent = 'Next →';
-            }
-            
-            // Insert feedback after the input container
-            document.getElementById('cloze-input-container').appendChild(feedbackEl);
-            inputEl.style.pointerEvents = 'none';
-            
-            // Flip to reveal
-            flashcardEl.classList.add('flipped');
-            
-            // Change submit button to advance
-            submitBtn.disabled = false;
-            submitBtn.onclick = (e2) => {
-                e2.stopPropagation();
-                flashcardEl.classList.remove('cloze-correct', 'cloze-wrong');
-                handleTraditionalResult(correct);
-            };
-        };
-        
-        clozeInput.onkeypress = (e) => {
-            if (e.key === 'Enter') submitBtn.click();
-        };
-        
-        // Focus the input
-        setTimeout(() => clozeInput.focus(), 100);
         
     } else {
         document.getElementById('study-term').innerHTML = marked.parse(card.term);
@@ -1274,7 +1188,7 @@ const openPreviewModal = (card) => {
                 if (p.startsWith('{{') && p.endsWith('}}')) {
                     const clozeAnswer = p.slice(2, -2);
                     if (isFront) {
-                        result += `<span class="cloze-blank">_____</span>`;
+                        result += `<span class="cloze-blank"></span>`;
                     } else {
                         result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
                     }

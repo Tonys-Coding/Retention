@@ -553,12 +553,11 @@ textarea { flex-shrink: 0; min-height: 80px; }
 
 /* Cloze styling */
 .cloze-blank {
-    color: var(--text-primary);
-    border-bottom: 3px solid var(--text-primary);
-    padding: 0 12px;
-    font-weight: 900;
     display: inline-block;
-    letter-spacing: 4px;
+    width: 80px;
+    border-bottom: 2px dashed var(--text-primary);
+    margin: 0 4px;
+    vertical-align: baseline;
 }
 
 .cloze-highlight {
