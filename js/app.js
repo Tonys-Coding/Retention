@@ -701,19 +701,27 @@ const updateStudyView = () => {
     
     if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
         
+        // Extract the first cloze answer for the input check
+        let clozeAnswer = '';
+        const extractAnswer = (text) => {
+            if (!text) return;
+            const match = text.match(/\{\{(.*?)\}\}/);
+            if (match && !clozeAnswer) clozeAnswer = match[1];
+        };
+        extractAnswer(card.term);
+        extractAnswer(card.definition);
+        
         const parseCloze = (text, isFront) => {
             if (!text) return '';
-            // Split by {{...}}
             const parts = text.split(/(\{\{.*?\}\})/g);
             let result = '';
-            
             parts.forEach(p => {
                 if (p.startsWith('{{') && p.endsWith('}}')) {
-                    const clozeAnswer = p.slice(2, -2);
+                    const answer = p.slice(2, -2);
                     if (isFront) {
-                        result += `<span class="cloze-blank">[ . . . ]</span>`;
+                        result += `<span class="cloze-blank">_____</span>`;
                     } else {
-                        result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
+                        result += `<span class="cloze-highlight">${answer}</span>`;
                     }
                 } else {
                     result += p;
@@ -724,21 +732,92 @@ const updateStudyView = () => {
         
         let frontTerm = parseCloze(card.term, true);
         let frontDef = parseCloze(card.definition, true);
-        
         let backTerm = parseCloze(card.term, false);
         let backDef = parseCloze(card.definition, false);
         
-        // Show BOTH on front if it's a pure cloze on definition? 
-        // Typically, if definition has the cloze, the front should show the definition's cloze blanks.
-        // Let's just show term (if exists) + definition (with blanks) on front.
         let frontHTML = frontTerm ? `<h3>${frontTerm}</h3>` : '';
         frontHTML += frontDef;
-        
         let backHTML = backTerm ? `<h3>${backTerm}</h3>` : '';
         backHTML += backDef;
         
         document.getElementById('study-term').innerHTML = marked.parse(frontHTML);
         document.getElementById('study-def').innerHTML = marked.parse(backHTML);
+        
+        // Show cloze input, hide tap hint, disable card flipping
+        document.getElementById('cloze-input-container').style.display = 'block';
+        document.getElementById('study-hint-tap').style.display = 'none';
+        document.getElementById('flashcard').style.pointerEvents = 'none';
+        document.getElementById('traditional-actions-container').style.display = 'none';
+        
+        // Reset input styling
+        const clozeInput = document.getElementById('input-cloze');
+        clozeInput.className = '';
+        clozeInput.style.borderColor = '';
+        clozeInput.style.backgroundColor = '';
+        clozeInput.style.color = '';
+        clozeInput.style.pointerEvents = 'auto';
+        
+        // Remove old feedback if any
+        const oldFeedback = document.getElementById('cloze-feedback-msg');
+        if (oldFeedback) oldFeedback.remove();
+        
+        const submitBtn = document.getElementById('btn-submit-cloze');
+        submitBtn.textContent = 'Check';
+        submitBtn.disabled = false;
+        
+        submitBtn.onclick = (e) => {
+            e.stopPropagation();
+            const guess = document.getElementById('input-cloze').value.trim();
+            const correct = guess.toLowerCase() === clozeAnswer.toLowerCase();
+            
+            const flashcardEl = document.getElementById('flashcard');
+            const inputEl = document.getElementById('input-cloze');
+            
+            // Remove old feedback
+            const existingFeedback = document.getElementById('cloze-feedback-msg');
+            if (existingFeedback) existingFeedback.remove();
+            
+            // Create feedback element
+            const feedbackEl = document.createElement('div');
+            feedbackEl.id = 'cloze-feedback-msg';
+            feedbackEl.classList.add('cloze-feedback');
+            
+            if (correct) {
+                inputEl.classList.add('cloze-input-correct');
+                flashcardEl.classList.add('cloze-correct');
+                feedbackEl.classList.add('cloze-feedback-correct');
+                feedbackEl.textContent = '✓ Correct';
+                submitBtn.textContent = 'Next →';
+            } else {
+                inputEl.classList.add('cloze-input-wrong');
+                flashcardEl.classList.add('cloze-wrong');
+                feedbackEl.classList.add('cloze-feedback-wrong');
+                feedbackEl.textContent = '✗ ' + clozeAnswer;
+                submitBtn.textContent = 'Next →';
+            }
+            
+            // Insert feedback after the input container
+            document.getElementById('cloze-input-container').appendChild(feedbackEl);
+            inputEl.style.pointerEvents = 'none';
+            
+            // Flip to reveal
+            flashcardEl.classList.add('flipped');
+            
+            // Change submit button to advance
+            submitBtn.disabled = false;
+            submitBtn.onclick = (e2) => {
+                e2.stopPropagation();
+                flashcardEl.classList.remove('cloze-correct', 'cloze-wrong');
+                handleTraditionalResult(correct);
+            };
+        };
+        
+        clozeInput.onkeypress = (e) => {
+            if (e.key === 'Enter') submitBtn.click();
+        };
+        
+        // Focus the input
+        setTimeout(() => clozeInput.focus(), 100);
         
     } else {
         document.getElementById('study-term').innerHTML = marked.parse(card.term);
@@ -1195,7 +1274,7 @@ const openPreviewModal = (card) => {
                 if (p.startsWith('{{') && p.endsWith('}}')) {
                     const clozeAnswer = p.slice(2, -2);
                     if (isFront) {
-                        result += `<span class="cloze-blank">[ . . . ]</span>`;
+                        result += `<span class="cloze-blank">_____</span>`;
                     } else {
                         result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
                     }
