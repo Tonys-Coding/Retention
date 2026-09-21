@@ -131,15 +131,21 @@
                     </div>
                 </div>
             </div>
+            
+            <div id="cloze-input-container" style="display: none; width: 100%; max-width: 400px; margin-top: 16px;">
+                <input type="text" id="input-cloze" placeholder="Type answer..." style="text-align: center; margin-bottom: 8px;">
+                <button id="btn-submit-cloze" class="primary" style="width: 100%;">Check</button>
+            </div>
+            
             <div class="study-actions" id="traditional-actions-container" style="display: none; gap: 8px;">
                 <button id="btn-study-forgot-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom-color: #ff4444;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Forgot
                 </button>
-                <button id="btn-study-skip-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg> Skip
+                <button id="btn-study-skip-trad" class="secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    Skip <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
-                <button id="btn-study-know-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom-color: #4CAF50;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Know
+                <button id="btn-study-know-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom-color: #00cc00;">
+                    Know <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </button>
             </div>
             

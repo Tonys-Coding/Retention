@@ -718,10 +718,17 @@ const updateStudyView = () => {
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
     document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
     
+    // Reset UI state
     document.getElementById('flashcard').className = 'flashcard';
-    document.getElementById('study-hint-tap').style.display = 'block';
-    document.getElementById('flashcard').style.pointerEvents = 'auto'; 
-    document.getElementById('traditional-actions-container').style.display = 'flex';
+    document.getElementById('cloze-input-container').style.display = 'none';
+    document.getElementById('input-cloze').value = '';
+    document.getElementById('input-cloze').className = '';
+    document.getElementById('btn-submit-cloze').textContent = 'Check';
+    document.getElementById('btn-submit-cloze').className = 'primary';
+    
+    // Clean up any old feedback
+    const oldFeedback = document.getElementById('cloze-feedback-msg');
+    if (oldFeedback) oldFeedback.remove();
     
     // Image support
     const imgEl = document.getElementById('study-image-front');
@@ -735,21 +742,28 @@ const updateStudyView = () => {
     const exEl = document.getElementById('study-ex');
     
     if (card.type === 'cloze') {
-        // FITB card: term = full sentence, definition = the answer word
-        // FRONT: sentence with answer replaced by a dashed blank
+        // FITB card UI
+        document.getElementById('traditional-actions-container').style.display = 'none';
+        document.getElementById('study-hint-tap').style.display = 'none';
+        document.getElementById('cloze-input-container').style.display = 'block';
+        
         const answer = card.definition;
         const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
         const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
-        
-        // BACK: sentence with answer highlighted
         const backText = card.term.replace(regex, '<span class="cloze-highlight">' + answer + '</span>');
         
         document.getElementById('study-term').innerHTML = frontText;
         document.getElementById('study-def').innerHTML = backText;
         exEl.style.display = 'none';
         
+        // Auto-focus input for convenience
+        setTimeout(() => document.getElementById('input-cloze').focus(), 100);
+        
     } else {
-        // Standard card
+        // Standard card UI
+        document.getElementById('traditional-actions-container').style.display = 'flex';
+        document.getElementById('study-hint-tap').style.display = 'block';
+        
         document.getElementById('study-term').innerHTML = marked.parse(card.term);
         document.getElementById('study-def').innerHTML = marked.parse(card.definition);
         
@@ -762,14 +776,65 @@ const updateStudyView = () => {
     }
 };
 
-document.getElementById('flashcard').addEventListener('click', () => {
+document.getElementById('flashcard').addEventListener('click', (e) => {
+    if (e.target.closest('#cloze-input-container')) return; // Don't flip if interacting with input
+    
     const card = studyCards[studyIndex];
-    if (card) {
+    if (card && card.type !== 'cloze') {
         document.getElementById('flashcard').classList.toggle('flipped');
     }
 });
 
+document.getElementById('btn-submit-cloze').addEventListener('click', () => {
+    const card = studyCards[studyIndex];
+    if (!card || card.type !== 'cloze') return;
+    
+    const inputEl = document.getElementById('input-cloze');
+    const btn = document.getElementById('btn-submit-cloze');
+    
+    if (btn.textContent === 'Continue') {
+        // Automatically mark as know or forgot based on if they were right or wrong?
+        // Let's assume if it had the correct class, it's a 'know', else 'forgot'
+        const isCorrect = inputEl.classList.contains('cloze-input-correct');
+        handleTraditionalResult(isCorrect);
+        return;
+    }
+    
+    const userAnswer = inputEl.value.trim().toLowerCase();
+    const correctAnswer = card.definition.toLowerCase();
+    
+    // Clean up old feedback
+    const oldFeedback = document.getElementById('cloze-feedback-msg');
+    if (oldFeedback) oldFeedback.remove();
+    
+    const feedbackEl = document.createElement('div');
+    feedbackEl.id = 'cloze-feedback-msg';
+    
+    if (userAnswer === correctAnswer) {
+        inputEl.className = 'cloze-input-correct cloze-correct';
+        feedbackEl.className = 'cloze-feedback cloze-feedback-correct';
+        feedbackEl.textContent = 'RIGHT';
+    } else {
+        inputEl.className = 'cloze-input-wrong cloze-wrong';
+        feedbackEl.className = 'cloze-feedback cloze-feedback-wrong';
+        feedbackEl.textContent = 'WRONG';
+    }
+    
+    document.getElementById('cloze-input-container').appendChild(feedbackEl);
+    
+    // Flip the card to reveal the highlight
+    document.getElementById('flashcard').classList.add('flipped');
+    
+    // Change button to Continue
+    btn.textContent = 'Continue';
+    btn.className = 'secondary';
+});
 
+document.getElementById('input-cloze').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('btn-submit-cloze').click();
+    }
+});
 
 const handleTraditionalResult = async (know) => {
     try {
