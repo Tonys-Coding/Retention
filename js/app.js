@@ -1088,7 +1088,13 @@ const handlePDFUpload = async (file) => {
         
         dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Generating Cards<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
         
-        const prompt = `Extract the most important terms and definitions from this text. Return ONLY a valid JSON array of objects. Each object should have 'term' and 'definition' strings. Make the definitions concise. Here is the text:\n\n${fullText.substring(0, 150000)}`;
+        const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards. 
+Return ONLY a valid JSON array of objects. 
+Generate a mix of two types of cards based on what fits best:
+1. Standard cards (for terms and definitions): { "type": "standard", "term": "...", "definition": "..." }
+2. Fill-in-the-blank cards (for memorizing facts in context): { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
+Make definitions concise. 
+Here is the text:\n\n${fullText.substring(0, 150000)}`;
         
         const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
             method: 'POST',
@@ -1123,7 +1129,8 @@ const handlePDFUpload = async (file) => {
                     deckId: deckId,
                     term: card.term,
                     definition: card.definition,
-                    status: 'new'
+                    status: 'new',
+                    type: card.type === 'cloze' ? 'cloze' : 'standard'
                 });
             }
             dropzone.style.display = 'none';

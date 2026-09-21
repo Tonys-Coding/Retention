@@ -27,7 +27,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 return;
             }
             
-            const prompt = 'Turn this text into a concise flashcard. Return ONLY a valid JSON object with "term" and "definition" string properties. Text: "' + text + '"';
+            const prompt = 'Turn this text into a concise flashcard. You can choose to make it a standard term/definition card OR a fill-in-the-blank card if it is a fact. Return ONLY a valid JSON object. ' + 
+                           'For standard: { "type": "standard", "term": "...", "definition": "..." }. ' + 
+                           'For fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }. Text: "' + text + '"';
             
             const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -36,8 +38,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                     'Authorization': 'Bearer ' + apiKey
                 },
                 body: JSON.stringify({
-                    model: "openai/gpt-4o-mini",
-                    messages: [{ role: "user", content: prompt }]
+                    model: "openrouter/free", // Changed to match app.js
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant that strictly outputs JSON objects representing flashcards." },
+                        { role: "user", content: prompt }
+                    ]
                 })
             });
             
@@ -67,7 +72,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 definition: cardData.definition,
                 example: '',
                 status: 'new',
-                type: 'standard'
+                type: cardData.type === 'cloze' ? 'cloze' : 'standard'
             });
             
             chrome.notifications.create({
