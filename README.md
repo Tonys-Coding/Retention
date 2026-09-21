@@ -17,11 +17,11 @@ Retention is a powerful, minimalistic flashcard study system built directly into
 *   **Markdown Support:** Flashcards support rich Markdown formatting. Easily add `code blocks`, lists, **bold**, and *italic* text to format complex subjects efficiently.
 *   **Image Support:** Drag and drop or paste images directly into your flashcards.
 
-### 🤖 AI Integration & PDF Extraction
+### AI Integration & PDF Extraction
 *   **Generate from PDF:** Instantly create flashcard decks from your study materials. Select a local PDF, and the extension will parse the text.
 *   **OpenRouter AI API:** Powered by your custom OpenRouter API key, the extension automatically processes your documents and intelligently generates high-quality flashcards for you.
 
-### ☁️ Import, Export, & Cloud Sync
+### Import, Export, & Cloud Sync
 *   **CSV Import/Export:** Easily backup or share individual decks using standard CSV files.
 *   **Google Drive Sync:** Securely back up and restore your entire workspace directly to/from your Google Drive.
 *   **Offline First:** Your workspace is stored entirely locally on your device via IndexedDB, making it lightning-fast and fully functional without an internet connection (aside from AI generation and Drive syncs).
