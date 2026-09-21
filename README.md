@@ -55,7 +55,7 @@ To enable cloud backups for your entire workspace, you must provide a Google Cli
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Create a new project and enable the **Google Drive API**.
 3. Configure the OAuth Consent Screen (add your email as a test user).
-4. Create **OAuth 2.0 Client ID** credentials (choose "Chrome App" and provide the Extension ID found in `chrome://extensions/`).
+4. Create **OAuth 2.0 Client ID** credentials (choose "Chrome Extension" and provide the Extension ID found in `chrome://extensions/`).
 5. Copy the generated **Client ID**.
 6. Open `manifest.json` and add the following block:
    ```json
