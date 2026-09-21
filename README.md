@@ -1,4 +1,7 @@
-# Retention - Chrome Extension
+<div align="center">
+  <img src="icons/icon128.png" alt="Retention Logo" width="128" height="128">
+  <h1>Retention - Chrome Extension</h1>
+</div>
 
 Retention is a powerful, minimalistic flashcard study system built directly into your browser as a Chrome Extension. Featuring a sleek, brutalist high-contrast aesthetic, Retention is designed for deep focus and efficient learning without distractions.
 
