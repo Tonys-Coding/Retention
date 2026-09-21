@@ -64,7 +64,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 inboxId = await addDeck("Inbox");
             }
             
-            await addCard(inboxId, cardData.term, cardData.definition, "");
+            await addCard({
+                deckId: inboxId,
+                term: cardData.term,
+                definition: cardData.definition,
+                example: '',
+                status: 'new',
+                type: (cardData.term.includes('{{') || cardData.definition.includes('{{')) ? 'cloze' : 'standard'
+            });
             
             chrome.notifications.create({
                 type: 'basic',

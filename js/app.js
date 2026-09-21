@@ -745,18 +745,6 @@ const updateStudyView = () => {
         document.getElementById('study-def').innerHTML = marked.parse(card.definition);
     }
 };
-        
-        document.getElementById('input-cloze').onkeypress = (e) => {
-            if (e.key === 'Enter') submitBtn.click();
-        };
-        
-    } else {
-        document.getElementById('study-term').innerHTML = marked.parse(card.term);
-        document.getElementById('study-def').innerHTML = marked.parse(card.definition);
-        
-        
-    }
-};
 
 document.getElementById('flashcard').addEventListener('click', () => {
     const card = studyCards[studyIndex];
