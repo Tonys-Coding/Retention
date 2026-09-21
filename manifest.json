@@ -7,13 +7,14 @@
     "default_popup": "index.html",
     "default_title": "Open Retention"
   },
-  "permissions": [
-    "storage",
-    "unlimitedStorage"
-  ],
+  "permissions": ["storage", "unlimitedStorage", "identity"],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "oauth2": {
+    "client_id": "34703865203030e99l44rnlrk380f33frv6uv738a6co.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/drive.file"]
   }
 }
