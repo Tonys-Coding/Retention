@@ -25,13 +25,21 @@ const showToast = (message) => {
     }, 3000);
 };
 
-const showConfirm = (message) => {
+const showConfirm = (message, okText = "Delete", isDanger = true) => {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-confirm');
         document.getElementById('confirm-message').textContent = message;
         modal.style.display = 'flex';
         
         const btnOk = document.getElementById('btn-ok-confirm');
+        btnOk.textContent = okText.toUpperCase();
+        if (isDanger) {
+            btnOk.classList.add('danger');
+            btnOk.classList.remove('primary');
+        } else {
+            btnOk.classList.remove('danger');
+            btnOk.classList.add('primary');
+        }
         const btnCancel = document.getElementById('btn-cancel-confirm');
         
         const cleanup = () => {
@@ -231,13 +239,13 @@ const loadDecks = async (searchQuery = '') => {
                 const data = JSON.parse(e.dataTransfer.getData('application/json'));
                 if (data.type === 'deck') {
                     const deckToMove = allDecks.find(d => d.id == data.id);
-                    if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${targetName}"?`)) {
+                    if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${targetName}"?`, "Move", false)) {
                         await updateDeck(deckToMove.id, deckToMove.name, targetParentId);
                         loadDecks();
                     }
                 } else if (data.type === 'folder') {
                     const folderToMove = allFolders.find(f => f.id == data.id);
-                    if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${targetName}"?`)) {
+                    if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${targetName}"?`, "Move", false)) {
                         await updateFolder(folderToMove.id, undefined, undefined, targetParentId);
                         loadDecks();
                     }
@@ -295,7 +303,7 @@ const loadDecks = async (searchQuery = '') => {
                     const data = JSON.parse(dataStr);
                     if (data.type === 'deck') {
                         const deckToMove = allDecks.find(d => d.id == data.id);
-                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
+                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`, "Move", false)) {
                             await updateDeck(deckToMove.id, deckToMove.name, folder.id);
                             loadDecks();
                         }
@@ -313,7 +321,7 @@ const loadDecks = async (searchQuery = '') => {
                         }
                         
                         const folderToMove = allFolders.find(f => f.id == data.id);
-                        if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${folder.name}"?`)) {
+                        if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${folder.name}"?`, "Move", false)) {
                             await updateFolder(folderToMove.id, undefined, undefined, folder.id);
                             loadDecks();
                         }
@@ -323,7 +331,7 @@ const loadDecks = async (searchQuery = '') => {
                     const deckId = e.dataTransfer.getData('text/plain');
                     if (deckId) {
                         const deckToMove = allDecks.find(d => d.id == deckId);
-                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`)) {
+                        if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`, "Move", false)) {
                             await updateDeck(deckToMove.id, deckToMove.name, folder.id);
                             loadDecks();
                         }
