@@ -550,3 +550,25 @@ textarea { flex-shrink: 0; min-height: 80px; }
     align-items: center;
     border: 4px dashed var(--text-primary);
 }
+
+/* Cloze styling */
+.cloze-blank {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 2px dashed var(--border-color);
+    padding: 0 8px;
+    font-weight: bold;
+    display: inline-block;
+    border-radius: 4px;
+}
+
+.cloze-highlight {
+    background-color: #ffd000;
+    color: #000;
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0px #000;
+    padding: 0 8px;
+    font-weight: bold;
+    display: inline-block;
+    border-radius: 4px;
+}

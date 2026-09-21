@@ -7,7 +7,13 @@
     "default_popup": "index.html",
     "default_title": "Open Retention"
   },
-  "permissions": ["storage", "unlimitedStorage", "identity"],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "identity",
+    "contextMenus",
+    "notifications"
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -15,6 +21,12 @@
   },
   "oauth2": {
     "client_id": "347038652030-30e99l44rnlrk380f33frv6uv738a6co.apps.googleusercontent.com",
-    "scopes": ["https://www.googleapis.com/auth/drive.file"]
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  },
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
   }
 }

@@ -607,6 +607,7 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
     
     // Check if card is cloze
     const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
+    const type = isCloze ? 'cloze' : 'basic';
     
     if (term && def) {
         await addCard({
@@ -698,51 +699,52 @@ const updateStudyView = () => {
         imgEl.style.display = 'none';
     }
     
-    if (card.type === 'cloze') {
-        const parts = card.term.split(/({[^}]+})/);
-        let frontText = '';
-        let backText = '';
-        let clozeAnswer = '';
+    if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
         
-        parts.forEach(p => {
-            if (p.startsWith('{') && p.endsWith('}')) {
-                clozeAnswer = p.slice(1, -1);
-                frontText += `<span class="cloze-blank"></span>`;
-                backText += `<span class="cloze-revealed">${clozeAnswer}</span>`;
-            } else {
-                frontText += p;
-                backText += p;
-            }
-        });
-        
-        if (card.example) {
-            frontText += '<br><br><i>' + card.example + '</i>';
-            backText += '<br><br><i>' + card.example + '</i>';
-        }
-        
-        document.getElementById('study-term').innerHTML = marked.parse(frontText);
-        document.getElementById('study-def').innerHTML = marked.parse(backText);
-        
-        document.getElementById('cloze-input-container').style.display = 'block';
-        document.getElementById('study-hint-tap').style.display = 'none';
-        document.getElementById('flashcard').style.pointerEvents = 'none'; 
-        
-        const submitBtn = document.getElementById('btn-submit-cloze');
-        submitBtn.dataset.answer = clozeAnswer;
-        submitBtn.onclick = (e) => {
-            e.stopPropagation();
-            const guess = document.getElementById('input-cloze').value.trim().toLowerCase();
-            const correct = guess === clozeAnswer.toLowerCase();
-            if (correct) {
-                document.getElementById('input-cloze').style.borderColor = '#4CAF50';
-            } else {
-                document.getElementById('input-cloze').style.borderColor = '#ff4444';
-            }
-            document.getElementById('flashcard').classList.add('flipped');
-            setTimeout(() => {
-                handleTraditionalResult(correct);
-            }, 1500);
+        const parseCloze = (text, isFront) => {
+            if (!text) return '';
+            // Split by {{...}}
+            const parts = text.split(/(\{\{.*?\}\})/g);
+            let result = '';
+            
+            parts.forEach(p => {
+                if (p.startsWith('{{') && p.endsWith('}}')) {
+                    const clozeAnswer = p.slice(2, -2);
+                    if (isFront) {
+                        result += `<span class="cloze-blank">[...]</span>`;
+                    } else {
+                        result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
+                    }
+                } else {
+                    result += p;
+                }
+            });
+            return result;
         };
+        
+        let frontTerm = parseCloze(card.term, true);
+        let frontDef = parseCloze(card.definition, true);
+        
+        let backTerm = parseCloze(card.term, false);
+        let backDef = parseCloze(card.definition, false);
+        
+        // Show BOTH on front if it's a pure cloze on definition? 
+        // Typically, if definition has the cloze, the front should show the definition's cloze blanks.
+        // Let's just show term (if exists) + definition (with blanks) on front.
+        let frontHTML = frontTerm ? `<h3>${frontTerm}</h3>` : '';
+        frontHTML += frontDef;
+        
+        let backHTML = backTerm ? `<h3>${backTerm}</h3>` : '';
+        backHTML += backDef;
+        
+        document.getElementById('study-term').innerHTML = marked.parse(frontHTML);
+        document.getElementById('study-def').innerHTML = marked.parse(backHTML);
+        
+    } else {
+        document.getElementById('study-term').innerHTML = marked.parse(card.term);
+        document.getElementById('study-def').innerHTML = marked.parse(card.definition);
+    }
+};
         
         document.getElementById('input-cloze').onkeypress = (e) => {
             if (e.key === 'Enter') submitBtn.click();
@@ -946,7 +948,9 @@ document.getElementById('btn-remove-image').addEventListener('click', () => {
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 
 document.getElementById('btn-open-settings').addEventListener('click', () => {
-    document.getElementById('input-api-key').value = localStorage.getItem('openrouter_api_key') || '';
+    chrome.storage.local.get(['openrouter_api_key'], (res) => {
+        document.getElementById('input-api-key').value = res.openrouter_api_key || '';
+    });
     document.getElementById('modal-settings').style.display = 'flex';
 });
 
@@ -957,9 +961,9 @@ document.getElementById('btn-cancel-settings').addEventListener('click', () => {
 document.getElementById('btn-save-settings').addEventListener('click', () => {
     const key = document.getElementById('input-api-key').value.trim();
     if (key) {
-        localStorage.setItem('openrouter_api_key', key);
+        chrome.storage.local.set({ 'openrouter_api_key': key });
     } else {
-        localStorage.removeItem('openrouter_api_key');
+        chrome.storage.local.remove('openrouter_api_key');
     }
     document.getElementById('modal-settings').style.display = 'none';
 });
@@ -994,7 +998,8 @@ document.body.addEventListener('dragleave', (e) => {
 const brutalistLoaderHtml = `<div class="brutalist-loader"><div class="block"></div><div class="block"></div><div class="block"></div></div>`;
 
 const handlePDFUpload = async (file) => {
-    const apiKey = localStorage.getItem('openrouter_api_key');
+    const res = await chrome.storage.local.get(['openrouter_api_key']);
+    const apiKey = res.openrouter_api_key;
     if (!apiKey) {
         showToast("Please set your OpenRouter API key in Settings first!");
         document.getElementById('btn-open-settings').click();
@@ -1145,6 +1150,7 @@ document.getElementById('btn-save-edit-card').addEventListener('click', async ()
     const def = document.getElementById('edit-input-def').value.trim();
     const ex = document.getElementById('edit-input-ex').value.trim();
     const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
+    const type = isCloze ? 'cloze' : 'basic';
     
     if (term && def) {
         await updateCard({
