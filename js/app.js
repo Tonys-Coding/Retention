@@ -750,7 +750,7 @@ const updateStudyView = () => {
         const answer = card.definition;
         const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
         const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
-        const backText = card.term.replace(regex, '<span class="cloze-highlight">' + answer + '</span>');
+        const backText = card.term.replace(regex, '<span class="cloze-highlight" id="study-cloze-highlight">' + answer + '</span>');
         
         document.getElementById('study-term').innerHTML = frontText;
         document.getElementById('study-def').innerHTML = backText;
@@ -810,14 +810,18 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
     const feedbackEl = document.createElement('div');
     feedbackEl.id = 'cloze-feedback-msg';
     
+    const highlightEl = document.getElementById('study-cloze-highlight');
+    
     if (userAnswer === correctAnswer) {
         inputEl.className = 'cloze-input-correct cloze-correct';
         feedbackEl.className = 'cloze-feedback cloze-feedback-correct';
         feedbackEl.textContent = 'RIGHT';
+        if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-correct';
     } else {
         inputEl.className = 'cloze-input-wrong cloze-wrong';
         feedbackEl.className = 'cloze-feedback cloze-feedback-wrong';
         feedbackEl.textContent = 'WRONG';
+        if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-wrong';
     }
     
     document.getElementById('cloze-input-container').appendChild(feedbackEl);
