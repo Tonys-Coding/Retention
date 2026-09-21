@@ -2,18 +2,18 @@
 
 Retention is a powerful, minimalistic flashcard study system built directly into your browser as a Chrome Extension. Featuring a sleek, brutalist high-contrast aesthetic, Retention is designed for deep focus and efficient learning without distractions.
 
-## 🚀 Features
+## Features
 
-### 🗂️ Organization & Workspace
+### Organization & Workspace
 *   **Decks & Nested Folders:** Organize your flashcards into custom decks. Group related decks into folders, and even nest folders within other folders for infinite organization.
 *   **Intuitive Drag & Drop:** Effortlessly reorganize your workspace. Drag decks into folders, drop folders into other folders, or drag items to the breadcrumb navigation at the top to move them back to the parent directory.
 
-### 🧠 Study Mode
+### Study Mode
 *   **Traditional Study Flow:** Shuffle and study your decks using a simple, effective 3-button self-assessment interface: *Forgot*, *Skip*, and *Know*.
 *   **Seamless Session Resuming:** Life happens. If you accidentally close the popup or click away in the middle of a study session, Retention silently saves your exact place. Reopen the extension, and you'll be dropped right back to the exact flashcard you were on.
 *   **Progress Tracking:** Cards dynamically update their status to track your Mastery percentage. 
 
-### 📝 Rich Flashcard Editing
+### Rich Flashcard Editing
 *   **Markdown Support:** Flashcards support rich Markdown formatting. Easily add `code blocks`, lists, **bold**, and *italic* text to format complex subjects efficiently.
 *   **Image Support:** Drag and drop or paste images directly into your flashcards.
 
@@ -26,13 +26,13 @@ Retention is a powerful, minimalistic flashcard study system built directly into
 *   **Google Drive Sync:** Securely back up and restore your entire workspace directly to/from your Google Drive.
 *   **Offline First:** Your workspace is stored entirely locally on your device via IndexedDB, making it lightning-fast and fully functional without an internet connection (aside from AI generation and Drive syncs).
 
-### 🎨 Theming
+### Theming
 *   **Light & Dark Modes:** Toggle seamlessly between a crisp Light Mode and an eye-friendly Dark Mode.
 *   **Brutalist UI:** A distraction-free, high-contrast aesthetic with thick borders and drop shadows designed for high readability. Expanded UI dimensions comfortably fit longer text and code snippets.
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 1. Open Google Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** in the top right corner.
@@ -42,7 +42,7 @@ Retention is a powerful, minimalistic flashcard study system built directly into
 
 ---
 
-## ⚙️ Integrations Setup
+## Integrations Setup
 
 ### OpenRouter API (AI Flashcard Generation)
 To use the "Generate from PDF" feature:
