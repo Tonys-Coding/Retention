@@ -72,25 +72,34 @@
         </div>
         <div class="list-container">
             <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; margin-bottom: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color);">
-                <h3 style="margin-top: 0;">Add Card</h3>
-                <input type="text" id="input-term" placeholder="Term">
-                <textarea id="input-def" placeholder="Definition" rows="3"></textarea>
-                <textarea id="input-ex" placeholder="Example Sentence" rows="2"></textarea>
-                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                    <input type="text" id="input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
-                    <button id="btn-add-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                    </button>
-                    <input type="file" id="input-image" accept="image/*" style="display: none;">
+                <div class="card-mode-toggle" style="margin-bottom: 12px;">
+                    <button id="btn-mode-card" class="mode-btn active">Card</button>
+                    <button id="btn-mode-fitb" class="mode-btn">Fill in the Blank</button>
                 </div>
+                <div id="card-fields-standard">
+                    <input type="text" id="input-term" placeholder="Term">
+                    <textarea id="input-def" placeholder="Definition" rows="3"></textarea>
+                    <textarea id="input-ex" placeholder="Example Sentence" rows="2"></textarea>
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <input type="text" id="input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                        <button id="btn-add-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        </button>
+                        <input type="file" id="input-image" accept="image/*" style="display: none;">
+                    </div>
 
-                <div id="image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
-                    <img id="image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
-                    <button id="btn-remove-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <div id="image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
+                        <img id="image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
+                        <button id="btn-remove-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <p style="font-size: 10px; color: var(--text-secondary); margin-top: 0;">(Tip: Paste an image from your clipboard)</p>
                 </div>
-                <p style="font-size: 10px; color: var(--text-secondary); margin-top: 0;">(Tip: Paste an image from your clipboard)</p>
+                <div id="card-fields-fitb" style="display: none;">
+                    <textarea id="input-fitb-sentence" placeholder="Full sentence (e.g. The capital of France is Paris)" rows="3"></textarea>
+                    <input type="text" id="input-fitb-answer" placeholder="Word to hide (e.g. Paris)">
+                </div>
                 <button id="btn-add-card" class="primary" style="width: 100%;">Add Card</button>
             </div>
             <div id="cards-list"></div>
@@ -114,10 +123,6 @@
                     <div class="flashcard-front" id="flashcard-front-content">
                         <img id="study-image-front" src="" style="flex: 1; min-height: 0; width: 100%; object-fit: contain; border: 2px solid var(--border-color); margin-bottom: 16px; display: none;">
                         <div id="study-term" style="font-size: 24px; font-weight: bold; margin: 0; width: 100%; text-align: center;">Term</div>
-                        <div id="cloze-input-container" style="display: none; margin-top: 16px; width: 100%;">
-                            <input type="text" id="input-cloze" placeholder="Type answer..." style="text-align: center; margin-bottom: 8px;">
-                            <button id="btn-submit-cloze" class="primary" style="width: 100%;">Check</button>
-                        </div>
                         <p id="study-hint-tap" style="font-size: 12px; color: var(--text-secondary); margin-top: 16px;">(Tap to flip)</p>
                     </div>
                     <div class="flashcard-back" id="flashcard-back-content">
@@ -250,21 +255,34 @@
     <div id="modal-edit-card" class="view" style="position: absolute; z-index: 2000; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px; flex-direction: column; justify-content: center; align-items: center;">
         <div style="border: 4px solid var(--border-color); background: var(--bg-secondary); padding: 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 48px); overflow-y: auto; box-sizing: border-box;">
             <h3 style="margin-top: 0;">Edit Card</h3>
-            <input type="text" id="edit-input-term" placeholder="Term">
-            <textarea id="edit-input-def" placeholder="Definition" rows="3"></textarea>
-            <textarea id="edit-input-ex" placeholder="Example Sentence" rows="2"></textarea>
-            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input type="text" id="edit-input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
-                <button id="btn-edit-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                </button>
-                <input type="file" id="edit-input-image" accept="image/*" style="display: none;">
+            
+            <div class="card-mode-toggle" style="margin-bottom: 12px;">
+                <button id="btn-edit-mode-card" class="mode-btn active">Card</button>
+                <button id="btn-edit-mode-fitb" class="mode-btn">Fill in the Blank</button>
             </div>
-            <div id="edit-image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
-                <img id="edit-image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
-                <button id="btn-remove-edit-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+            
+            <div id="edit-card-fields-standard">
+                <input type="text" id="edit-input-term" placeholder="Term">
+                <textarea id="edit-input-def" placeholder="Definition" rows="3"></textarea>
+                <textarea id="edit-input-ex" placeholder="Example Sentence" rows="2"></textarea>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="edit-input-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                    <button id="btn-edit-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </button>
+                    <input type="file" id="edit-input-image" accept="image/*" style="display: none;">
+                </div>
+                <div id="edit-image-preview-container" style="display: none; margin-bottom: 12px; position: relative;">
+                    <img id="edit-image-preview" src="" style="width: 100%; border: 2px solid var(--border-color); box-sizing: border-box;">
+                    <button id="btn-remove-edit-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="edit-card-fields-fitb" style="display: none;">
+                <textarea id="edit-input-fitb-sentence" placeholder="Full sentence (e.g. The capital of France is Paris)" rows="3"></textarea>
+                <input type="text" id="edit-input-fitb-answer" placeholder="Word to hide (e.g. Paris)">
             </div>
             <div style="display: flex; gap: 16px; margin-top: 16px;">
                 <button id="btn-cancel-edit-card" style="flex: 1;">Cancel</button>

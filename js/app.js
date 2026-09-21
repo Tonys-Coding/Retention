@@ -600,37 +600,82 @@ document.getElementById('btn-back-decks').addEventListener('click', () => {
     showView('decks');
 });
 
+// Card mode toggle
+let addCardMode = 'standard'; // 'standard' or 'fitb'
+
+document.getElementById('btn-mode-card').addEventListener('click', () => {
+    addCardMode = 'standard';
+    document.getElementById('btn-mode-card').classList.add('active');
+    document.getElementById('btn-mode-fitb').classList.remove('active');
+    document.getElementById('card-fields-standard').style.display = 'block';
+    document.getElementById('card-fields-fitb').style.display = 'none';
+    document.getElementById('btn-add-card').textContent = 'Add Card';
+});
+
+document.getElementById('btn-mode-fitb').addEventListener('click', () => {
+    addCardMode = 'fitb';
+    document.getElementById('btn-mode-fitb').classList.add('active');
+    document.getElementById('btn-mode-card').classList.remove('active');
+    document.getElementById('card-fields-standard').style.display = 'none';
+    document.getElementById('card-fields-fitb').style.display = 'block';
+    document.getElementById('btn-add-card').textContent = 'Add Fill in the Blank';
+});
+
 document.getElementById('btn-add-card').addEventListener('click', async () => {
-    const term = document.getElementById('input-term').value.trim();
-    const def = document.getElementById('input-def').value.trim();
-    const ex = document.getElementById('input-ex').value.trim();
-    
-    // Check if card is cloze
-    const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
-    const type = isCloze ? 'cloze' : 'basic';
-    
-    if (term && def) {
+    if (addCardMode === 'fitb') {
+        const sentence = document.getElementById('input-fitb-sentence').value.trim();
+        const answer = document.getElementById('input-fitb-answer').value.trim();
+        
+        if (!sentence || !answer) {
+            showToast("Sentence and Answer are required.");
+            return;
+        }
+        
+        if (!sentence.toLowerCase().includes(answer.toLowerCase())) {
+            showToast("The answer must appear in the sentence.");
+            return;
+        }
+        
         await addCard({
             deckId: currentDeckId,
-            term,
-            definition: def,
-            example: ex,
+            term: sentence,
+            definition: answer,
+            example: '',
             status: 'new',
-            image: currentPastedImage,
-            type: isCloze ? 'cloze' : 'standard'
+            type: 'cloze'
         });
-        document.getElementById('input-term').value = '';
-        document.getElementById('input-def').value = '';
-        document.getElementById('input-ex').value = '';
-        document.getElementById('input-image-paste').value = '';
         
-        currentPastedImage = null;
-        document.getElementById('image-preview').src = '';
-        document.getElementById('image-preview-container').style.display = 'none';
-        
+        document.getElementById('input-fitb-sentence').value = '';
+        document.getElementById('input-fitb-answer').value = '';
         loadCards();
     } else {
-        showToast("Term and Definition are required.");
+        const term = document.getElementById('input-term').value.trim();
+        const def = document.getElementById('input-def').value.trim();
+        const ex = document.getElementById('input-ex').value.trim();
+        
+        if (term && def) {
+            await addCard({
+                deckId: currentDeckId,
+                term,
+                definition: def,
+                example: ex,
+                status: 'new',
+                image: currentPastedImage,
+                type: 'standard'
+            });
+            document.getElementById('input-term').value = '';
+            document.getElementById('input-def').value = '';
+            document.getElementById('input-ex').value = '';
+            document.getElementById('input-image-paste').value = '';
+            
+            currentPastedImage = null;
+            document.getElementById('image-preview').src = '';
+            document.getElementById('image-preview-container').style.display = 'none';
+            
+            loadCards();
+        } else {
+            showToast("Term and Definition are required.");
+        }
     }
 });
 
@@ -673,20 +718,8 @@ const updateStudyView = () => {
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
     document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
     
-    const exEl = document.getElementById('study-ex');
-    if (card.example) {
-        exEl.innerHTML = marked.parse(`> "${card.example}"`);
-        exEl.style.display = 'block';
-    } else {
-        exEl.style.display = 'none';
-    }
-    
     document.getElementById('flashcard').className = 'flashcard';
-    
-    // Reset UI
-    document.getElementById('cloze-input-container').style.display = 'none';
     document.getElementById('study-hint-tap').style.display = 'block';
-    document.getElementById('input-cloze').value = '';
     document.getElementById('flashcard').style.pointerEvents = 'auto'; 
     document.getElementById('traditional-actions-container').style.display = 'flex';
     
@@ -699,43 +732,33 @@ const updateStudyView = () => {
         imgEl.style.display = 'none';
     }
     
-    if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
+    const exEl = document.getElementById('study-ex');
+    
+    if (card.type === 'cloze') {
+        // FITB card: term = full sentence, definition = the answer word
+        // FRONT: sentence with answer replaced by a dashed blank
+        const answer = card.definition;
+        const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
         
-        const parseCloze = (text, isFront) => {
-            if (!text) return '';
-            const parts = text.split(/(\{\{.*?\}\})/g);
-            let result = '';
-            parts.forEach(p => {
-                if (p.startsWith('{{') && p.endsWith('}}')) {
-                    const answer = p.slice(2, -2);
-                    if (isFront) {
-                        result += `<span class="cloze-blank"></span>`;
-                    } else {
-                        result += `<span class="cloze-highlight">${answer}</span>`;
-                    }
-                } else {
-                    result += p;
-                }
-            });
-            return result;
-        };
+        // BACK: sentence with answer highlighted
+        const backText = card.term.replace(regex, '<span class="cloze-highlight">' + answer + '</span>');
         
-        let frontTerm = parseCloze(card.term, true);
-        let frontDef = parseCloze(card.definition, true);
-        let backTerm = parseCloze(card.term, false);
-        let backDef = parseCloze(card.definition, false);
-        
-        let frontHTML = frontTerm ? `<h3>${frontTerm}</h3>` : '';
-        frontHTML += frontDef;
-        let backHTML = backTerm ? `<h3>${backTerm}</h3>` : '';
-        backHTML += backDef;
-        
-        document.getElementById('study-term').innerHTML = marked.parse(frontHTML);
-        document.getElementById('study-def').innerHTML = marked.parse(backHTML);
+        document.getElementById('study-term').innerHTML = frontText;
+        document.getElementById('study-def').innerHTML = backText;
+        exEl.style.display = 'none';
         
     } else {
+        // Standard card
         document.getElementById('study-term').innerHTML = marked.parse(card.term);
         document.getElementById('study-def').innerHTML = marked.parse(card.definition);
+        
+        if (card.example) {
+            exEl.innerHTML = marked.parse(`> "${card.example}"`);
+            exEl.style.display = 'block';
+        } else {
+            exEl.style.display = 'none';
+        }
     }
 };
 
@@ -1100,17 +1123,42 @@ document.getElementById('file-ai-pdf').addEventListener('change', async (e) => {
 // Edit Card Modal Logic
 let currentEditCardId = null;
 let currentEditPastedImage = null;
+let editCardMode = 'standard';
+
+document.getElementById('btn-edit-mode-card').addEventListener('click', () => {
+    editCardMode = 'standard';
+    document.getElementById('btn-edit-mode-card').classList.add('active');
+    document.getElementById('btn-edit-mode-fitb').classList.remove('active');
+    document.getElementById('edit-card-fields-standard').style.display = 'block';
+    document.getElementById('edit-card-fields-fitb').style.display = 'none';
+});
+
+document.getElementById('btn-edit-mode-fitb').addEventListener('click', () => {
+    editCardMode = 'fitb';
+    document.getElementById('btn-edit-mode-fitb').classList.add('active');
+    document.getElementById('btn-edit-mode-card').classList.remove('active');
+    document.getElementById('edit-card-fields-standard').style.display = 'none';
+    document.getElementById('edit-card-fields-fitb').style.display = 'block';
+});
 
 const openEditCardModal = (card) => {
     currentEditCardId = card.id;
     currentEditPastedImage = card.image || null;
     
-    document.getElementById('edit-input-term').value = card.term || '';
-    document.getElementById('edit-input-def').value = card.definition || '';
-    document.getElementById('edit-input-ex').value = card.example || '';
+    if (card.type === 'cloze') {
+        document.getElementById('btn-edit-mode-fitb').click();
+        document.getElementById('edit-input-fitb-sentence').value = card.term || '';
+        document.getElementById('edit-input-fitb-answer').value = card.definition || '';
+    } else {
+        document.getElementById('btn-edit-mode-card').click();
+        document.getElementById('edit-input-term').value = card.term || '';
+        document.getElementById('edit-input-def').value = card.definition || '';
+        document.getElementById('edit-input-ex').value = card.example || '';
+    }
+    
     document.getElementById('edit-input-image-paste').value = '';
     
-    if (card.image) {
+    if (card.image && card.type !== 'cloze') {
         document.getElementById('edit-image-preview').src = card.image;
         document.getElementById('edit-image-preview-container').style.display = 'block';
     } else {
@@ -1127,27 +1175,54 @@ document.getElementById('btn-cancel-edit-card').addEventListener('click', () => 
 
 document.getElementById('btn-save-edit-card').addEventListener('click', async () => {
     if (!currentEditCardId) return;
-    const term = document.getElementById('edit-input-term').value.trim();
-    const def = document.getElementById('edit-input-def').value.trim();
-    const ex = document.getElementById('edit-input-ex').value.trim();
-    const isCloze = term.includes('{{') && term.includes('}}') || def.includes('{{') && def.includes('}}');
-    const type = isCloze ? 'cloze' : 'basic';
     
-    if (term && def) {
+    if (editCardMode === 'fitb') {
+        const sentence = document.getElementById('edit-input-fitb-sentence').value.trim();
+        const answer = document.getElementById('edit-input-fitb-answer').value.trim();
+        
+        if (!sentence || !answer) {
+            showToast("Sentence and Answer are required.");
+            return;
+        }
+        
+        if (!sentence.toLowerCase().includes(answer.toLowerCase())) {
+            showToast("The answer must appear in the sentence.");
+            return;
+        }
+        
         await updateCard({
             id: currentEditCardId,
             deckId: currentDeckId,
-            term,
-            definition: def,
-            example: ex,
+            term: sentence,
+            definition: answer,
+            example: '',
             status: 'new',
-            image: currentEditPastedImage,
-            type: isCloze ? 'cloze' : 'standard'
+            image: null,
+            type: 'cloze'
         });
         document.getElementById('modal-edit-card').style.display = 'none';
         loadCards();
     } else {
-        showToast("Term and Definition are required!");
+        const term = document.getElementById('edit-input-term').value.trim();
+        const def = document.getElementById('edit-input-def').value.trim();
+        const ex = document.getElementById('edit-input-ex').value.trim();
+        
+        if (term && def) {
+            await updateCard({
+                id: currentEditCardId,
+                deckId: currentDeckId,
+                term,
+                definition: def,
+                example: ex,
+                status: 'new',
+                image: currentEditPastedImage,
+                type: 'standard'
+            });
+            document.getElementById('modal-edit-card').style.display = 'none';
+            loadCards();
+        } else {
+            showToast("Term and Definition are required!");
+        }
     }
 });
 
@@ -1179,51 +1254,28 @@ document.getElementById('btn-remove-edit-image').addEventListener('click', () =>
 // Preview Modal Logic
 const openPreviewModal = (card) => {
     
-    if (card.type === 'cloze' || (card.definition && card.definition.includes('{{')) || (card.term && card.term.includes('{{'))) {
-        const parseCloze = (text, isFront) => {
-            if (!text) return '';
-            const parts = text.split(/(\{\{.*?\}\})/g);
-            let result = '';
-            parts.forEach(p => {
-                if (p.startsWith('{{') && p.endsWith('}}')) {
-                    const clozeAnswer = p.slice(2, -2);
-                    if (isFront) {
-                        result += `<span class="cloze-blank"></span>`;
-                    } else {
-                        result += `<span class="cloze-highlight">${clozeAnswer}</span>`;
-                    }
-                } else {
-                    result += p;
-                }
-            });
-            return result;
-        };
+    const exEl = document.getElementById('preview-ex');
+    
+    if (card.type === 'cloze') {
+        const answer = card.definition;
+        const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
+        const backText = card.term.replace(regex, '<span class="cloze-highlight">' + answer + '</span>');
         
-        let frontTerm = parseCloze(card.term, true);
-        let frontDef = parseCloze(card.definition, true);
+        document.getElementById('preview-term').innerHTML = frontText;
+        document.getElementById('preview-def').innerHTML = backText;
+        exEl.style.display = 'none';
         
-        let backTerm = parseCloze(card.term, false);
-        let backDef = parseCloze(card.definition, false);
-        
-        let frontHTML = frontTerm ? `<h3>${frontTerm}</h3>` : '';
-        frontHTML += frontDef;
-        
-        let backHTML = backTerm ? `<h3>${backTerm}</h3>` : '';
-        backHTML += backDef;
-        
-        document.getElementById('preview-term').innerHTML = marked.parse(frontHTML);
-        document.getElementById('preview-def').innerHTML = marked.parse(backHTML);
     } else {
         document.getElementById('preview-term').innerHTML = marked.parse(card.term);
         document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
-    }
-    
-    const exEl = document.getElementById('preview-ex');
-    if (card.example) {
-        exEl.innerHTML = marked.parse(`> "${card.example}"`);
-        exEl.style.display = 'block';
-    } else {
-        exEl.style.display = 'none';
+        
+        if (card.example) {
+            exEl.innerHTML = marked.parse(`> "${card.example}"`);
+            exEl.style.display = 'block';
+        } else {
+            exEl.style.display = 'none';
+        }
     }
     
     const imgEl = document.getElementById('preview-image-front');
