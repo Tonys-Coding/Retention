@@ -748,7 +748,7 @@ const updateStudyView = () => {
 
 document.getElementById('flashcard').addEventListener('click', () => {
     const card = studyCards[studyIndex];
-    if (card && card.type !== 'cloze') {
+    if (card) {
         document.getElementById('flashcard').classList.toggle('flipped');
     }
 });
