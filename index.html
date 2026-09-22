@@ -32,6 +32,18 @@
             </div>
         </div>
         <div class="list-container">
+            <!-- Background Task Progress Banner -->
+            <div id="bg-task-banner" style="display: none; background: var(--bg-secondary); border-bottom: 4px solid var(--border-color); padding: 12px 16px; position: relative; margin-bottom: 16px;">
+                <button id="btn-close-bg-task" style="position: absolute; right: 16px; top: 12px; background: none; border: none; cursor: pointer; color: var(--text-secondary);">✕</button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-right: 20px;">
+                    <div style="font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <span class="brutalist-loader" id="bg-task-spinner" style="width: auto; height: 12px; gap: 4px; margin-bottom: 0;"><div class="block" style="width: 8px; height: 8px;"></div><div class="block" style="width: 8px; height: 8px;"></div><div class="block" style="width: 8px; height: 8px;"></div></span>
+                        <span id="bg-task-title">Generating AI Cards...</span>
+                    </div>
+                    <div id="bg-task-percent" style="font-size: 14px; font-weight: bold;">0%</div>
+                </div>
+                <div class="progress-bar" style="height: 12px;"><div class="progress-fill" id="bg-task-fill" style="width: 0%;"></div></div>
+            </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center; position: relative;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <h3 id="workspace-title" style="margin: 0;">My Workspace</h3>

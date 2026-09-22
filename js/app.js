@@ -33,6 +33,17 @@ const updateProgressBanner = (progress) => {
         return;
     }
     banner.style.display = 'block';
+    
+    if (progress.status === 'error') {
+        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${progress.errorMsg || 'Failed'}</span>`;
+        document.getElementById('bg-task-percent').textContent = '';
+        document.getElementById('bg-task-fill').style.width = '100%';
+        document.getElementById('bg-task-fill').style.backgroundColor = 'red';
+        document.getElementById('bg-task-spinner').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('bg-task-spinner').style.display = 'flex';
     const percent = Math.round((progress.current / progress.total) * 100) || 0;
     
     if (progress.status === 'saving') {
@@ -43,7 +54,13 @@ const updateProgressBanner = (progress) => {
     
     document.getElementById('bg-task-percent').textContent = `${percent}%`;
     document.getElementById('bg-task-fill').style.width = `${percent}%`;
+    document.getElementById('bg-task-fill').style.backgroundColor = 'var(--text-primary)';
 };
+
+document.getElementById('btn-close-bg-task')?.addEventListener('click', () => {
+    chrome.storage.local.remove('pdfProgress');
+    document.getElementById('bg-task-banner').style.display = 'none';
+});
 
 // Listen for progress updates
 chrome.storage.onChanged.addListener((changes, area) => {

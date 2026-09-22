@@ -167,45 +167,66 @@ Strict Guidelines:
 
 Here is the text:\n\n${textChunks[i]}`;
 
-        try {
-            const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
-                    'X-Title': 'Retention Chrome Extension'
-                },
-                body: JSON.stringify({
-                    model: "openrouter/free",
-                    messages: [
-                        { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards. If no highly-valuable content exists in this text chunk, return an empty array []." },
-                        { role: "user", content: prompt }
-                    ]
-                })
-            });
-            
-            if (!response.ok) {
-                console.warn("Chunk failed:", response.statusText);
-                continue;
-            }
-            
-            const data = await response.json();
-            const textResult = data.choices[0].message.content;
-            const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-            
+        let retries = 3;
+        let success = false;
+        
+        while (retries > 0 && !success) {
             try {
-                const chunkCards = JSON.parse(cleanText);
-                if (Array.isArray(chunkCards) && chunkCards.length > 0) {
-                    allFlashcards = allFlashcards.concat(chunkCards);
+                const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
+                        'X-Title': 'Retention Chrome Extension'
+                    },
+                    body: JSON.stringify({
+                        model: "openrouter/free",
+                        messages: [
+                            { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards. If no highly-valuable content exists in this text chunk, return an empty array []." },
+                            { role: "user", content: prompt }
+                        ]
+                    })
+                });
+                
+                if (response.status === 429) {
+                    retries--;
+                    console.warn(`Rate limited (429) on chunk ${i}. Retrying in 5s...`);
+                    await new Promise(r => setTimeout(r, 5000));
+                    continue;
                 }
-                successfulChunks++;
-            } catch (parseErr) {
-                console.warn("JSON parse error on chunk", i);
+                
+                if (!response.ok) {
+                    console.warn("Chunk failed:", response.statusText);
+                    break;
+                }
+                
+                const data = await response.json();
+                const textResult = data.choices[0].message.content;
+                const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    const chunkCards = JSON.parse(cleanText);
+                    if (Array.isArray(chunkCards) && chunkCards.length > 0) {
+                        allFlashcards = allFlashcards.concat(chunkCards);
+                    }
+                    successfulChunks++;
+                    success = true;
+                } catch (parseErr) {
+                    console.warn("JSON parse error on chunk", i);
+                    break; // break retry loop if it's a parsing error
+                }
+                
+            } catch (networkErr) {
+                retries--;
+                console.warn("Network error on chunk", i, "retrying in 5s...", networkErr);
+                await new Promise(r => setTimeout(r, 5000));
             }
-            
-        } catch (networkErr) {
-            console.warn("Network error on chunk", i, networkErr);
+        }
+        
+        // Add a small delay between successful chunks to avoid hitting RPM limits
+        if (success && i < textChunks.length - 1) {
+            await new Promise(r => setTimeout(r, 2000));
         }
     }
     
@@ -234,8 +255,15 @@ Here is the text:\n\n${textChunks[i]}`;
                 message: `Successfully created ${allFlashcards.length} flashcards in "${finalDeckName}".`
             });
             chrome.runtime.sendMessage({ action: 'REFRESH_DECKS' }).catch(() => {});
+            // Clear progress smoothly
+            setTimeout(async () => {
+                await chrome.storage.local.remove('pdfProgress');
+            }, 2000);
         } catch(e) {
             console.error("DB Save Error:", e);
+            await chrome.storage.local.set({ 
+                pdfProgress: { status: 'error', errorMsg: 'Failed to save to database.', deckName } 
+            });
         }
     } else {
         chrome.notifications.create({
@@ -244,8 +272,8 @@ Here is the text:\n\n${textChunks[i]}`;
             title: 'PDF Processing Failed',
             message: `Could not generate any flashcards for "${deckName}".`
         });
+        await chrome.storage.local.set({ 
+            pdfProgress: { status: 'error', errorMsg: 'API failed or returned no cards. OpenRouter rate limits?', deckName } 
+        });
     }
-    
-    // Clear progress
-    await chrome.storage.local.remove('pdfProgress');
 }
