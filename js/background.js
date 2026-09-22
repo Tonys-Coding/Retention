@@ -172,8 +172,12 @@ Here is the text:\n\n${textChunks[i]}`;
         
         while (retries > 0 && !success) {
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+                
                 const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: { 
                         'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
@@ -188,6 +192,8 @@ Here is the text:\n\n${textChunks[i]}`;
                         ]
                     })
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (response.status === 429) {
                     retries--;
@@ -232,7 +238,17 @@ Here is the text:\n\n${textChunks[i]}`;
                 
             } catch (networkErr) {
                 retries--;
-                console.warn("Network error on chunk", i, "retrying in 5s...", networkErr);
+                let isTimeout = networkErr.name === 'AbortError';
+                console.warn(isTimeout ? "Timeout on chunk" : "Network error on chunk", i, "retrying in 5s...", networkErr);
+                
+                // If we ran out of retries on a timeout, fail the whole job so it doesn't hang invisibly
+                if (retries === 0 && isTimeout) {
+                    await chrome.storage.local.set({ 
+                        pdfProgress: { status: 'error', errorMsg: `AI model timed out after 60s. The free tier may be heavily congested.`, deckName } 
+                    });
+                    return; // Halt completely
+                }
+                
                 await new Promise(r => setTimeout(r, 5000));
             }
         }
