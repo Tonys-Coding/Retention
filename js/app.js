@@ -1174,8 +1174,27 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 document.getElementById('btn-open-settings').addEventListener('click', () => {
     chrome.storage.local.get(['openrouter_api_key'], (res) => {
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
+        document.getElementById('input-api-key').type = 'password';
+        document.getElementById('icon-api-key-locked').style.display = 'block';
+        document.getElementById('icon-api-key-unlocked').style.display = 'none';
     });
     document.getElementById('modal-settings').style.display = 'flex';
+});
+
+document.getElementById('btn-toggle-api-key').addEventListener('click', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('input-api-key');
+    const iconLocked = document.getElementById('icon-api-key-locked');
+    const iconUnlocked = document.getElementById('icon-api-key-unlocked');
+    if (input.type === 'password') {
+        input.type = 'text';
+        iconLocked.style.display = 'none';
+        iconUnlocked.style.display = 'block';
+    } else {
+        input.type = 'password';
+        iconLocked.style.display = 'block';
+        iconUnlocked.style.display = 'none';
+    }
 });
 
 document.getElementById('btn-cancel-settings').addEventListener('click', () => {
