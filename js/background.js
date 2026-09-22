@@ -193,9 +193,8 @@ Here is the text:\n\n${textChunks[i]}`;
                     })
                 });
                 
-                clearTimeout(timeoutId);
-                
                 if (response.status === 429) {
+                    clearTimeout(timeoutId);
                     retries--;
                     console.warn(`Rate limited (429) on chunk ${i}. Retrying in 5s...`);
                     await new Promise(r => setTimeout(r, 5000));
@@ -203,6 +202,7 @@ Here is the text:\n\n${textChunks[i]}`;
                 }
                 
                 if (!response.ok) {
+                    clearTimeout(timeoutId);
                     let errMsg = response.statusText;
                     try {
                         const errData = await response.json();
@@ -221,6 +221,8 @@ Here is the text:\n\n${textChunks[i]}`;
                 }
                 
                 const data = await response.json();
+                clearTimeout(timeoutId); // Only clear once the BODY is fully received!
+                
                 const textResult = data.choices[0].message.content;
                 const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
                 
