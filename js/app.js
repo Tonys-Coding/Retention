@@ -785,7 +785,24 @@ const updateStudyView = () => {
     document.getElementById('study-progress-fill').style.width = `${((studyIndex) / studyCards.length) * 100}%`;
     
     // Reset UI state
-    document.getElementById('flashcard').className = 'flashcard';
+    const flashcardEl = document.getElementById('flashcard');
+    const flashcardInnerEl = flashcardEl.querySelector('.flashcard-inner');
+    
+    // Temporarily disable the flip transition so it snaps back to the front instantly
+    // preventing the user from seeing the back of the *new* card animating out.
+    if (flashcardInnerEl) {
+        flashcardInnerEl.style.transition = 'none';
+    }
+    
+    flashcardEl.className = 'flashcard';
+    
+    // Force a browser reflow to apply the unflipped state immediately
+    void flashcardEl.offsetWidth;
+    
+    if (flashcardInnerEl) {
+        flashcardInnerEl.style.transition = '';
+    }
+    
     document.getElementById('cloze-input-container').style.display = 'none';
     document.getElementById('input-cloze').value = '';
     document.getElementById('input-cloze').className = '';
