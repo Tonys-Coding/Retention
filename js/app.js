@@ -1,6 +1,6 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
-import { uploadToDrive, downloadFromDrive } from './drive.js';
+import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
 
 // State
 let currentDeckId = null;
@@ -1450,6 +1450,61 @@ document.getElementById('btn-menu-add-deck').addEventListener('click', () => ope
 document.getElementById('btn-menu-add-folder').addEventListener('click', () => openAddItemModal('folder'));
 document.getElementById('btn-menu-add-pdf').addEventListener('click', () => {
     document.getElementById('file-ai-pdf').click();
+});
+
+document.getElementById('btn-menu-add-pdf-drive').addEventListener('click', async () => {
+    try {
+        const btn = document.getElementById('btn-menu-add-pdf-drive');
+        btn.textContent = 'Loading...';
+        const files = await listDrivePdfs();
+        btn.textContent = 'Import PDF from Drive';
+        
+        const listContainer = document.getElementById('drive-files-list');
+        listContainer.innerHTML = '';
+        if (files.length === 0) {
+            listContainer.innerHTML = '<p style="font-size: 14px; text-align: center; color: var(--text-secondary);">No PDFs found in your Google Drive.</p>';
+        } else {
+            files.forEach(file => {
+                const el = document.createElement('div');
+                el.style.padding = '8px 12px';
+                el.style.border = '2px solid var(--border-color)';
+                el.style.cursor = 'pointer';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.gap = '8px';
+                el.style.background = 'var(--bg-primary)';
+                el.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span style="font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${file.name}</span>
+                `;
+                el.addEventListener('click', async () => {
+                    document.getElementById('modal-drive-picker').style.display = 'none';
+                    try {
+                        const dropzone = document.getElementById('dropzone-overlay');
+                        dropzone.style.display = 'flex';
+                        dropzone.classList.add('dropzone-loading');
+                        dropzone.innerHTML = `<h2 style="margin-bottom: 12px; font-size: 24px;">Downloading from Drive...</h2>`;
+                        
+                        const arrayBuffer = await downloadPdfFromDrive(file.id);
+                        const pdfFile = new File([arrayBuffer], file.name, { type: 'application/pdf' });
+                        await handlePDFUpload(pdfFile);
+                    } catch (err) {
+                        document.getElementById('dropzone-overlay').style.display = 'none';
+                        showToast("Drive Error: " + err.message);
+                    }
+                });
+                listContainer.appendChild(el);
+            });
+        }
+        document.getElementById('modal-drive-picker').style.display = 'flex';
+    } catch (e) {
+        document.getElementById('btn-menu-add-pdf-drive').textContent = 'Import PDF from Drive';
+        showToast("Drive Error: " + e.message);
+    }
+});
+
+document.getElementById('btn-cancel-drive-picker').addEventListener('click', () => {
+    document.getElementById('modal-drive-picker').style.display = 'none';
 });
 
 document.getElementById('btn-cancel-add-item').addEventListener('click', () => {

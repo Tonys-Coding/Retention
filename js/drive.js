@@ -1,6 +1,6 @@
 import { getDecks, getFolders, db } from './db.js';
 
-const getAuthToken = () => {
+export const getAuthToken = () => {
     return new Promise((resolve, reject) => {
         chrome.identity.getAuthToken({ interactive: true }, (token) => {
             if (chrome.runtime.lastError) {
@@ -10,6 +10,25 @@ const getAuthToken = () => {
             }
         });
     });
+};
+
+export const listDrivePdfs = async () => {
+    const token = await getAuthToken();
+    const res = await fetch('https://www.googleapis.com/drive/v3/files?q=mimeType="application/pdf" and trashed=false&fields=files(id,name)&pageSize=50', {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch PDFs from Drive');
+    const data = await res.json();
+    return data.files || [];
+};
+
+export const downloadPdfFromDrive = async (fileId) => {
+    const token = await getAuthToken();
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to download PDF from Drive');
+    return await res.arrayBuffer();
 };
 
 const getBackupFileId = async (token) => {
