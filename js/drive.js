@@ -12,14 +12,22 @@ export const getAuthToken = () => {
     });
 };
 
-export const listDrivePdfs = async () => {
+export const listDrivePdfs = async (query = '', pageToken = '') => {
     const token = await getAuthToken();
-    const res = await fetch('https://www.googleapis.com/drive/v3/files?q=mimeType="application/pdf" and trashed=false&fields=files(id,name)&pageSize=50', {
+    let qStr = 'mimeType="application/pdf" and trashed=false';
+    if (query) {
+        qStr += ` and name contains '${query}'`;
+    }
+    let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qStr)}&fields=nextPageToken,files(id,name)&pageSize=50`;
+    if (pageToken) {
+        url += `&pageToken=${encodeURIComponent(pageToken)}`;
+    }
+    
+    const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to fetch PDFs from Drive');
-    const data = await res.json();
-    return data.files || [];
+    return await res.json();
 };
 
 export const downloadPdfFromDrive = async (fileId) => {

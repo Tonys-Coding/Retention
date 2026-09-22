@@ -1452,54 +1452,93 @@ document.getElementById('btn-menu-add-pdf').addEventListener('click', () => {
     document.getElementById('file-ai-pdf').click();
 });
 
-document.getElementById('btn-menu-add-pdf-drive').addEventListener('click', async () => {
+let currentDrivePageToken = '';
+let currentDriveQuery = '';
+
+const renderDriveFiles = (files, append = false) => {
+    const listContainer = document.getElementById('drive-files-list');
+    if (!append) listContainer.innerHTML = '';
+    
+    if (files.length === 0 && !append) {
+        listContainer.innerHTML = '<p style="font-size: 14px; text-align: center; color: var(--text-secondary);">No PDFs found.</p>';
+        return;
+    }
+    
+    files.forEach(file => {
+        const el = document.createElement('div');
+        el.style.padding = '8px 12px';
+        el.style.border = '2px solid var(--border-color)';
+        el.style.cursor = 'pointer';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.gap = '8px';
+        el.style.background = 'var(--bg-primary)';
+        el.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span style="font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${file.name}</span>
+        `;
+        el.addEventListener('click', async () => {
+            document.getElementById('modal-drive-picker').style.display = 'none';
+            try {
+                const dropzone = document.getElementById('dropzone-overlay');
+                dropzone.style.display = 'flex';
+                dropzone.classList.add('dropzone-loading');
+                dropzone.innerHTML = `<h2 style="margin-bottom: 12px; font-size: 24px;">Downloading from Drive...</h2>`;
+                
+                const arrayBuffer = await downloadPdfFromDrive(file.id);
+                const pdfFile = new File([arrayBuffer], file.name, { type: 'application/pdf' });
+                await handlePDFUpload(pdfFile);
+            } catch (err) {
+                document.getElementById('dropzone-overlay').style.display = 'none';
+                showToast("Drive Error: " + err.message);
+            }
+        });
+        listContainer.appendChild(el);
+    });
+};
+
+const loadDrivePdfs = async (append = false) => {
+    const listContainer = document.getElementById('drive-files-list');
+    const loadMoreBtn = document.getElementById('btn-drive-picker-load-more');
+    if (!append) listContainer.innerHTML = '<p style="font-size: 14px; text-align: center; color: var(--text-secondary);">Loading...</p>';
+    
     try {
-        const btn = document.getElementById('btn-menu-add-pdf-drive');
-        btn.textContent = 'Loading...';
-        const files = await listDrivePdfs();
-        btn.textContent = 'Import PDF from Drive';
+        const data = await listDrivePdfs(currentDriveQuery, append ? currentDrivePageToken : '');
+        renderDriveFiles(data.files || [], append);
         
-        const listContainer = document.getElementById('drive-files-list');
-        listContainer.innerHTML = '';
-        if (files.length === 0) {
-            listContainer.innerHTML = '<p style="font-size: 14px; text-align: center; color: var(--text-secondary);">No PDFs found in your Google Drive.</p>';
-        } else {
-            files.forEach(file => {
-                const el = document.createElement('div');
-                el.style.padding = '8px 12px';
-                el.style.border = '2px solid var(--border-color)';
-                el.style.cursor = 'pointer';
-                el.style.display = 'flex';
-                el.style.alignItems = 'center';
-                el.style.gap = '8px';
-                el.style.background = 'var(--bg-primary)';
-                el.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span style="font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${file.name}</span>
-                `;
-                el.addEventListener('click', async () => {
-                    document.getElementById('modal-drive-picker').style.display = 'none';
-                    try {
-                        const dropzone = document.getElementById('dropzone-overlay');
-                        dropzone.style.display = 'flex';
-                        dropzone.classList.add('dropzone-loading');
-                        dropzone.innerHTML = `<h2 style="margin-bottom: 12px; font-size: 24px;">Downloading from Drive...</h2>`;
-                        
-                        const arrayBuffer = await downloadPdfFromDrive(file.id);
-                        const pdfFile = new File([arrayBuffer], file.name, { type: 'application/pdf' });
-                        await handlePDFUpload(pdfFile);
-                    } catch (err) {
-                        document.getElementById('dropzone-overlay').style.display = 'none';
-                        showToast("Drive Error: " + err.message);
-                    }
-                });
-                listContainer.appendChild(el);
-            });
-        }
-        document.getElementById('modal-drive-picker').style.display = 'flex';
+        currentDrivePageToken = data.nextPageToken || '';
+        loadMoreBtn.style.display = currentDrivePageToken ? 'block' : 'none';
     } catch (e) {
-        document.getElementById('btn-menu-add-pdf-drive').textContent = 'Import PDF from Drive';
+        if (!append) listContainer.innerHTML = `<p style="font-size: 14px; text-align: center; color: #ff4444;">${e.message}</p>`;
         showToast("Drive Error: " + e.message);
+    }
+};
+
+document.getElementById('btn-menu-add-pdf-drive').addEventListener('click', () => {
+    document.getElementById('drive-picker-search').value = '';
+    currentDriveQuery = '';
+    currentDrivePageToken = '';
+    document.getElementById('modal-drive-picker').style.display = 'flex';
+    document.getElementById('btn-drive-picker-load-more').style.display = 'none';
+    loadDrivePdfs();
+});
+
+document.getElementById('drive-picker-search').addEventListener('input', (e) => {
+    currentDriveQuery = e.target.value.trim();
+    currentDrivePageToken = '';
+    // Debounce or just load on every keystroke (with a small delay)
+    clearTimeout(window.driveSearchTimeout);
+    window.driveSearchTimeout = setTimeout(() => {
+        loadDrivePdfs();
+    }, 500);
+});
+
+document.getElementById('btn-drive-picker-load-more').addEventListener('click', () => {
+    if (currentDrivePageToken) {
+        document.getElementById('btn-drive-picker-load-more').textContent = 'Loading...';
+        loadDrivePdfs(true).finally(() => {
+            document.getElementById('btn-drive-picker-load-more').textContent = 'Load More';
+        });
     }
 });
 
