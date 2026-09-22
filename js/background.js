@@ -107,3 +107,123 @@ Text: "${text}"`;
         }
     }
 });
+
+// Process PDF Chunks in the background
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'PROCESS_PDF_CHUNKS') {
+        processPdfChunksInBackground(request.textChunks, request.deckName, request.folderId).catch(console.error);
+        sendResponse({status: 'started'});
+    }
+});
+
+async function processPdfChunksInBackground(textChunks, deckName, folderId) {
+    const res = await chrome.storage.local.get(['openrouter_api_key']);
+    const apiKey = res.openrouter_api_key;
+    
+    if (!apiKey) {
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon128.png',
+            title: 'Retention API Error',
+            message: 'Cannot process PDF. Please set your OpenRouter API key.'
+        });
+        return;
+    }
+    
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon128.png',
+        title: 'PDF Processing Started',
+        message: `Analyzing ${textChunks.length} sections of "${deckName}" in the background...`
+    });
+
+    let allFlashcards = [];
+    let successfulChunks = 0;
+
+    for (let i = 0; i < textChunks.length; i++) {
+        const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards.
+Return ONLY a valid JSON array of objects.
+
+Strict Guidelines:
+- Focus heavily on actual terms, core concepts, and mechanics. Ignore history and background fluff.
+- Scale intelligently: Extract thoroughly for dense texts, but don't over-generate for sparse texts.
+- Keep definitions EXTREMELY short. NEVER write a paragraph. 
+
+1. Standard cards: { "type": "standard", "term": "...", "definition": "..." }
+   - The 'term' MUST be phrased as a clear question (e.g., "What is the function of X?", "Define X"). NEVER just output the standalone word/concept with no context.
+   - The 'definition' MUST be a single ultra-short fragment or sentence (MAXIMUM 15 WORDS). Use extreme brevity.
+
+2. Fill-in-the-blank cards: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact word to hide." }
+   - The 'term' (the full sentence) MUST be a single short sentence (MAXIMUM 15 WORDS). DO NOT replace the answer with "___".
+   - The 'definition' MUST be exactly 1 to 2 words MAX.
+
+Here is the text:\n\n${textChunks[i]}`;
+
+        try {
+            const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
+                    'X-Title': 'Retention Chrome Extension'
+                },
+                body: JSON.stringify({
+                    model: "openrouter/free",
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards. If no highly-valuable content exists in this text chunk, return an empty array []." },
+                        { role: "user", content: prompt }
+                    ]
+                })
+            });
+            
+            if (!response.ok) continue;
+            
+            const data = await response.json();
+            const textResult = data.choices[0].message.content;
+            const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+            
+            try {
+                const chunkCards = JSON.parse(cleanText);
+                if (Array.isArray(chunkCards) && chunkCards.length > 0) {
+                    allFlashcards = allFlashcards.concat(chunkCards);
+                }
+                successfulChunks++;
+            } catch (parseErr) {}
+            
+        } catch (networkErr) {}
+    }
+    
+    if (allFlashcards.length > 0) {
+        try {
+            await initDB();
+            const finalDeckName = deckName || 'AI Generated Deck';
+            const deckId = await addDeck(finalDeckName, folderId);
+            for (const card of allFlashcards) {
+                await addCard({
+                    deckId: deckId,
+                    term: card.term,
+                    definition: card.definition,
+                    status: 'new',
+                    type: card.type === 'cloze' ? 'cloze' : 'standard'
+                });
+            }
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'icons/icon128.png',
+                title: 'PDF Processing Complete!',
+                message: `Successfully created ${allFlashcards.length} flashcards in "${finalDeckName}".`
+            });
+            chrome.runtime.sendMessage({ action: 'REFRESH_DECKS' }).catch(() => {});
+        } catch(e) {
+            console.error("DB Save Error:", e);
+        }
+    } else {
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'icons/icon128.png',
+            title: 'PDF Processing Failed',
+            message: `Could not generate any flashcards for "${deckName}".`
+        });
+    }
+}
