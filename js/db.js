@@ -188,6 +188,17 @@ export const getCardsByDeck = (deckId) => {
     });
 };
 
+export const getCardsByFolder = async (folderId) => {
+    const allDecks = await getDecks();
+    const folderDecks = allDecks.filter(d => d.folderId === folderId);
+    let allCards = [];
+    for (const deck of folderDecks) {
+        const cards = await getCardsByDeck(deck.id);
+        allCards = allCards.concat(cards);
+    }
+    return allCards;
+};
+
 export const deleteCard = (id) => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['cards'], 'readwrite');

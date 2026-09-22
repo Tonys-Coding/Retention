@@ -1,4 +1,4 @@
-import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
+import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
 import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
 
@@ -320,6 +320,7 @@ const loadDecks = async (searchQuery = '') => {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                 </button>
                 <div class="dropdown-content" id="dropdown-folder-${folder.id}">
+                    <button class="btn-folder-study" data-id="${folder.id}">Study Decks</button>
                     <button class="btn-folder-edit" data-id="${folder.id}">Edit</button>
                     <button class="btn-folder-delete" data-id="${folder.id}">Delete</button>
                 </div>
@@ -405,13 +406,29 @@ const loadDecks = async (searchQuery = '') => {
             dropdown.classList.toggle('show');
         });
         
+        el.querySelector('.btn-folder-study').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            const cards = await getCardsByFolder(folder.id);
+            if (cards.length === 0) {
+                showToast("No cards found in this folder's decks.");
+                return;
+            }
+            currentDeckName = `${folder.name} (Folder)`;
+            currentDeckId = `folder_${folder.id}`; 
+            currentCards = cards;
+            startStudySession('decks');
+        });
+
         el.querySelector('.btn-folder-edit').addEventListener('click', (e) => {
             e.stopPropagation();
+            dropdown.classList.remove('show');
             openAddItemModal('folder', folder);
         });
 
         el.querySelector('.btn-folder-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
+            dropdown.classList.remove('show');
             if (await showConfirm(`Delete folder "${folder.name}"? Decks inside will be moved to workspace.`)) {
                 const childrenDecks = allDecks.filter(d => d.folderId === folder.id);
                 for (let d of childrenDecks) {
