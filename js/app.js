@@ -1089,24 +1089,34 @@ const handlePDFUpload = async (file) => {
     }
     
     try {
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Processing PDF<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text...</p>`;
+        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Processing PDF<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Extracting text from all pages...</p>`;
         dropzone.style.display = 'flex';
         dropzone.classList.add('dropzone-loading');
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        const pagesToExtract = Math.min(pdf.numPages, 50); 
-        for (let i = 1; i <= pagesToExtract; i++) {
+        
+        let allText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n';
+            allText += pageText + ' \n';
         }
         
-        dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Generating Cards<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
+        // Chunk the text to prevent token limits on large PDFs
+        const chunkSize = 15000; // Roughly 15k characters per chunk
+        const textChunks = [];
+        for (let i = 0; i < allText.length; i += chunkSize) {
+            textChunks.push(allText.substring(i, i + chunkSize));
+        }
         
-        const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards.
+        let allFlashcards = [];
+        
+        for (let i = 0; i < textChunks.length; i++) {
+            dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Generating Cards<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Analyzing part ${i + 1} of ${textChunks.length}...</p>`;
+            
+            const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards.
 Return ONLY a valid JSON array of objects.
 
 Strict Guidelines:
@@ -1122,39 +1132,55 @@ Strict Guidelines:
    - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences). DO NOT replace the answer with "___" in the sentence; provide the full intact sentence.
    - The 'definition' (the exact text to hide) MUST be extremely short: 1 to 3 words MAX. Do NOT hide long phrases.
 
-Here is the text:\n\n${fullText.substring(0, 150000)}`;
-        
-        const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
-                'X-Title': 'Retention Chrome Extension'
-            },
-            body: JSON.stringify({
-                model: "openrouter/free",
-                messages: [
-                    { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards." },
-                    { role: "user", content: prompt }
-                ]
-            })
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || "Unknown API Error");
+Here is the text:\n\n${textChunks[i]}`;
+
+            try {
+                const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
+                        'X-Title': 'Retention Chrome Extension'
+                    },
+                    body: JSON.stringify({
+                        model: "openrouter/free",
+                        messages: [
+                            { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards. If no highly-valuable content exists in this text chunk, return an empty array []." },
+                            { role: "user", content: prompt }
+                        ]
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.warn(`API Error on chunk ${i+1}:`, errorData.error?.message);
+                    continue; // Skip failing chunks rather than crashing the whole PDF
+                }
+                
+                const data = await response.json();
+                const textResult = data.choices[0].message.content;
+                const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                try {
+                    const chunkCards = JSON.parse(cleanText);
+                    if (Array.isArray(chunkCards)) {
+                        allFlashcards = allFlashcards.concat(chunkCards);
+                    }
+                } catch (parseErr) {
+                    console.warn(`JSON Parse error on chunk ${i+1}:`, parseErr);
+                }
+                
+            } catch (networkErr) {
+                console.warn(`Network error on chunk ${i+1}:`, networkErr);
+            }
         }
-        const data = await response.json();
-        const textResult = data.choices[0].message.content;
         
-        const cleanText = textResult.replace(/```json/g, '').replace(/```/g, '').trim();
-        const flashcards = JSON.parse(cleanText);
-        
-        if (flashcards && flashcards.length > 0) {
+        if (allFlashcards.length > 0) {
+            dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Saving Cards<span class="animated-dots"></span></h2>`;
             const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
             const deckId = await addDeck(deckName, currentFolderId);
-            for (const card of flashcards) {
+            for (const card of allFlashcards) {
                 await addCard({
                     deckId: deckId,
                     term: card.term,
@@ -1164,10 +1190,10 @@ Here is the text:\n\n${fullText.substring(0, 150000)}`;
                 });
             }
             dropzone.style.display = 'none';
-            showToast(`Generated ${flashcards.length} cards from PDF!`);
+            showToast(`Success! Generated ${allFlashcards.length} cards from PDF.`);
             loadDecks();
         } else {
-            throw new Error("No flashcards could be generated from this text.");
+            throw new Error("No flashcards could be generated from this document.");
         }
     } catch (err) {
         dropzone.style.display = 'none';
