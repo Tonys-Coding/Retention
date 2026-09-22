@@ -25,6 +25,38 @@ const showToast = (message) => {
     }, 3000);
 };
 
+// UI Progress updater
+const updateProgressBanner = (progress) => {
+    const banner = document.getElementById('bg-task-banner');
+    if (!progress) {
+        banner.style.display = 'none';
+        return;
+    }
+    banner.style.display = 'block';
+    const percent = Math.round((progress.current / progress.total) * 100) || 0;
+    
+    if (progress.status === 'saving') {
+        document.getElementById('bg-task-title').textContent = 'Saving Cards...';
+    } else {
+        document.getElementById('bg-task-title').textContent = `Analyzing "${progress.deckName}"`;
+    }
+    
+    document.getElementById('bg-task-percent').textContent = `${percent}%`;
+    document.getElementById('bg-task-fill').style.width = `${percent}%`;
+};
+
+// Listen for progress updates
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.pdfProgress) {
+        updateProgressBanner(changes.pdfProgress.newValue);
+    }
+});
+
+// Check on boot
+chrome.storage.local.get(['pdfProgress'], (res) => {
+    if (res.pdfProgress) updateProgressBanner(res.pdfProgress);
+});
+
 const showConfirm = (message, okText = "Delete", isDanger = true) => {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-confirm');

@@ -140,7 +140,15 @@ async function processPdfChunksInBackground(textChunks, deckName, folderId) {
     let allFlashcards = [];
     let successfulChunks = 0;
 
+    await chrome.storage.local.set({ 
+        pdfProgress: { status: 'running', current: 0, total: textChunks.length, deckName } 
+    });
+
     for (let i = 0; i < textChunks.length; i++) {
+        await chrome.storage.local.set({ 
+            pdfProgress: { status: 'running', current: i, total: textChunks.length, deckName } 
+        });
+        
         const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards.
 Return ONLY a valid JSON array of objects.
 
@@ -177,7 +185,10 @@ Here is the text:\n\n${textChunks[i]}`;
                 })
             });
             
-            if (!response.ok) continue;
+            if (!response.ok) {
+                console.warn("Chunk failed:", response.statusText);
+                continue;
+            }
             
             const data = await response.json();
             const textResult = data.choices[0].message.content;
@@ -189,10 +200,18 @@ Here is the text:\n\n${textChunks[i]}`;
                     allFlashcards = allFlashcards.concat(chunkCards);
                 }
                 successfulChunks++;
-            } catch (parseErr) {}
+            } catch (parseErr) {
+                console.warn("JSON parse error on chunk", i);
+            }
             
-        } catch (networkErr) {}
+        } catch (networkErr) {
+            console.warn("Network error on chunk", i, networkErr);
+        }
     }
+    
+    await chrome.storage.local.set({ 
+        pdfProgress: { status: 'saving', current: textChunks.length, total: textChunks.length, deckName } 
+    });
     
     if (allFlashcards.length > 0) {
         try {
@@ -226,4 +245,7 @@ Here is the text:\n\n${textChunks[i]}`;
             message: `Could not generate any flashcards for "${deckName}".`
         });
     }
+    
+    // Clear progress
+    await chrome.storage.local.remove('pdfProgress');
 }
