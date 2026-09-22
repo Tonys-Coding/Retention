@@ -34,11 +34,11 @@ Strict Guidelines:
 - Choose to make it a standard card OR a fill-in-the-blank card depending on what fits best.
 
 1. Standard: { "type": "standard", "term": "...", "definition": "..." }
-   - The 'term' can be a clear contextual question OR a standalone term/concept.
+   - The 'term' MUST be phrased as a clear question (e.g., "What is the function of X?", "Define X"). NEVER just output the standalone word.
    - The 'definition' MUST be highly concise (strictly 1-2 short sentences).
 
 2. Fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact word to hide." }
-   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences).
+   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences). DO NOT replace the answer with "___" in the sentence; provide the full intact sentence.
    - The 'definition' (the exact text to hide) MUST be extremely short: 1 to 3 words MAX. Do NOT hide long phrases.
 
 Text: "${text}"`;

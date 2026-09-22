@@ -747,10 +747,28 @@ const updateStudyView = () => {
         document.getElementById('study-hint-tap').style.display = 'none';
         document.getElementById('cloze-input-container').style.display = 'block';
         
-        const answer = card.definition;
-        const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
-        const backText = card.term.replace(regex, '<span class="cloze-highlight" id="study-cloze-highlight">' + answer + '</span>');
+        let answer = card.definition.trim();
+        const escapedAnswer = answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const answerRegex = new RegExp(escapedAnswer, 'i');
+        
+        let frontText = '';
+        let backText = '';
+        
+        // If the AI put '___' or '___' in the term itself:
+        if (card.term.includes('___')) {
+            frontText = card.term.replace(/_+/g, '<span class="cloze-blank"></span>');
+            backText = card.term.replace(/_+/g, '<span class="cloze-highlight" id="study-cloze-highlight">' + answer + '</span>');
+        } 
+        // If the AI provided the full sentence and we need to hide the answer:
+        else if (answerRegex.test(card.term)) {
+            frontText = card.term.replace(answerRegex, '<span class="cloze-blank"></span>');
+            backText = card.term.replace(answerRegex, '<span class="cloze-highlight" id="study-cloze-highlight">' + answer + '</span>');
+        } 
+        // Fallback: AI provided a sentence that doesn't perfectly contain the exact answer string
+        else {
+            frontText = card.term + '<br><br><span class="cloze-blank"></span>';
+            backText = card.term + '<br><br><span class="cloze-highlight" id="study-cloze-highlight">' + answer + '</span>';
+        }
         
         document.getElementById('study-term').innerHTML = frontText;
         document.getElementById('study-def').innerHTML = backText;
@@ -1097,11 +1115,11 @@ Strict Guidelines:
 - Generate a mix of two types of cards based on what fits best:
 
 1. Standard cards: { "type": "standard", "term": "...", "definition": "..." }
-   - The 'term' can be a clear contextual question OR a standalone term/concept.
+   - The 'term' MUST be phrased as a clear question (e.g., "What is the function of X?", "Define X"). NEVER just output the standalone word/concept with no context.
    - The 'definition' MUST be highly concise (strictly 1-2 short sentences).
 
 2. Fill-in-the-blank cards: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact word to hide." }
-   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences).
+   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences). DO NOT replace the answer with "___" in the sentence; provide the full intact sentence.
    - The 'definition' (the exact text to hide) MUST be extremely short: 1 to 3 words MAX. Do NOT hide long phrases.
 
 Here is the text:\n\n${fullText.substring(0, 150000)}`;
