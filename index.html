@@ -193,7 +193,7 @@
                 Term, Definition, Type, Example, Status
             </div>
             
-            <div style="font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="font-size: 13px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
                 <div style="border-left: 4px solid var(--border-color); padding-left: 12px;">
                     <strong>Type: <code style="background: var(--hover-bg); padding: 2px 6px; border: 1px solid var(--border-color);">standard</code> (Flashcard)</strong>
                     <div style="margin-top: 4px;">• <i>Term:</i> The front of the flashcard.</div>
@@ -205,7 +205,13 @@
                     <div>• <i>Definition:</i> The specific word(s) to hide.</div>
                 </div>
             </div>
-            <label style="display: flex; align-items: center; gap: 8px; margin: 24px 0 16px 0; cursor: pointer; font-size: 14px;">
+            
+            <div style="margin-bottom: 24px; padding-top: 16px; border-top: 2px dashed var(--border-color); text-align: center; font-size: 13px;">
+                <span style="color: var(--text-secondary);">Studying with an AI agent?</span> 
+                <a href="#" id="link-download-ai-skill" style="color: var(--text-primary); font-weight: bold; text-decoration: underline; margin-left: 4px; cursor: pointer;">Download AI Prompt</a>
+            </div>
+
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0 0 16px 0; cursor: pointer; font-size: 14px;">
                 <input type="checkbox" id="checkbox-dont-show-import" style="width: auto; margin: 0;">
                 Don't show this again
             </label>

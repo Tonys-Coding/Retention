@@ -968,6 +968,57 @@ document.getElementById('btn-restart-study').addEventListener('click', () => {
     document.getElementById('btn-start-study').click();
 });
 
+// Modal Close handlers
+document.getElementById('btn-cancel-import').addEventListener('click', () => {
+    document.getElementById('modal-import-instructions').style.display = 'none';
+    if (document.getElementById('checkbox-dont-show-import').checked) {
+        chrome.storage.local.set({ hideImportInstructions: true });
+    }
+});
+
+document.getElementById('btn-continue-import').addEventListener('click', () => {
+    document.getElementById('modal-import-instructions').style.display = 'none';
+    if (document.getElementById('checkbox-dont-show-import').checked) {
+        chrome.storage.local.set({ hideImportInstructions: true });
+    }
+    document.getElementById('file-import-deck').click();
+});
+
+document.getElementById('link-download-ai-skill')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const skillContent = `# Retention Extension - CSV Generation Skill
+
+You are an AI assistant generating flashcards for the "Retention" Chrome Extension. 
+
+## Task
+When the user asks you to create flashcards from text, output a raw CSV inside a \`\`\`csv\`\`\` code block. 
+
+## CSV Format
+Your CSV MUST have exactly these columns in the header:
+Term, Definition, Type, Example, Status
+
+## Card Types
+The 'Type' column must be exactly 'standard' or 'fitb'.
+- 'standard' (Flashcard): 'Term' is a question, 'Definition' is the answer (under 15 words).
+- 'fitb' (Fill-in-the-blank): 'Term' is a short sentence containing the answer. 'Definition' is the exact 1-3 word hidden answer. Do NOT use "___" in the Term.
+
+## Example
+\`\`\`csv
+Term, Definition, Type, Example, Status
+"What is the powerhouse of the cell?","Mitochondria","standard","It generates ATP.","new"
+"The mitochondria generates most of the cell's ATP.","mitochondria","fitb","","new"
+\`\`\`
+`;
+    const blob = new Blob([skillContent], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'Retention_AI_Skill.md');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
 // Rename Modal Logic
 document.getElementById('btn-cancel-rename').addEventListener('click', () => {
     document.getElementById('modal-rename-deck').style.display = 'none';
