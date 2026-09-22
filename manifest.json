@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Retention",
-  "version": "1.0",
-  "description": "Flashcard system to organize terms into custom study decks, with quizzes and CSV import/export.",
+  "name": "Retention: AI Flashcards",
+  "version": "1.0.0",
+  "author": "Tony",
+  "description": "AI-powered flashcard system with Brutalist UI. Instantly convert PDFs and text into custom study decks, quizzes, and spaced repetition.",
   "action": {
     "default_popup": "index.html",
     "default_title": "Open Retention"

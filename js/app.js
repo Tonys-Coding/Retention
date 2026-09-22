@@ -542,7 +542,22 @@ const loadDecks = async (searchQuery = '') => {
             }
         });
         
+        
         list.appendChild(el);
+    }
+
+    // Empty State
+    if (folders.length === 0 && decks.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.style.padding = '48px 24px';
+        emptyState.style.textAlign = 'center';
+        emptyState.style.color = 'var(--text-secondary)';
+        emptyState.innerHTML = `
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px; opacity: 0.5;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            <h3 style="margin: 0 0 8px 0; color: var(--text-primary);">It's pretty empty here</h3>
+            <p style="margin: 0; font-size: 14px;">Click the <strong>+ New</strong> button below to create your first folder or deck.</p>
+        `;
+        list.appendChild(emptyState);
     }
 };
 

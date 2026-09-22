@@ -664,3 +664,23 @@ textarea { flex-shrink: 0; min-height: 80px; }
     background: var(--text-primary);
     color: var(--bg-primary);
 }
+
+/* Brutalist Scrollbar */
+::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+    background: var(--bg-primary);
+    border-left: 3px solid var(--border-color);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--text-primary);
+    border: 3px solid var(--border-color);
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--hover-bg);
+}
+::-webkit-scrollbar-corner {
+    background: var(--bg-primary);
+    border-left: 3px solid var(--border-color);
+    border-top: 3px solid var(--border-color);
+}
