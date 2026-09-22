@@ -31,14 +31,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             
 Strict Guidelines:
 - Focus heavily on actual terms, core concepts, and mechanics. Ignore history and background fluff.
-- Choose to make it a standard question/answer card OR a fill-in-the-blank card depending on what fits best.
+- Choose to make it a standard card OR a fill-in-the-blank card depending on what fits best.
 
 1. Standard: { "type": "standard", "term": "...", "definition": "..." }
-   - The 'term' MUST be phrased as a clear question (e.g., "What is the function of X?").
-   - The 'definition' MUST be concise (strictly 1-2 sentences).
+   - The 'term' can be a clear contextual question OR a standalone term/concept.
+   - The 'definition' MUST be highly concise (strictly 1-2 short sentences).
 
-2. Fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
-   - The 'term' (the sentence with the blank) MUST be short (1-2 sentences maximum).
+2. Fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact word to hide." }
+   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences).
+   - The 'definition' (the exact text to hide) MUST be extremely short: 1 to 3 words MAX. Do NOT hide long phrases.
 
 Text: "${text}"`;
             

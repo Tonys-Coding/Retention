@@ -1092,16 +1092,17 @@ const handlePDFUpload = async (file) => {
 Return ONLY a valid JSON array of objects.
 
 Strict Guidelines:
-- Focus heavily on actual terms, core concepts, and mechanics relevant to the primary subject of the text.
-- Ignore history, background fluff, and historic events entirely unless the text is clearly a history document.
+- Focus heavily on actual terms, core concepts, and mechanics relevant to the primary subject. Ignore history and background fluff.
+- Scale intelligently: Extract only the most highly-valuable content. Do not over-generate cards for short or sparse texts, but extract thoroughly for long, dense texts.
 - Generate a mix of two types of cards based on what fits best:
 
 1. Standard cards: { "type": "standard", "term": "...", "definition": "..." }
-   - The 'term' MUST be phrased as a specific question (e.g., "What is the function of mitochondria?" instead of just "Mitochondria"), providing enough context so the user knows exactly what is being asked.
-   - The 'definition' MUST be concise, strictly kept to 1-2 decent sentences to avoid information overload.
+   - The 'term' can be a clear contextual question OR a standalone term/concept.
+   - The 'definition' MUST be highly concise (strictly 1-2 short sentences).
 
-2. Fill-in-the-blank cards: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
-   - The 'term' (the sentence with the blank) MUST be short, no more than 1-2 sentences.
+2. Fill-in-the-blank cards: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact word to hide." }
+   - The 'term' (the full sentence) MUST be highly concise (strictly 1-2 short sentences).
+   - The 'definition' (the exact text to hide) MUST be extremely short: 1 to 3 words MAX. Do NOT hide long phrases.
 
 Here is the text:\n\n${fullText.substring(0, 150000)}`;
         
