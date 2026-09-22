@@ -990,24 +990,32 @@ document.getElementById('link-download-ai-skill')?.addEventListener('click', (e)
 
 You are an AI assistant generating flashcards for the "Retention" Chrome Extension. 
 
-## Task
-When the user asks you to create flashcards from text, output a raw CSV inside a \`\`\`csv\`\`\` code block. 
+## Core Directives
+Extract the most important concepts, facts, and terms from the text provided by the user. 
+- Focus heavily on actual terms, core concepts, and mechanics. Ignore history and background fluff.
+- Scale intelligently: Extract thoroughly for dense texts, but don't over-generate for sparse texts.
+- Keep definitions EXTREMELY short. NEVER write a paragraph.
 
-## CSV Format
-Your CSV MUST have exactly these columns in the header:
+## Output Format
+Create a **downloadable .csv file** for the user containing the flashcards.
+The CSV MUST have exactly these columns in the header:
 Term, Definition, Type, Example, Status
 
-## Card Types
+## Card Types & Strict Rules
 The 'Type' column must be exactly 'standard' or 'fitb'.
-- 'standard' (Flashcard): 'Term' is a question, 'Definition' is the answer (under 15 words).
-- 'fitb' (Fill-in-the-blank): 'Term' is a short sentence containing the answer. 'Definition' is the exact 1-3 word hidden answer. Do NOT use "___" in the Term.
 
-## Example
-\`\`\`csv
+1. 'standard' (Flashcard)
+   - The 'Term' MUST be phrased as a clear question (e.g., "What is the function of X?", "Define X"). NEVER just output the standalone word/concept with no context.
+   - The 'Definition' MUST be a single ultra-short fragment or sentence (MAXIMUM 15 WORDS). Use extreme brevity.
+
+2. 'fitb' (Fill-in-the-blank)
+   - The 'Term' (the full sentence) MUST be a single short sentence (MAXIMUM 15 WORDS). DO NOT replace the answer with "___".
+   - The 'Definition' MUST be exactly 1 to 2 words MAX (this is the hidden answer).
+
+## Example CSV Data
 Term, Definition, Type, Example, Status
 "What is the powerhouse of the cell?","Mitochondria","standard","It generates ATP.","new"
 "The mitochondria generates most of the cell's ATP.","mitochondria","fitb","","new"
-\`\`\`
 `;
     const blob = new Blob([skillContent], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
