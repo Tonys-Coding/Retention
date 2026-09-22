@@ -197,7 +197,20 @@ Here is the text:\n\n${textChunks[i]}`;
                 }
                 
                 if (!response.ok) {
-                    console.warn("Chunk failed:", response.statusText);
+                    let errMsg = response.statusText;
+                    try {
+                        const errData = await response.json();
+                        errMsg = errData.error?.message || errMsg;
+                    } catch(e) {}
+                    
+                    // If it's a hard auth/quota error, abort the entire PDF job instantly
+                    if (response.status === 401 || response.status === 402 || response.status === 403) {
+                        await chrome.storage.local.set({ 
+                            pdfProgress: { status: 'error', errorMsg: `API Error: ${errMsg}`, deckName } 
+                        });
+                        return; // Halt completely
+                    }
+                    console.warn("Chunk failed:", errMsg);
                     break;
                 }
                 
@@ -273,7 +286,7 @@ Here is the text:\n\n${textChunks[i]}`;
             message: `Could not generate any flashcards for "${deckName}".`
         });
         await chrome.storage.local.set({ 
-            pdfProgress: { status: 'error', errorMsg: 'API failed or returned no cards. OpenRouter rate limits?', deckName } 
+            pdfProgress: { status: 'error', errorMsg: 'API returned empty data. Rate limit or quota exceeded.', deckName } 
         });
     }
 }
