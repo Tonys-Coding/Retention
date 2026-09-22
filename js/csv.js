@@ -3,7 +3,7 @@ export const exportDeckToCSV = (deckName, cards) => {
     const rows = cards.map(c => [
         `"${(c.term || '').replace(/"/g, '""')}"`,
         `"${(c.definition || '').replace(/"/g, '""')}"`,
-        `"${(c.type || 'standard').replace(/"/g, '""')}"`,
+        `"${(c.type === 'cloze' ? 'fitb' : 'standard').replace(/"/g, '""')}"`,
         `"${(c.example || '').replace(/"/g, '""')}"`,
         `"${(c.status || 'new').replace(/"/g, '""')}"`
     ]);
@@ -68,10 +68,13 @@ export const parseCSV = (csvText) => {
     for (let i = 1; i < lines.length; i++) {
         const parsed = parseLine(lines[i]);
         if (parsed.length >= 1 && parsed[colMap.term]) {
+            let parsedType = colMap.type !== -1 ? (parsed[colMap.type] || 'standard').toLowerCase() : 'standard';
+            if (parsedType === 'fitb' || parsedType === 'fill-in-the-blank') parsedType = 'cloze';
+            
             cards.push({
                 term: parsed[colMap.term] || '',
                 definition: colMap.definition !== -1 ? (parsed[colMap.definition] || '') : '',
-                type: colMap.type !== -1 ? (parsed[colMap.type] || 'standard').toLowerCase() : 'standard',
+                type: parsedType,
                 example: colMap.example !== -1 ? (parsed[colMap.example] || '') : '',
                 status: colMap.status !== -1 ? (parsed[colMap.status] || 'new') : 'new'
             });
