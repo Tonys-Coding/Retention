@@ -43,7 +43,7 @@ const updateProgressBanner = (progress) => {
         return;
     }
 
-    document.getElementById('bg-task-spinner').style.display = 'flex';
+    document.getElementById('bg-task-spinner').style.display = 'block';
     const percent = Math.round((progress.current / progress.total) * 100) || 0;
     
     if (progress.status === 'saving') {

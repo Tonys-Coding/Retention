@@ -164,6 +164,16 @@ button.icon-btn:active {
     background: var(--bg-overlay);
 }
 
+@keyframes ai-pulse-spin {
+    0% { transform: scale(0.8) rotate(0deg); opacity: 0.8; }
+    50% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+    100% { transform: scale(0.8) rotate(90deg); opacity: 0.8; }
+}
+
+.ai-sparkle {
+    animation: ai-pulse-spin 1.5s ease-in-out infinite;
+}
+
 .card-item, .deck-item { cursor: pointer;
     border: 3px solid var(--border-color);
     padding: 12px;
