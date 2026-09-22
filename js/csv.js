@@ -1,9 +1,9 @@
 export const exportDeckToCSV = (deckName, cards) => {
-    const headers = ['Term', 'Part of Speech', 'Definition', 'Example', 'Status'];
+    const headers = ['Term', 'Definition', 'Type', 'Example', 'Status'];
     const rows = cards.map(c => [
         `"${(c.term || '').replace(/"/g, '""')}"`,
-        `"${(c.partOfSpeech || '').replace(/"/g, '""')}"`,
         `"${(c.definition || '').replace(/"/g, '""')}"`,
+        `"${(c.type || 'standard').replace(/"/g, '""')}"`,
         `"${(c.example || '').replace(/"/g, '""')}"`,
         `"${(c.status || 'new').replace(/"/g, '""')}"`
     ]);
@@ -38,26 +38,42 @@ export const parseCSV = (csvText) => {
                     inQuotes = !inQuotes;
                 }
             } else if (char === ',' && !inQuotes) {
-                result.push(current);
+                result.push(current.trim());
                 current = '';
             } else {
                 current += char;
             }
         }
-        result.push(current);
+        result.push(current.trim());
         return result;
     };
+    
+    const rawHeaders = parseLine(lines[0]);
+    const headers = rawHeaders.map(h => h.toLowerCase().replace(/[^a-z]/g, ''));
+    
+    // Map expected fields to their column index
+    const colMap = {
+        term: headers.indexOf('term'),
+        definition: headers.indexOf('definition'),
+        type: headers.indexOf('type'),
+        example: headers.indexOf('example'),
+        status: headers.indexOf('status')
+    };
+    
+    // Fallback defaults if headers don't strictly match but data exists
+    if (colMap.term === -1) colMap.term = 0;
+    if (colMap.definition === -1) colMap.definition = 1;
     
     const cards = [];
     for (let i = 1; i < lines.length; i++) {
         const parsed = parseLine(lines[i]);
-        if (parsed.length >= 1) {
+        if (parsed.length >= 1 && parsed[colMap.term]) {
             cards.push({
-                term: parsed[0] || '',
-                partOfSpeech: parsed[1] || '',
-                definition: parsed[2] || '',
-                example: parsed[3] || '',
-                status: parsed[4] || 'new'
+                term: parsed[colMap.term] || '',
+                definition: colMap.definition !== -1 ? (parsed[colMap.definition] || '') : '',
+                type: colMap.type !== -1 ? (parsed[colMap.type] || 'standard').toLowerCase() : 'standard',
+                example: colMap.example !== -1 ? (parsed[colMap.example] || '') : '',
+                status: colMap.status !== -1 ? (parsed[colMap.status] || 'new') : 'new'
             });
         }
     }
