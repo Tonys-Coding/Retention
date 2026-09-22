@@ -1088,12 +1088,21 @@ const handlePDFUpload = async (file) => {
         
         dropzone.innerHTML = `${brutalistLoaderHtml}<h2 style="margin-bottom: 12px; font-size: 24px;">Generating Cards<span class="animated-dots"></span></h2><p style="color: var(--text-secondary); text-align: center; font-size: 14px;">Looking for terms and definitions...</p>`;
         
-        const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards. 
-Return ONLY a valid JSON array of objects. 
-Generate a mix of two types of cards based on what fits best:
-1. Standard cards (for terms and definitions): { "type": "standard", "term": "...", "definition": "..." }
-2. Fill-in-the-blank cards (for memorizing facts in context): { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
-Make definitions concise. 
+        const prompt = `Extract the most important concepts, facts, and terms from this text and turn them into flashcards.
+Return ONLY a valid JSON array of objects.
+
+Strict Guidelines:
+- Focus heavily on actual terms, core concepts, and mechanics relevant to the primary subject of the text.
+- Ignore history, background fluff, and historic events entirely unless the text is clearly a history document.
+- Generate a mix of two types of cards based on what fits best:
+
+1. Standard cards: { "type": "standard", "term": "...", "definition": "..." }
+   - The 'term' MUST be phrased as a specific question (e.g., "What is the function of mitochondria?" instead of just "Mitochondria"), providing enough context so the user knows exactly what is being asked.
+   - The 'definition' MUST be concise, strictly kept to 1-2 decent sentences to avoid information overload.
+
+2. Fill-in-the-blank cards: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
+   - The 'term' (the sentence with the blank) MUST be short, no more than 1-2 sentences.
+
 Here is the text:\n\n${fullText.substring(0, 150000)}`;
         
         const response = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {

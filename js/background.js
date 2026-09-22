@@ -27,9 +27,20 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 return;
             }
             
-            const prompt = 'Turn this text into a concise flashcard. You can choose to make it a standard term/definition card OR a fill-in-the-blank card if it is a fact. Return ONLY a valid JSON object. ' + 
-                           'For standard: { "type": "standard", "term": "...", "definition": "..." }. ' + 
-                           'For fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }. Text: "' + text + '"';
+            const prompt = `Turn this text into a concise flashcard. Return ONLY a valid JSON object.
+            
+Strict Guidelines:
+- Focus heavily on actual terms, core concepts, and mechanics. Ignore history and background fluff.
+- Choose to make it a standard question/answer card OR a fill-in-the-blank card depending on what fits best.
+
+1. Standard: { "type": "standard", "term": "...", "definition": "..." }
+   - The 'term' MUST be phrased as a clear question (e.g., "What is the function of X?").
+   - The 'definition' MUST be concise (strictly 1-2 sentences).
+
+2. Fill-in-the-blank: { "type": "cloze", "term": "The complete sentence with the answer included.", "definition": "The exact single word or short phrase from the sentence to hide." }
+   - The 'term' (the sentence with the blank) MUST be short (1-2 sentences maximum).
+
+Text: "${text}"`;
             
             const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
