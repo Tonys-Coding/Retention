@@ -35,7 +35,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + apiKey
+                    'Authorization': 'Bearer ' + apiKey,
+                    'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
+                    'X-Title': 'Retention Chrome Extension'
                 },
                 body: JSON.stringify({
                     model: "openrouter/free", // Changed to match app.js

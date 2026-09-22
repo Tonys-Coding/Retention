@@ -1100,7 +1100,9 @@ Here is the text:\n\n${fullText.substring(0, 150000)}`;
             method: 'POST',
             headers: { 
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://github.com/Tonys-Coding/Retention',
+                'X-Title': 'Retention Chrome Extension'
             },
             body: JSON.stringify({
                 model: "openrouter/free",
