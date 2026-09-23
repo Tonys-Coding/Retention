@@ -41,6 +41,9 @@ Retention is a powerful, minimalistic flashcard study system built directly into
 
 ## Installation
 
+1. **[Download from the Chrome Web Store (Coming Soon!)](https://chrome.google.com/webstore)**
+
+Alternatively, to install manually for development:
 1. Open Google Chrome and navigate to `chrome://extensions/`.
 2. Enable **Developer mode** in the top right corner.
 3. Click on **Load unpacked**.
