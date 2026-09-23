@@ -18,9 +18,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             const apiKey = res.openrouter_api_key;
             
             if (!apiKey) {
-                chrome.notifications.create({
+                chrome.notifications.create(Date.now().toString(), {
                     type: 'basic',
-                    iconUrl: '/icons/icon128.png',
+                    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
                     title: 'Retention API Error',
                     message: 'Please set your OpenRouter API key in the extension settings.'
                 });
@@ -89,18 +89,18 @@ Text: "${text}"`;
                 type: cardData.type === 'cloze' ? 'cloze' : 'standard'
             });
             
-            chrome.notifications.create({
+            chrome.notifications.create(Date.now().toString(), {
                 type: 'basic',
-                iconUrl: '/icons/icon128.png',
+                iconUrl: chrome.runtime.getURL("icons/icon128.png"),
                 title: 'Flashcard Created!',
                 message: 'Saved "' + cardData.term + '" to Inbox.'
             });
             
         } catch (err) {
             console.error(err);
-            chrome.notifications.create({
+            chrome.notifications.create(Date.now().toString(), {
                 type: 'basic',
-                iconUrl: '/icons/icon128.png',
+                iconUrl: chrome.runtime.getURL("icons/icon128.png"),
                 title: 'Retention Error',
                 message: 'Failed to generate flashcard: ' + err.message
             });
@@ -121,18 +121,18 @@ async function processPdfChunksInBackground(textChunks, deckName, folderId) {
     const apiKey = res.openrouter_api_key;
     
     if (!apiKey) {
-        chrome.notifications.create({
+        chrome.notifications.create(Date.now().toString(), {
             type: 'basic',
-            iconUrl: '/icons/icon128.png',
+            iconUrl: chrome.runtime.getURL("icons/icon128.png"),
             title: 'Retention API Error',
             message: 'Cannot process PDF. Please set your OpenRouter API key.'
         });
         return;
     }
     
-    chrome.notifications.create({
+    chrome.notifications.create(Date.now().toString(), {
         type: 'basic',
-        iconUrl: '/icons/icon128.png',
+        iconUrl: chrome.runtime.getURL("icons/icon128.png"),
         title: 'PDF Processing Started',
         message: `Analyzing ${textChunks.length} sections of "${deckName}" in the background...`
     });
@@ -279,9 +279,9 @@ Here is the text:\n\n${textChunks[i]}`;
                     type: card.type === 'cloze' ? 'cloze' : 'standard'
                 });
             }
-            chrome.notifications.create({
+            chrome.notifications.create(Date.now().toString(), {
                 type: 'basic',
-                iconUrl: '/icons/icon128.png',
+                iconUrl: chrome.runtime.getURL("icons/icon128.png"),
                 title: 'PDF Processing Complete!',
                 message: `Successfully created ${allFlashcards.length} flashcards in "${finalDeckName}".`
             });
@@ -297,9 +297,9 @@ Here is the text:\n\n${textChunks[i]}`;
             });
         }
     } else {
-        chrome.notifications.create({
+        chrome.notifications.create(Date.now().toString(), {
             type: 'basic',
-            iconUrl: '/icons/icon128.png',
+            iconUrl: chrome.runtime.getURL("icons/icon128.png"),
             title: 'PDF Processing Failed',
             message: `Could not generate any flashcards for "${deckName}".`
         });
