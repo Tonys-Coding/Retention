@@ -3,7 +3,7 @@
   "name": "Retention: AI Flashcards",
   "version": "1.0.0",
   "author": "Tony",
-  "description": "AI-powered flashcard system that instantly converts PDFs and text into custom study decks, quizzes, and spaced repetition.",
+  "description": "AI-powered flashcard system that instantly converts PDFs and text into custom study decks, fill-in-the-blank exercises, and quizzes.",
   "action": {
     "default_popup": "index.html",
     "default_title": "Open Retention"
