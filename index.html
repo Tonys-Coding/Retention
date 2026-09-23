@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retention - Privacy Policy</title>
+    <style>
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --border-width: 4px;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--black);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--white);
+            border: var(--border-width) solid var(--black);
+            box-shadow: 12px 12px 0px var(--black);
+            padding: 50px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: var(--border-width) solid var(--black);
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -1px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        p, li {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .highlight {
+            display: inline-block;
+            background-color: var(--black);
+            color: var(--white);
+            padding: 2px 8px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: var(--border-width) solid var(--black);
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                box-shadow: 6px 6px 0px var(--black);
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="Retention Logo" class="logo">
+            <h1>Retention</h1>
+            <div class="subtitle">AI Flashcards. Minimalist Focus.</div>
+        </div>
+
+        <h2>Privacy Policy</h2>
+        <p><strong>Last Updated:</strong> September 23, 2026</p>
+        <p>Retention ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how your data is collected, used, and stored when you use the Extension.</p>
+
+        <h2>1. Data Collection & Storage</h2>
+        <p>Retention is built with a strictly <span class="highlight">local-first</span> architecture.</p>
+        <ul>
+            <li><strong>Local Storage:</strong> All of your custom folders, flashcard decks, study progress, and your OpenRouter API key are stored purely locally on your device using Chrome's secure storage API.</li>
+            <li><strong>No Analytics:</strong> We do not track your study habits, click events, or usage metrics.</li>
+        </ul>
+
+        <h2>2. Third-Party Services</h2>
+        <p>Retention interacts with the following third-party services exclusively to provide its core functionality:</p>
+        <ul>
+            <li><strong>OpenRouter (AI Generation):</strong> When you upload a PDF or highlight web text to generate flashcards, that specific text is sent directly from your browser to OpenRouter's API using the API key you provide. We do not intercept, log, or store these API requests.</li>
+            <li><strong>Google Drive (Cloud Sync):</strong> Retention requests permission to access your Google Drive strictly for Cloud Sync functionality. We only access files created by the Extension (your backup JSON files). Data is only sent to or retrieved from Google Drive when you manually trigger a sync. We do not have access to any other personal files.</li>
+        </ul>
+
+        <h2>3. Data Sharing</h2>
+        <p>We <span class="highlight">do not</span> sell, rent, or share your personal data, flashcards, or API keys with any third parties under any circumstances. Your data remains yours.</p>
+
+        <h2>4. Permissions Justification</h2>
+        <ul>
+            <li><strong>Storage:</strong> Required to save your flashcards and API key locally on your device.</li>
+            <li><strong>Identity:</strong> Required to securely authenticate you with Google to backup your flashcards to your personal Google Drive.</li>
+            <li><strong>ContextMenus:</strong> Required so you can right-click highlighted text on websites to instantly generate flashcards.</li>
+            <li><strong>Notifications:</strong> Used to alert you when your AI flashcard generation is complete or when a Google Drive backup succeeds/fails.</li>
+        </ul>
+
+        <div class="footer">
+            &copy; 2026 Retention Chrome Extension. Built for focus.
+        </div>
+    </div>
+
+</body>
+</html>
