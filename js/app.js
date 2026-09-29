@@ -1645,15 +1645,17 @@ const openPreviewModal = (card) => {
     const newFlashcard = flashcard.cloneNode(true);
     flashcard.parentNode.replaceChild(newFlashcard, flashcard);
     const currentFlashcard = document.getElementById('preview-flashcard');
+    const newExEl = document.getElementById('preview-ex');
+    const newHintText = currentFlashcard.querySelector('.hint-text');
     
     if (card.type === 'cloze') {
         if (clozeArea) clozeArea.style.display = 'block';
-        if (hintText) hintText.style.display = 'none';
+        if (newHintText) newHintText.style.display = 'none';
         
         let frontText = '';
         let backText = '';
         const answer = card.definition;
-        const answerRegex = new RegExp(answer.replace(/[.*+?^${}()|[\]\]/g, '\$&'), 'gi');
+        const answerRegex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
         
         if (card.term.includes('___')) {
             frontText = card.term.replace(/_+/g, '<span class="cloze-blank"></span>');
@@ -1668,7 +1670,7 @@ const openPreviewModal = (card) => {
         
         document.getElementById('preview-term').innerHTML = frontText;
         document.getElementById('preview-def').innerHTML = backText;
-        exEl.style.display = 'none';
+        newExEl.style.display = 'none';
         
         clozeCheck.onclick = () => {
             if (clozeCheck.textContent === 'Continue') {
@@ -1700,15 +1702,15 @@ const openPreviewModal = (card) => {
         
     } else {
         if (clozeArea) clozeArea.style.display = 'none';
-        if (hintText) hintText.style.display = 'block';
+        if (newHintText) newHintText.style.display = 'block';
         document.getElementById('preview-term').innerHTML = marked.parse(card.term);
         document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
         
         if (card.example) {
-            exEl.innerHTML = marked.parse(`> "${card.example}"`);
-            exEl.style.display = 'block';
+            newExEl.innerHTML = marked.parse(`> "${card.example}"`);
+            newExEl.style.display = 'block';
         } else {
-            exEl.style.display = 'none';
+            newExEl.style.display = 'none';
         }
         
         currentFlashcard.onclick = () => {
