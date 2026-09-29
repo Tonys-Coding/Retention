@@ -568,7 +568,10 @@ body > .maze-bg {
     }
     
     body.keyboard-open {
-        overflow-y: hidden !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        width: 100% !important;
+        height: 100dvh !important;
     }
     body.keyboard-open .db-sidebar,
     body.keyboard-open .db-study-actions {
