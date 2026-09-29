@@ -512,6 +512,9 @@ body > .maze-bg {
 @media (max-width: 700px) {
     body {
         flex-direction: column !important;
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh !important;
     }
     .db-sidebar {
         width: 100%;
@@ -548,9 +551,11 @@ body > .maze-bg {
         flex: 1;
         order: 1;
         padding-bottom: 70px; /* Space for fixed bottom nav */
+        overflow: visible;
     }
     .db-body {
         padding: 16px;
+        overflow: visible;
     }
     .db-grid {
         grid-template-columns: 1fr;
