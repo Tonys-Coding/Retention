@@ -165,7 +165,9 @@ const themeData = [
     { id: 'space', name: 'Space', color: '#04050a' },
     { id: 'moon', name: 'Moon', color: '#8a8d91' },
     { id: 'cabin', name: 'Cozy Cabin', color: '#382215' },
-    { id: 'matcha', name: 'Matcha', color: '#d1deb9' }
+    { id: 'matcha', name: 'Matcha', color: '#d1deb9' },
+    { id: 'tatooine', name: 'Tatooine', color: '#e6c280' },
+    { id: 'vader', name: 'Vader', color: '#ff0000' }
 ];
 
 const applyTheme = (theme) => {

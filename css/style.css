@@ -310,6 +310,51 @@ body.theme-matcha button.primary { background: #2c3d25; color: #ffffff; border-c
 body.theme-matcha button.secondary { background: #fcf9f2; color: #2c3d25; border-color: #2c3d25; }
 body.theme-matcha .maze-bg { display: none !important; }
 
+/* TATOOINE */
+body.theme-tatooine {
+    --bg-primary: #e6c280;
+    --bg-secondary: #f4dca6;
+    --bg-overlay: rgba(230, 194, 128, 0.95);
+    --text-primary: #3d2314;
+    --text-secondary: #6e3d22;
+    --border-color: #3d2314;
+    --shadow-color: #8c4a22;
+    --hover-bg: #d4a355;
+    --input-bg: #ffffff;
+
+    background-color: var(--bg-primary);
+    background-image: radial-gradient(circle at 80% 20%, rgba(255,165,0,0.4) 10px, transparent 40px), 
+                      radial-gradient(circle at 65% 15%, rgba(255,69,0,0.5) 15px, transparent 50px);
+}
+body.theme-tatooine button.primary { background: #8c4a22; color: #f4dca6; border-color: #3d2314; }
+body.theme-tatooine button.secondary { background: #f4dca6; color: #3d2314; border-color: #3d2314; }
+body.theme-tatooine .maze-bg { display: none !important; }
+
+/* VADER / EMPIRE */
+body.theme-vader {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #1a1a1a;
+    --bg-overlay: rgba(10, 10, 10, 0.95);
+    --text-primary: #ff0000;
+    --text-secondary: #cc0000;
+    --border-color: #ff0000;
+    --shadow-color: #660000;
+    --hover-bg: #330000;
+    --input-bg: #0a0a0a;
+
+    background-color: var(--bg-primary);
+    background-image: repeating-linear-gradient(
+        0deg,
+        rgba(255, 0, 0, 0.05),
+        rgba(255, 0, 0, 0.05) 2px,
+        transparent 2px,
+        transparent 10px
+    );
+}
+body.theme-vader button.primary { background: #ff0000; color: #0a0a0a; border-color: #ff0000; }
+body.theme-vader button.secondary { background: #1a1a1a; color: #ff0000; border-color: #ff0000; }
+body.theme-vader .maze-bg { display: none !important; }
+
 /* TRANSPARENCY BLOCK */
 body.theme-autumn .view,
 body.theme-vaporwave .view,
@@ -321,6 +366,8 @@ body.theme-space .view,
 body.theme-moon .view,
 body.theme-cabin .view,
 body.theme-matcha .view,
+body.theme-tatooine .view,
+body.theme-vader .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
 body.theme-blueprint .list-container,
@@ -330,7 +377,9 @@ body.theme-earthy .list-container,
 body.theme-space .list-container,
 body.theme-moon .list-container,
 body.theme-cabin .list-container,
-body.theme-matcha .list-container {
+body.theme-matcha .list-container,
+body.theme-tatooine .list-container,
+body.theme-vader .list-container {
     background: transparent !important;
 }
 
