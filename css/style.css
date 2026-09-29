@@ -330,30 +330,24 @@ body.theme-tatooine button.primary { background: #8c4a22; color: #f4dca6; border
 body.theme-tatooine button.secondary { background: #f4dca6; color: #3d2314; border-color: #3d2314; }
 body.theme-tatooine .maze-bg { display: none !important; }
 
-/* VADER / EMPIRE */
-body.theme-vader {
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #1a1a1a;
-    --bg-overlay: rgba(10, 10, 10, 0.95);
-    --text-primary: #ff0000;
-    --text-secondary: #cc0000;
-    --border-color: #ff0000;
-    --shadow-color: #660000;
-    --hover-bg: #330000;
-    --input-bg: #0a0a0a;
+/* KYLO REN */
+body.theme-kylo {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --bg-overlay: rgba(18, 18, 18, 0.95);
+    --text-primary: #e0e0e0;
+    --text-secondary: #a84242;
+    --border-color: #333333;
+    --shadow-color: #000000;
+    --hover-bg: #2a2a2a;
+    --input-bg: #121212;
 
     background-color: var(--bg-primary);
-    background-image: repeating-linear-gradient(
-        0deg,
-        rgba(255, 0, 0, 0.05),
-        rgba(255, 0, 0, 0.05) 2px,
-        transparent 2px,
-        transparent 10px
-    );
+    background-image: radial-gradient(circle at 50% 50%, rgba(92, 22, 22, 0.05) 0%, transparent 60%);
 }
-body.theme-vader button.primary { background: #ff0000; color: #0a0a0a; border-color: #ff0000; }
-body.theme-vader button.secondary { background: #1a1a1a; color: #ff0000; border-color: #ff0000; }
-body.theme-vader .maze-bg { display: none !important; }
+body.theme-kylo button.primary { background: #5c1616; color: #e0e0e0; border-color: #333333; }
+body.theme-kylo button.secondary { background: #1e1e1e; color: #5c1616; border-color: #333333; }
+body.theme-kylo .maze-bg { display: none !important; }
 
 /* TRANSPARENCY BLOCK */
 body.theme-autumn .view,
@@ -367,7 +361,7 @@ body.theme-moon .view,
 body.theme-cabin .view,
 body.theme-matcha .view,
 body.theme-tatooine .view,
-body.theme-vader .view,
+body.theme-kylo .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
 body.theme-blueprint .list-container,
@@ -379,7 +373,7 @@ body.theme-moon .list-container,
 body.theme-cabin .list-container,
 body.theme-matcha .list-container,
 body.theme-tatooine .list-container,
-body.theme-vader .list-container {
+body.theme-kylo .list-container {
     background: transparent !important;
 }
 
