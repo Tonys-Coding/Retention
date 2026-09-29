@@ -363,12 +363,15 @@ body > .maze-bg {
 
 
 /* Image in flashcard */
-.db-flashcard-img {
-    max-height: 40%;
+.db-flashcard-face img {
     max-width: 100%;
+    flex: 1;
+    min-height: 0;
     object-fit: contain;
     border: 3px solid var(--border-color);
-    margin-bottom: 16px;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+    background: var(--bg-primary);
+    margin: 8px 0;
 }
 
 /* Study action buttons */
