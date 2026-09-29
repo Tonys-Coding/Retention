@@ -1,4 +1,6 @@
-import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
+import { isExtension, storage, runtime } from './env.js';
+import { processChunksInPage } from './ai-processor.js';
+import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 
@@ -1375,14 +1377,14 @@ const updateProgressBanner = (progress) => {
 
 if (document.getElementById('btn-close-bg-task')) {
     document.getElementById('btn-close-bg-task').addEventListener('click', () => {
-        chrome.storage.local.remove('pdfProgress');
+        storage.remove('pdfProgress');
         document.getElementById('bg-task-banner').style.display = 'none';
     });
 }
 
 // Listen for progress updates
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.pdfProgress) {
+storage.onChange((changes) => {
+    if (changes.pdfProgress) {
         if (changes.pdfProgress.newValue) {
             updateProgressBanner(changes.pdfProgress.newValue);
         } else {
@@ -1393,20 +1395,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 // Check on boot
-chrome.storage.local.get(['pdfProgress'], (res) => {
+storage.get(['pdfProgress']).then(res => {
     if (res.pdfProgress) updateProgressBanner(res.pdfProgress);
 });
 
 // SETTINGS & API KEY
 if (document.getElementById('btn-open-settings')) {
-    document.getElementById('btn-open-settings').addEventListener('click', () => {
-        chrome.storage.local.get(['openrouter_api_key'], (res) => {
-            document.getElementById('input-api-key').value = res.openrouter_api_key || '';
-            document.getElementById('input-api-key').type = 'password';
-            document.getElementById('icon-api-key-locked').style.display = 'block';
-            document.getElementById('icon-api-key-unlocked').style.display = 'none';
-            document.getElementById('modal-settings').style.display = 'flex';
-        });
+    document.getElementById('btn-open-settings').addEventListener('click', async () => {
+        const res = await storage.get(['openrouter_api_key']);
+        document.getElementById('input-api-key').value = res.openrouter_api_key || '';
+        document.getElementById('input-api-key').type = 'password';
+        document.getElementById('icon-api-key-locked').style.display = 'block';
+        document.getElementById('icon-api-key-unlocked').style.display = 'none';
+        document.getElementById('modal-settings').style.display = 'flex';
     });
 }
 
@@ -1414,9 +1415,9 @@ if (document.getElementById('btn-save-settings')) {
     document.getElementById('btn-save-settings').addEventListener('click', () => {
         const key = document.getElementById('input-api-key').value.trim();
         if (key) {
-            chrome.storage.local.set({ 'openrouter_api_key': key });
+            storage.set({ 'openrouter_api_key': key });
         } else {
-            chrome.storage.local.remove('openrouter_api_key');
+            storage.remove('openrouter_api_key');
         }
         document.getElementById('modal-settings').style.display = 'none';
         showToast("Settings saved.");
@@ -1483,7 +1484,7 @@ if (document.getElementById('btn-sync-download')) {
 
 // PDF UPLOAD LOGIC
 const handlePDFUpload = async (file) => {
-    const res = await chrome.storage.local.get(['openrouter_api_key']);
+    const res = await storage.get(['openrouter_api_key']);
     const apiKey = res.openrouter_api_key;
     if (!apiKey) {
         showToast("Please set your OpenRouter API key in Settings first!");
@@ -1525,12 +1526,18 @@ const handlePDFUpload = async (file) => {
         const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
         const targetFolder = (typeof currentFolderId !== 'undefined') ? currentFolderId : null;
         
-        chrome.runtime.sendMessage({
-            action: 'PROCESS_PDF_CHUNKS',
-            textChunks: textChunks,
-            deckName: deckName,
-            folderId: targetFolder
-        });
+        if (isExtension) {
+            // Extension: delegate to background service worker
+            chrome.runtime.sendMessage({
+                action: 'PROCESS_PDF_CHUNKS',
+                textChunks: textChunks,
+                deckName: deckName,
+                folderId: targetFolder
+            });
+        } else {
+            // Web / PWA: process directly in-page
+            processChunksInPage(textChunks, deckName, targetFolder);
+        }
         
         if (dropzoneOverlay) {
             dropzoneOverlay.style.display = 'none';
@@ -1711,7 +1718,7 @@ if (document.getElementById('btn-add-menu')) {
 }
 
 
-chrome.runtime.onMessage.addListener((msg) => {
+runtime.onMessage((msg) => {
     if (msg.action === 'REFRESH_DECKS') {
         if (typeof refreshSidebar === 'function') refreshSidebar();
         if (typeof showHome === 'function') {

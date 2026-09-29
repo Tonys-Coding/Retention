@@ -1,14 +1,56 @@
 import { getDecks, getFolders, db } from './db.js';
+import { isExtension } from './env.js';
 
+// ─── Web OAuth state ─────────────────────────────────────────────────
+let webAccessToken = null;
+let gisTokenClient = null;
+
+/**
+ * Initialise the Google Identity Services token client (web only).
+ * Call this once after the GIS library has loaded.
+ */
+export const initGoogleAuth = (clientId) => {
+    if (typeof google === 'undefined' || !google.accounts) return;
+    gisTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+        callback: () => {} // overwritten per-call in getAuthToken
+    });
+};
+
+// ─── Unified Auth ────────────────────────────────────────────────────
 export const getAuthToken = () => {
-    return new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, (token) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message || chrome.runtime.lastError || "Auth error"));
-            } else {
-                resolve(token);
-            }
+    if (isExtension) {
+        // Chrome Extension path (unchanged)
+        return new Promise((resolve, reject) => {
+            chrome.identity.getAuthToken({ interactive: true }, (token) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message || chrome.runtime.lastError || "Auth error"));
+                } else {
+                    resolve(token);
+                }
+            });
         });
+    }
+
+    // Web path — use Google Identity Services
+    return new Promise((resolve, reject) => {
+        if (webAccessToken) return resolve(webAccessToken);
+
+        if (!gisTokenClient) {
+            return reject(new Error(
+                'Google Sign-In is not configured. Please set a Web OAuth Client ID in Settings to use Drive features.'
+            ));
+        }
+
+        gisTokenClient.callback = (response) => {
+            if (response.error) return reject(new Error(response.error));
+            webAccessToken = response.access_token;
+            // Token expires ~1 hr; clear it ahead of time
+            setTimeout(() => { webAccessToken = null; }, 3500 * 1000);
+            resolve(webAccessToken);
+        };
+        gisTokenClient.requestAccessToken({ prompt: '' });
     });
 };
 
