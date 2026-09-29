@@ -626,7 +626,7 @@ body > .maze-bg {
     /* Flashcard study view — perfectly centered on mobile */
     .db-flashcard {
         width: 100%;
-        min-height: 350px;
+        min-height: 250px;
         aspect-ratio: 1 / 1;
         max-height: 50vh;
         margin-bottom: 16px;

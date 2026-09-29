@@ -836,9 +836,16 @@ function openEditCardModal(card) {
 
 const renderMarkdown = (text) => {
     if (!text) return '';
-    let html = marked.parse(text);
-    html = html.replace(/<p>\s*(<img[^>]+>)\s*<\/p>/gi, '<p class="img-container">$1</p>');
-    return html;
+    return marked.parse(text);
+};
+
+const polyfillImgContainers = (container) => {
+    if (!container) return;
+    container.querySelectorAll('p').forEach(p => {
+        if (p.querySelector('img')) {
+            p.classList.add('img-container');
+        }
+    });
 };
 
 function openPreviewModal(card) {
@@ -846,6 +853,11 @@ function openPreviewModal(card) {
     $('preview-term').innerHTML = renderMarkdown(card.term);
     $('preview-def').innerHTML = renderMarkdown(card.definition);
     $('preview-ex').innerHTML = card.example ? renderMarkdown(card.example) : '';
+    
+    polyfillImgContainers($('preview-term'));
+    polyfillImgContainers($('preview-def'));
+    polyfillImgContainers($('preview-ex'));
+    
     overlay.classList.add('active');
     $('preview-close').onclick = () => overlay.classList.remove('active');
 }
@@ -1070,6 +1082,10 @@ function renderCard() {
     }
     
     dom.fcEx.innerHTML = c.example ? renderMarkdown(c.example) : '';
+    
+    polyfillImgContainers(dom.fcTerm);
+    polyfillImgContainers(dom.fcDef);
+    polyfillImgContainers(dom.fcEx);
 }
 
 function flipCard() { 
