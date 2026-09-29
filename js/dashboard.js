@@ -1395,18 +1395,27 @@ storage.onChange((changes) => {
 });
 
 // Check on boot
-storage.get(['pdfProgress']).then(res => {
+storage.get(['pdfProgress', 'web_google_client_id']).then(res => {
     if (res.pdfProgress) updateProgressBanner(res.pdfProgress);
+    if (!isExtension && res.web_google_client_id) {
+        initGoogleAuth(res.web_google_client_id);
+    }
 });
 
 // SETTINGS & API KEY
 if (document.getElementById('btn-open-settings')) {
     document.getElementById('btn-open-settings').addEventListener('click', async () => {
-        const res = await storage.get(['openrouter_api_key']);
+        const res = await storage.get(['openrouter_api_key', 'web_google_client_id']);
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
         document.getElementById('input-api-key').type = 'password';
         document.getElementById('icon-api-key-locked').style.display = 'block';
         document.getElementById('icon-api-key-unlocked').style.display = 'none';
+        
+        if (!isExtension) {
+            document.getElementById('web-oauth-section').style.display = 'block';
+            document.getElementById('input-google-client-id').value = res.web_google_client_id || '';
+        }
+        
         document.getElementById('modal-settings').style.display = 'flex';
     });
 }
@@ -1419,6 +1428,17 @@ if (document.getElementById('btn-save-settings')) {
         } else {
             storage.remove('openrouter_api_key');
         }
+        
+        if (!isExtension) {
+            const googleKey = document.getElementById('input-google-client-id').value.trim();
+            if (googleKey) {
+                storage.set({ 'web_google_client_id': googleKey });
+                initGoogleAuth(googleKey); // Re-init immediately
+            } else {
+                storage.remove('web_google_client_id');
+            }
+        }
+        
         document.getElementById('modal-settings').style.display = 'none';
         showToast("Settings saved.");
     });
