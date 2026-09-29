@@ -19,11 +19,10 @@ export const initGoogleAuth = (clientId) => {
 };
 
 // ─── Unified Auth ────────────────────────────────────────────────────
-export const getAuthToken = () => {
+export const getAuthToken = (interactive = true) => {
     if (isExtension) {
-        // Chrome Extension path (unchanged)
         return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({ interactive: true }, (token) => {
+            chrome.identity.getAuthToken({ interactive }, (token) => {
                 if (chrome.runtime.lastError) {
                     reject(new Error(chrome.runtime.lastError.message || chrome.runtime.lastError || "Auth error"));
                 } else {
@@ -33,20 +32,29 @@ export const getAuthToken = () => {
         });
     }
 
-    // Web path — use Google Identity Services
     return new Promise((resolve, reject) => {
         if (webAccessToken) return resolve(webAccessToken);
+        
+        const cachedToken = localStorage.getItem('google_access_token');
+        const tokenExpiry = localStorage.getItem('google_access_token_expiry');
+        if (cachedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry)) {
+            webAccessToken = cachedToken;
+            return resolve(webAccessToken);
+        }
+
+        if (!interactive) {
+            return reject(new Error("Token expired or missing. Interactive auth required."));
+        }
 
         if (!gisTokenClient) {
-            return reject(new Error(
-                'Google Sign-In is not configured. Please set a Web OAuth Client ID in Settings to use Drive features.'
-            ));
+            return reject(new Error('Google Sign-In is not configured.'));
         }
 
         gisTokenClient.callback = (response) => {
             if (response.error) return reject(new Error(response.error));
             webAccessToken = response.access_token;
-            // Token expires ~1 hr; clear it ahead of time
+            localStorage.setItem('google_access_token', webAccessToken);
+            localStorage.setItem('google_access_token_expiry', Date.now() + (3500 * 1000));
             setTimeout(() => { webAccessToken = null; }, 3500 * 1000);
             resolve(webAccessToken);
         };
@@ -202,7 +210,7 @@ export const doAutoSync = async () => {
     if (isSyncing) return;
     isSyncing = true;
     try {
-        const token = await getAuthToken().catch(() => null);
+        const token = await getAuthToken(false).catch(() => null);
         if (!token) {
             isSyncing = false;
             return; // Not authenticated
