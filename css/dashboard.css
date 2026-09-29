@@ -562,6 +562,13 @@ body > .maze-bg {
     .db-body {
         padding: 16px;
         overflow: visible;
+        display: flex;
+        flex-direction: column;
+    }
+    .db-study.active {
+        flex: 1;
+        justify-content: center;
+        padding: 24px 0;
     }
     .db-grid {
         grid-template-columns: 1fr;
@@ -579,12 +586,12 @@ body > .maze-bg {
         width: 36px;
         height: 36px;
     }
-    /* Flashcard study view — tall and prominent on mobile */
+    /* Flashcard study view — perfectly centered on mobile */
     .db-flashcard {
         width: 100%;
-        min-height: 45vh; /* Much taller */
-        aspect-ratio: 3 / 4; /* Portrait shape */
-        max-height: 65vh;
+        min-height: 280px;
+        aspect-ratio: 16 / 10;
+        max-height: 400px;
         margin-bottom: 16px;
     }
     .db-study-actions {

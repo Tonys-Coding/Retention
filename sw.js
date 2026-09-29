@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v2';
+const CACHE_NAME = 'retention-v3';
 
 const APP_SHELL = [
     './dashboard.html',
