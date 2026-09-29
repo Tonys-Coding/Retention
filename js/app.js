@@ -1623,20 +1623,84 @@ document.getElementById('btn-remove-edit-image').addEventListener('click', () =>
 
 // Preview Modal Logic
 const openPreviewModal = (card) => {
-    
     const exEl = document.getElementById('preview-ex');
+    const flashcard = document.getElementById('preview-flashcard');
+    const clozeArea = document.getElementById('preview-cloze-area');
+    const clozeInput = document.getElementById('preview-cloze-input');
+    const clozeCheck = document.getElementById('btn-preview-cloze-check');
+    const hintText = flashcard.querySelector('.hint-text');
+    
+    // Reset state
+    flashcard.classList.remove('flipped');
+    if (clozeArea) {
+        clozeInput.value = '';
+        clozeInput.className = '';
+        clozeCheck.textContent = 'Check';
+        clozeCheck.className = 'primary';
+        clozeCheck.disabled = false;
+        clozeInput.disabled = false;
+    }
+    
+    // Unbind previous flashcard click events by replacing the node
+    const newFlashcard = flashcard.cloneNode(true);
+    flashcard.parentNode.replaceChild(newFlashcard, flashcard);
+    const currentFlashcard = document.getElementById('preview-flashcard');
     
     if (card.type === 'cloze') {
+        if (clozeArea) clozeArea.style.display = 'block';
+        if (hintText) hintText.style.display = 'none';
+        
+        let frontText = '';
+        let backText = '';
         const answer = card.definition;
-        const regex = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        const frontText = card.term.replace(regex, '<span class="cloze-blank"></span>');
-        const backText = card.term.replace(regex, '<span class="cloze-highlight">' + answer + '</span>');
+        const answerRegex = new RegExp(answer.replace(/[.*+?^${}()|[\]\]/g, '\$&'), 'gi');
+        
+        if (card.term.includes('___')) {
+            frontText = card.term.replace(/_+/g, '<span class="cloze-blank"></span>');
+            backText = card.term.replace(/_+/g, '<span class="cloze-highlight" id="preview-cloze-highlight">' + answer + '</span>');
+        } else if (answerRegex.test(card.term)) {
+            frontText = card.term.replace(answerRegex, '<span class="cloze-blank"></span>');
+            backText = card.term.replace(answerRegex, '<span class="cloze-highlight" id="preview-cloze-highlight">' + answer + '</span>');
+        } else {
+            frontText = card.term + '<br><br><span class="cloze-blank"></span>';
+            backText = card.term + '<br><br><span class="cloze-highlight" id="preview-cloze-highlight">' + answer + '</span>';
+        }
         
         document.getElementById('preview-term').innerHTML = frontText;
         document.getElementById('preview-def').innerHTML = backText;
         exEl.style.display = 'none';
         
+        clozeCheck.onclick = () => {
+            if (clozeCheck.textContent === 'Continue') {
+                document.getElementById('modal-preview-card').style.display = 'none';
+                return;
+            }
+            
+            const ans = clozeInput.value.trim().toLowerCase();
+            const correct = answer.trim().toLowerCase();
+            
+            currentFlashcard.classList.add('flipped');
+            
+            const highlightEl = document.getElementById('preview-cloze-highlight');
+            if (ans === correct) {
+                clozeInput.className = 'cloze-correct';
+                if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-correct';
+            } else {
+                clozeInput.className = 'cloze-wrong';
+                if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-wrong';
+            }
+            
+            clozeCheck.textContent = 'Continue';
+            clozeCheck.className = 'secondary';
+        };
+        
+        clozeInput.onkeypress = (e) => {
+            if (e.key === 'Enter') clozeCheck.click();
+        };
+        
     } else {
+        if (clozeArea) clozeArea.style.display = 'none';
+        if (hintText) hintText.style.display = 'block';
         document.getElementById('preview-term').innerHTML = marked.parse(card.term);
         document.getElementById('preview-def').innerHTML = marked.parse(card.definition);
         
@@ -1646,6 +1710,10 @@ const openPreviewModal = (card) => {
         } else {
             exEl.style.display = 'none';
         }
+        
+        currentFlashcard.onclick = () => {
+            currentFlashcard.classList.toggle('flipped');
+        };
     }
     
     const imgEl = document.getElementById('preview-image-front');
@@ -1656,17 +1724,8 @@ const openPreviewModal = (card) => {
         imgEl.style.display = 'none';
     }
     
-    // Hide the legacy cloze container if it exists
-    const clozeContainer = document.getElementById('preview-cloze-container');
-    if (clozeContainer) clozeContainer.style.display = 'none';
-    
-    document.getElementById('preview-flashcard').classList.remove('flipped');
     document.getElementById('modal-preview-card').style.display = 'flex';
 };
-
-document.getElementById('preview-flashcard').addEventListener('click', () => {
-    document.getElementById('preview-flashcard').classList.toggle('flipped');
-});
 
 document.getElementById('btn-close-preview').addEventListener('click', () => {
     document.getElementById('modal-preview-card').style.display = 'none';
