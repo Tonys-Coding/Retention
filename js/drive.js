@@ -62,6 +62,16 @@ export const getAuthToken = (interactive = true) => {
     });
 };
 
+
+const clearToken = () => {
+    webAccessToken = null;
+    localStorage.removeItem('google_access_token');
+    localStorage.removeItem('google_access_token_expiry');
+    if (isExtension) {
+        chrome.identity.clearAllCachedAuthTokens(() => {});
+    }
+};
+
 export const listDrivePdfs = async (query = '', pageToken = '') => {
     const token = await getAuthToken();
     let qStr = 'mimeType="application/pdf" and trashed=false';
@@ -76,6 +86,7 @@ export const listDrivePdfs = async (query = '', pageToken = '') => {
     const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
     });
+    if (res.status === 401) clearToken();
     if (!res.ok) throw new Error('Failed to fetch PDFs from Drive');
     return await res.json();
 };
@@ -85,6 +96,7 @@ export const downloadPdfFromDrive = async (fileId) => {
     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` }
     });
+    if (res.status === 401) clearToken();
     if (!res.ok) throw new Error('Failed to download PDF from Drive');
     return await res.arrayBuffer();
 };
@@ -93,6 +105,8 @@ const getBackupFile = async (token) => {
     const res = await fetch('https://www.googleapis.com/drive/v3/files?q=name="retention_backup.json" and trashed=false&spaces=drive&fields=files(id,modifiedTime)', {
         headers: { Authorization: `Bearer ${token}` }
     });
+    if (res.status === 401) clearToken();
+    if (!res.ok) throw new Error('Failed to fetch backup file info');
     const data = await res.json();
     if (data.files && data.files.length > 0) return data.files[0];
     return null;
@@ -139,7 +153,8 @@ export const uploadToDrive = async () => {
             body: form
         });
         
-        if (!res.ok) throw new Error('Failed to upload to Drive');
+        if (res.status === 401) clearToken();
+    if (!res.ok) throw new Error('Failed to upload to Drive');
         return true;
     } catch (e) {
         console.error(e);
@@ -150,14 +165,16 @@ export const uploadToDrive = async () => {
 export const downloadFromDrive = async () => {
     try {
         const token = await getAuthToken();
-        const fileId = (await getBackupFile(token))?.id;
+        const file = await getBackupFile(token);
+        const fileId = file?.id;
         if (!fileId) throw new Error('No backup found on Drive.');
         
         const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (!res.ok) throw new Error('Failed to download from Drive');
+        if (res.status === 401) clearToken();
+    if (!res.ok) throw new Error('Failed to download from Drive');
         const data = await res.json();
         
         // Restore data
@@ -179,6 +196,9 @@ export const downloadFromDrive = async () => {
             cStore.clear();
             data.cards.forEach(c => cStore.add(c));
         }
+        
+        if (file) localStorage.setItem('drive_last_modified', file.modifiedTime);
+        localStorage.setItem('needs_sync', 'false');
         
         return true;
     } catch (e) {
