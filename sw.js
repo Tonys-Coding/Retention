@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v1';
+const CACHE_NAME = 'retention-v2';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -47,32 +47,35 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// ─── Fetch: serve from cache, fall back to network ───────────────────
+// ─── Fetch: Network First, fallback to cache ───────────────────────
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Never cache API calls (OpenRouter, Google Drive, Google Auth)
+    // Never cache API calls
     if (
         url.hostname === 'openrouter.ai' ||
         url.hostname.includes('googleapis.com') ||
         url.hostname.includes('accounts.google.com') ||
         url.hostname.includes('gstatic.com')
     ) {
-        return; // let the browser handle it normally
+        return; // Let the browser handle it normally
     }
 
     event.respondWith(
-        caches.match(event.request).then(cached => {
-            // Serve from cache immediately, but also update in background
-            const fetchPromise = fetch(event.request).then(networkResponse => {
+        fetch(event.request)
+            .then(networkResponse => {
+                // If we get a valid response from the network, update the cache
                 if (networkResponse && networkResponse.ok) {
                     const clone = networkResponse.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, clone);
+                    });
                 }
                 return networkResponse;
-            }).catch(() => cached); // If offline, cached version wins
-
-            return cached || fetchPromise;
-        })
+            })
+            .catch(() => {
+                // If network fails (offline), fall back to the cache
+                return caches.match(event.request);
+            })
     );
 });
