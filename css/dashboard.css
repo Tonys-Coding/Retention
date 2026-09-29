@@ -318,6 +318,7 @@ body > .maze-bg {
     padding: 32px;
     overflow-y: auto;
     text-align: center;
+    gap: 16px;
 }
 
 .db-flashcard-face--back {
@@ -335,13 +336,13 @@ body > .maze-bg {
 .db-flashcard-face h3 {
     font-size: clamp(16px, 2.5vw, 26px);
     font-weight: 700;
-    margin: 0 0 16px 0;
+    margin: 0;
     line-height: 1.4;
     word-break: break-word;
 }
 
 .db-flashcard-face p {
-    margin: 8px 0;
+    margin: 0;
 }
 
 .db-flashcard-face .example-text {
