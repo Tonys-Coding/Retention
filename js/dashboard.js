@@ -1489,6 +1489,8 @@ if (document.getElementById('btn-sync-upload')) {
             document.getElementById('btn-sync-upload').innerText = 'UPLOADING...';
             document.getElementById('btn-sync-upload').disabled = true;
             await uploadToDrive();
+            localStorage.setItem('needs_sync', 'false');
+            // Remote time is updated in autoSync, but manually it might lag. Let autoSync handle time fetch.
             showToast("Successfully uploaded to Google Drive!");
         } catch (e) {
             showToast("Upload failed: " + e.message);
@@ -1506,7 +1508,9 @@ if (document.getElementById('btn-sync-download')) {
             document.getElementById('btn-sync-download').innerText = 'DOWNLOADING...';
             document.getElementById('btn-sync-download').disabled = true;
             await downloadFromDrive();
+            localStorage.setItem('needs_sync', 'false');
             showToast("Successfully downloaded and merged from Google Drive!");
+            setTimeout(() => location.reload(), 1000);
             if (typeof renderDecksView === 'function') renderDecksView(); // Refresh UI
         } catch (e) {
             showToast("Download failed: " + e.message);
