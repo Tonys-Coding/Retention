@@ -516,26 +516,118 @@ body > .maze-bg {
     .db-sidebar {
         width: 100%;
         height: auto;
-        max-height: 35vh;
+        max-height: none;
         border-right: none;
         border-bottom: 4px solid var(--border-color);
+        order: 2; /* Push sidebar BELOW content on mobile */
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        overflow: visible;
+    }
+    .db-sidebar-header {
+        display: none; /* Hide big logo on mobile */
+    }
+    .db-sidebar-nav {
+        display: none; /* Hide full tree on mobile — use grid instead */
+    }
+    .db-sidebar-footer {
+        padding: 8px 12px !important;
+        border-top: 3px solid var(--border-color);
+    }
+    .db-sidebar-footer .dropdown-content {
+        /* Dropdown opens UPWARD on mobile */
+        bottom: 100% !important;
+        left: 0 !important;
+        top: auto !important;
+        margin-bottom: 8px;
     }
     .db-main {
         height: auto;
         flex: 1;
+        order: 1;
+        padding-bottom: 70px; /* Space for fixed bottom nav */
     }
     .db-body {
         padding: 16px;
     }
     .db-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .db-toolbar {
+        padding: 12px 16px;
+        gap: 8px;
+        flex-wrap: wrap;
     }
     .db-toolbar h2 {
         font-size: 18px;
     }
+    .db-toolbar-right .icon-btn {
+        width: 32px;
+        height: 32px;
+    }
+    /* Flashcard study view — full width on mobile */
+    .db-flashcard {
+        width: 100%;
+        min-height: 260px;
+    }
+    .db-study-actions {
+        flex-direction: row;
+        gap: 8px;
+    }
     .db-study-actions button {
         font-size: 13px;
         padding: 12px;
+    }
+    /* Stats bar — compact on mobile */
+    .db-stats-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .db-stats-bar > div {
+        font-size: 13px;
+    }
+    /* Modals — full-width on mobile */
+    .db-modal-overlay .db-modal {
+        max-width: 95vw !important;
+        padding: 20px !important;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    /* Settings modal — stack columns on mobile */
+    .db-modal-overlay .db-modal > div[style*="display: flex"][style*="gap: 48px"] {
+        flex-direction: column !important;
+        gap: 24px !important;
+    }
+    /* Grid card touch-friendly sizing */
+    .db-grid-card {
+        min-height: 80px;
+    }
+    /* Add card form */
+    .db-add-card {
+        gap: 8px;
+    }
+    .db-add-card textarea {
+        min-height: 60px;
+    }
+}
+
+/* Ultra-small phones (SE, mini, etc.) */
+@media (max-width: 380px) {
+    .db-body {
+        padding: 10px;
+    }
+    .db-toolbar h2 {
+        font-size: 16px;
+    }
+    .db-flashcard {
+        min-height: 220px;
+    }
+    .db-study-actions button {
+        font-size: 12px;
+        padding: 10px 6px;
     }
 }
 
