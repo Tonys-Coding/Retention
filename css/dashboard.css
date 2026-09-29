@@ -521,13 +521,16 @@ body > .maze-bg {
         height: auto;
         max-height: none;
         border-right: none;
-        border-bottom: 4px solid var(--border-color);
+        border-bottom: none;
+        border-top: 4px solid var(--border-color);
         order: 2; /* Push sidebar BELOW content on mobile */
         position: fixed;
         bottom: 0;
         left: 0;
         z-index: 100;
         overflow: visible;
+        background: var(--bg-secondary);
+        padding-bottom: env(safe-area-inset-bottom); /* iPhone home bar support */
     }
     .db-sidebar-header {
         display: none; /* Hide big logo on mobile */
@@ -536,21 +539,24 @@ body > .maze-bg {
         display: none; /* Hide full tree on mobile — use grid instead */
     }
     .db-sidebar-footer {
-        padding: 8px 12px !important;
-        border-top: 3px solid var(--border-color);
+        padding: 12px 16px !important;
+        border-top: none;
     }
     .db-sidebar-footer .dropdown-content {
         /* Dropdown opens UPWARD on mobile */
         bottom: 100% !important;
-        left: 0 !important;
+        left: 16px !important;
+        right: 16px !important;
         top: auto !important;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
+        min-width: 0 !important;
+        width: auto !important;
     }
     .db-main {
         height: auto;
         flex: 1;
         order: 1;
-        padding-bottom: 70px; /* Space for fixed bottom nav */
+        padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Space for fixed bottom nav */
         overflow: visible;
     }
     .db-body {
@@ -559,7 +565,7 @@ body > .maze-bg {
     }
     .db-grid {
         grid-template-columns: 1fr;
-        gap: 12px;
+        gap: 16px;
     }
     .db-toolbar {
         padding: 12px 16px;
@@ -567,24 +573,29 @@ body > .maze-bg {
         flex-wrap: wrap;
     }
     .db-toolbar h2 {
-        font-size: 18px;
+        font-size: 20px;
     }
     .db-toolbar-right .icon-btn {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
     }
-    /* Flashcard study view — full width on mobile */
+    /* Flashcard study view — tall and prominent on mobile */
     .db-flashcard {
         width: 100%;
-        min-height: 260px;
+        min-height: 45vh; /* Much taller */
+        aspect-ratio: 3 / 4; /* Portrait shape */
+        max-height: 65vh;
+        margin-bottom: 16px;
     }
     .db-study-actions {
         flex-direction: row;
-        gap: 8px;
+        gap: 12px;
+        width: 100%;
     }
     .db-study-actions button {
-        font-size: 13px;
-        padding: 12px;
+        font-size: 15px;
+        padding: 18px 8px;
+        font-weight: 900;
     }
     /* Stats bar — compact on mobile */
     .db-stats-bar {
