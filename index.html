@@ -19,13 +19,16 @@
             </div>
             <div style="display: flex; gap: 8px;">
                 <button class="icon-btn" id="btn-toggle-theme" title="Toggle Theme" style="display: flex; align-items: center; justify-content: center;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
                 </button>
                 <button class="icon-btn" id="btn-open-settings" title="Settings" style="display: flex; align-items: center; justify-content: center;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
                 <button class="icon-btn" id="btn-view-stats" title="View Stats" style="display: flex; align-items: center; justify-content: center;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-4"></path></svg>
+                </button>
+                <button class="icon-btn" id="btn-expand-dashboard" title="Open Fullscreen Dashboard" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>
                 </button>
                 <button id="btn-import-csv" title="Import CSV">Import</button>
                 <input type="file" id="file-import" accept=".csv,.pdf" style="display: none;">
@@ -84,6 +87,7 @@
                 <div id="deck-accuracy" style="font-size: 12px; color: var(--text-secondary);">0% Mastery</div>
             </div>
             <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <button id="btn-quick-10" class="secondary" title="Quick 10 Study" style="padding: 8px; display: none;">Quick 10</button>
                 <button id="btn-start-study" class="primary" title="Traditional Study" style="padding: 8px;">Study</button>
             </div>
         </div>
@@ -154,13 +158,13 @@
             </div>
             
             <div class="study-actions" id="traditional-actions-container" style="display: none; gap: 8px;">
-                <button id="btn-study-forgot-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom-color: #ff4444;">
+                <button id="btn-study-forgot-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; ">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Forgot
                 </button>
                 <button id="btn-study-skip-trad" class="secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     Skip <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </button>
-                <button id="btn-study-know-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-bottom-color: #00cc00;">
+                <button id="btn-study-know-trad" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; ">
                     Know <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </button>
             </div>
@@ -267,7 +271,7 @@
             
             <p style="font-size: 12px; margin-bottom: 8px;">To generate flashcards from PDFs, you need an OpenRouter API Key.</p>
             <div style="position: relative; width: 100%; margin-bottom: 8px;">
-                <input type="password" id="input-api-key" placeholder="Paste your OpenRouter API Key..." style="margin-bottom: 0; padding-right: 48px; width: 100%; box-sizing: border-box;">
+                <input type="password" id="input-api-key" placeholder="Paste your OpenRouter API Key..." style="margin-bottom: 0; padding: 8px 48px 8px 8px; width: 100%; box-sizing: border-box;">
                 <button id="btn-toggle-api-key" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: transparent; border: none; box-shadow: none; padding: 4px; cursor: pointer; color: var(--text-primary); display: flex; align-items: center; justify-content: center; height: 100%;">
                     <svg id="icon-api-key-locked" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     <svg id="icon-api-key-unlocked" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>

@@ -187,19 +187,79 @@ const checkSavedSession = async () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-    }
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme !== 'light') document.body.classList.add('theme-' + savedTheme);
 
     await initDB();
     await loadDecks();
     await checkSavedSession();
 });
 
-document.getElementById('btn-toggle-theme').addEventListener('click', () => {
-    const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+
+const themeData = [
+    { id: 'light', name: 'Light', color: '#ffffff' },
+    { id: 'dark', name: 'Dark', color: '#121212' },
+    { id: 'autumn', name: 'Autumn', color: '#c25e29' },
+    { id: 'terminal', name: 'Terminal', color: '#4ade80' },
+    { id: 'vaporwave', name: 'Vaporwave', color: '#ff71ce' },
+    { id: 'blueprint', name: 'Blueprint', color: '#0a3d91' },
+    { id: 'neopop', name: 'Neo-Pop', color: '#a7f3d0' },
+    { id: 'composition', name: 'Composition', color: '#fdf6e3' },
+    { id: 'dracula', name: 'Dracula', color: '#282a36' },
+    { id: 'earthy', name: 'Earthy', color: '#3b5240' },
+    { id: 'space', name: 'Space', color: '#04050a' },
+    { id: 'moon', name: 'Moon', color: '#8a8d91' },
+    { id: 'cabin', name: 'Cozy Cabin', color: '#382215' },
+    { id: 'matcha', name: 'Matcha', color: '#d1deb9' }
+];
+
+const applyTheme = (theme) => {
+    document.body.className = document.body.className.replace(/theme-\w+/g, '').replace('dark-mode', '').trim();
+    if (theme !== 'light') document.body.classList.add('theme-' + theme);
+    localStorage.setItem('theme', theme);
+};
+
+let themeMenuEl = null;
+const toggleThemeMenu = (e) => {
+    e.stopPropagation();
+    if (!themeMenuEl) {
+        themeMenuEl = document.createElement('div');
+        themeMenuEl.className = 'theme-menu';
+        themeData.forEach(t => {
+            const opt = document.createElement('div');
+            opt.className = 'theme-option';
+            opt.innerHTML = `<div class="theme-color-box" style="background-color: ${t.color};"></div> <span>${t.name}</span>`;
+            opt.onclick = () => {
+                applyTheme(t.id);
+                showToast(`Theme: ${t.name}`);
+                themeMenuEl.style.display = 'none';
+            };
+            themeMenuEl.appendChild(opt);
+        });
+        document.body.appendChild(themeMenuEl);
+        
+        document.addEventListener('click', (ev) => {
+            if (!themeMenuEl.contains(ev.target)) {
+                themeMenuEl.style.display = 'none';
+            }
+        });
+    }
+    
+    if (themeMenuEl.style.display === 'flex') {
+        themeMenuEl.style.display = 'none';
+    } else {
+        const rect = e.currentTarget.getBoundingClientRect();
+        themeMenuEl.style.top = (rect.bottom + 8) + 'px';
+        themeMenuEl.style.right = (window.innerWidth - rect.right) + 'px';
+        themeMenuEl.style.display = 'flex';
+    }
+};
+
+document.getElementById('btn-toggle-theme').addEventListener('click', toggleThemeMenu);
+
+document.getElementById('btn-expand-dashboard').addEventListener('click', () => {
+    chrome.tabs.create({ url: 'dashboard.html' });
 });
 
 document.addEventListener('click', () => {
@@ -288,12 +348,14 @@ const loadDecks = async (searchQuery = '') => {
                 const data = JSON.parse(e.dataTransfer.getData('application/json'));
                 if (data.type === 'deck') {
                     const deckToMove = allDecks.find(d => d.id == data.id);
+                    if (deckToMove && (deckToMove.folderId || null) == (targetParentId || null)) { showToast("Already in this location."); return; }
                     if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${targetName}"?`, "Move", false)) {
                         await updateDeck(deckToMove.id, deckToMove.name, targetParentId);
                         loadDecks();
                     }
                 } else if (data.type === 'folder') {
                     const folderToMove = allFolders.find(f => f.id == data.id);
+                    if (folderToMove && (folderToMove.parentId || null) == (targetParentId || null)) { showToast("Already in this location."); return; }
                     if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${targetName}"?`, "Move", false)) {
                         await updateFolder(folderToMove.id, undefined, undefined, targetParentId);
                         loadDecks();
@@ -353,6 +415,7 @@ const loadDecks = async (searchQuery = '') => {
                     const data = JSON.parse(dataStr);
                     if (data.type === 'deck') {
                         const deckToMove = allDecks.find(d => d.id == data.id);
+                        if (deckToMove && deckToMove.folderId == folder.id) { showToast("Already in this location."); return; }
                         if (deckToMove && await showConfirm(`Move "${deckToMove.name}" to "${folder.name}"?`, "Move", false)) {
                             await updateDeck(deckToMove.id, deckToMove.name, folder.id);
                             loadDecks();
@@ -371,6 +434,7 @@ const loadDecks = async (searchQuery = '') => {
                         }
                         
                         const folderToMove = allFolders.find(f => f.id == data.id);
+                        if (folderToMove && folderToMove.parentId == folder.id) { showToast("Already in this location."); return; }
                         if (folderToMove && await showConfirm(`Move "${folderToMove.name}" to "${folder.name}"?`, "Move", false)) {
                             await updateFolder(folderToMove.id, undefined, undefined, folder.id);
                             loadDecks();
@@ -626,6 +690,12 @@ const openDeck = async (id, name) => {
 const loadCards = async () => {
     currentCards = await getCardsByDeck(currentDeckId);
     
+    if (currentCards.length > 10) {
+        document.getElementById('btn-quick-10').style.display = 'block';
+    } else {
+        document.getElementById('btn-quick-10').style.display = 'none';
+    }
+    
     const mastered = currentCards.filter(c => c.status === 'mastered').length;
     const total = currentCards.length;
     const mastery = total > 0 ? Math.round((mastered / total) * 100) : 0;
@@ -767,7 +837,7 @@ document.getElementById('btn-add-card').addEventListener('click', async () => {
 
 let currentStudyMode = 'traditional';
 
-const startStudySession = (source) => {
+const startStudySession = (source, isQuickStudy = false) => {
     studySourceView = source || 'deckDetails';
     currentStudyMode = 'traditional';
     
@@ -776,7 +846,8 @@ const startStudySession = (source) => {
         return;
     }
     
-    studyCards = [...currentCards].sort(() => Math.random() - 0.5);
+    let tempCards = [...currentCards].sort(() => Math.random() - 0.5);
+    studyCards = isQuickStudy ? tempCards.slice(0, 10) : tempCards;
     document.getElementById('traditional-actions-container').style.display = 'flex';
     
     studyIndex = 0;
@@ -787,6 +858,7 @@ const startStudySession = (source) => {
 };
 
 document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails'));
+document.getElementById('btn-quick-10').addEventListener('click', () => startStudySession('deckDetails', true));
 
 const updateStudyView = () => {
     if (studyIndex >= studyCards.length) {
@@ -985,6 +1057,75 @@ document.getElementById('btn-back-details').addEventListener('click', () => {
     }
 });
 
+function triggerCelebration() {
+    if (typeof confetti !== 'function') return;
+    
+    const centerX = 0.5;
+    const leftEdge = 0.05;
+    const rightEdge = 0.95;
+
+    const effects = [
+        () => {
+            confetti({ particleCount: 100, spread: 70, origin: { x: leftEdge, y: 0.7 }, angle: 60 });
+            confetti({ particleCount: 100, spread: 70, origin: { x: rightEdge, y: 0.7 }, angle: 120 });
+        },
+        () => {
+            const duration = 2500;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({
+                    particleCount: 7,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: leftEdge + (Math.random() * (rightEdge - leftEdge)), y: Math.random() - 0.2 }
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        },
+        () => {
+            const count = 200;
+            const defaults = { origin: { x: centerX, y: 0.6 } };
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, { particleCount: Math.floor(count * particleRatio) }));
+            }
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        },
+        () => {
+            confetti({ particleCount: 200, spread: 100, origin: { x: centerX, y: 0.6 }, startVelocity: 45 });
+        },
+        () => {
+            confetti({ particleCount: 80, spread: 120, origin: { x: centerX, y: 0.6 }, shapes: ['star'], colors: ['#FFD700', '#FFB14E', '#FAEA48', '#E89400'] });
+            confetti({ particleCount: 40, spread: 90, origin: { x: centerX, y: 0.6 }, shapes: ['circle'], colors: ['#FFD700', '#FFFFFF'] });
+        },
+        () => {
+            const duration = 4000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 270,
+                    spread: 40,
+                    startVelocity: 15,
+                    decay: 0.9,
+                    gravity: 0.8,
+                    origin: { x: leftEdge + (Math.random() * (rightEdge - leftEdge)), y: -0.1 },
+                    colors: ['#ffffff', '#e0f7fa', '#bbdefb'],
+                    shapes: ['circle'],
+                    scalar: Math.random() * 0.8 + 0.4
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+    ];
+
+    const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+    randomEffect();
+}
+
 const showStudyComplete = () => {
     clearStudySession();
     document.getElementById('study-progress-fill').style.width = '100%';
@@ -993,14 +1134,7 @@ const showStudyComplete = () => {
         <strong>${studyStats.forgot}</strong> to Review
     `;
     showView('studyComplete');
-    if (typeof confetti === 'function') {
-        confetti({
-            particleCount: 150,
-            spread: 80,
-            origin: { y: 0.6 }
-        });
-    }
-
+    triggerCelebration();
 };
 
 document.getElementById('btn-back-details-complete').addEventListener('click', () => {
