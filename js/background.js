@@ -52,7 +52,7 @@ Text: "${text}"`;
                     'X-Title': 'Retention Chrome Extension'
                 },
                 body: JSON.stringify({
-                    model: "openrouter/free", // Changed to match app.js
+                    models: ["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.1-8b-instruct:free", "meta-llama/llama-3-8b-instruct:free", "mistralai/mistral-7b-instruct:free"], // Changed to match app.js
                     messages: [
                         { role: "system", content: "You are a helpful assistant that strictly outputs JSON objects representing flashcards." },
                         { role: "user", content: prompt }
@@ -185,7 +185,7 @@ Here is the text:\n\n${textChunks[i]}`;
                         'X-Title': 'Retention Chrome Extension'
                     },
                     body: JSON.stringify({
-                        model: "openrouter/free",
+                        models: ["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.1-8b-instruct:free", "meta-llama/llama-3-8b-instruct:free", "mistralai/mistral-7b-instruct:free"],
                         messages: [
                             { role: "system", content: "You are a helpful assistant that strictly outputs JSON arrays of objects representing flashcards. If no highly-valuable content exists in this text chunk, return an empty array []." },
                             { role: "user", content: prompt }
