@@ -833,11 +833,19 @@ function openEditCardModal(card) {
     $('edit-card-cancel').onclick = () => overlay.classList.remove('active');
 }
 
+
+const renderMarkdown = (text) => {
+    if (!text) return '';
+    let html = marked.parse(text);
+    html = html.replace(/<p>\s*(<img[^>]+>)\s*<\/p>/gi, '<p class="img-container">$1</p>');
+    return html;
+};
+
 function openPreviewModal(card) {
     const overlay = $('modal-preview');
-    $('preview-term').innerHTML = marked.parse(card.term);
-    $('preview-def').innerHTML = marked.parse(card.definition);
-    $('preview-ex').innerHTML = card.example ? marked.parse(card.example) : '';
+    $('preview-term').innerHTML = renderMarkdown(card.term);
+    $('preview-def').innerHTML = renderMarkdown(card.definition);
+    $('preview-ex').innerHTML = card.example ? renderMarkdown(card.example) : '';
     overlay.classList.add('active');
     $('preview-close').onclick = () => overlay.classList.remove('active');
 }
@@ -1055,13 +1063,13 @@ function renderCard() {
         checkBtn.className = 'primary';
         setTimeout(() => dom.clozeInput.focus(), 100);
     } else {
-        dom.fcTerm.innerHTML = marked.parse(c.term);
-        dom.fcDef.innerHTML = marked.parse(c.definition);
+        dom.fcTerm.innerHTML = renderMarkdown(c.term);
+        dom.fcDef.innerHTML = renderMarkdown(c.definition);
         dom.fcHint.style.display = 'block';
         dom.clozeArea.style.display = 'none';
     }
     
-    dom.fcEx.innerHTML = c.example ? marked.parse(c.example) : '';
+    dom.fcEx.innerHTML = c.example ? renderMarkdown(c.example) : '';
 }
 
 function flipCard() { 

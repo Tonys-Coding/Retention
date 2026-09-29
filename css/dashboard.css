@@ -363,7 +363,7 @@ body > .maze-bg {
 
 
 /* Image in flashcard */
-.db-flashcard-face p:has(img) {
+.db-flashcard-face p.img-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -626,9 +626,9 @@ body > .maze-bg {
     /* Flashcard study view — perfectly centered on mobile */
     .db-flashcard {
         width: 100%;
-        min-height: 120px;
-        aspect-ratio: 16 / 10;
-        max-height: 400px;
+        min-height: 350px;
+        aspect-ratio: 1 / 1;
+        max-height: 50vh;
         margin-bottom: 16px;
     }
     .db-study-actions {
