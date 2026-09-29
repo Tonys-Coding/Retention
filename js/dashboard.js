@@ -1217,7 +1217,11 @@ function setupEvents() {
     dom.flashcard.onclick = (e) => { if (!e.target.closest('.db-cloze-area')) flipCard(); };
     $('btn-cloze-check').onclick = checkCloze;
     dom.clozeInput.onkeydown = (e) => { if (e.key === 'Enter') checkCloze(); };
-    dom.clozeInput.addEventListener('focus', () => document.body.classList.add('keyboard-open'));
+    dom.clozeInput.addEventListener('focus', () => {
+        document.body.classList.add('keyboard-open');
+        setTimeout(() => window.scrollTo(0, 0), 50);
+        setTimeout(() => window.scrollTo(0, 0), 300); // Catch iOS animation delay
+    });
     dom.clozeInput.addEventListener('blur', () => document.body.classList.remove('keyboard-open'));
     $('btn-forgot').onclick = () => handleResult(false);
     $('btn-skip').onclick = () => handleResult(null);
