@@ -515,7 +515,7 @@ body > .maze-bg {
         flex-direction: column !important;
         overflow-y: auto !important;
         height: auto !important;
-        min-height: 100vh !important;
+        min-height: 100dvh !important;
     }
     .db-sidebar {
         width: 100%;
@@ -566,6 +566,14 @@ body > .maze-bg {
         display: flex;
         flex-direction: column;
     }
+    
+    body.keyboard-open .db-sidebar {
+        display: none !important;
+    }
+    body.keyboard-open .db-main {
+        padding-bottom: 0 !important;
+    }
+
     .db-study.active {
         flex: 1;
         justify-content: center;
@@ -590,7 +598,7 @@ body > .maze-bg {
     /* Flashcard study view — perfectly centered on mobile */
     .db-flashcard {
         width: 100%;
-        min-height: 280px;
+        min-height: 120px;
         aspect-ratio: 16 / 10;
         max-height: 400px;
         margin-bottom: 16px;
