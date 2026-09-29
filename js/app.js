@@ -1874,6 +1874,8 @@ document.getElementById('btn-sync-upload').addEventListener('click', async () =>
         const btn = document.getElementById('btn-sync-upload');
         btn.textContent = 'Uploading...';
         await uploadToDrive();
+            localStorage.setItem('needs_sync', 'false');
+            // Remote time is updated in autoSync, but manually it might lag. Let autoSync handle time fetch.
         showToast("Successfully backed up to Google Drive!");
     } catch (e) {
         showToast("Error: " + (e.message || e));
@@ -1887,7 +1889,9 @@ document.getElementById('btn-sync-download').addEventListener('click', async () 
         const btn = document.getElementById('btn-sync-download');
         btn.textContent = 'Downloading...';
         await downloadFromDrive();
+        localStorage.setItem('needs_sync', 'false');
         showToast("Successfully restored from Google Drive!");
+        setTimeout(() => location.reload(), 1000);
         loadDecks();
     } catch (e) {
         showToast("Error: " + (e.message || e));

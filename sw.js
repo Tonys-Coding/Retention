@@ -7,13 +7,13 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v24';
+const CACHE_NAME = 'retention-v25';
 
 const APP_SHELL = [
     './dashboard.html',
-    './css/style.css?v=7',
-    './css/dashboard.css?v=7',
-    './js/dashboard.js?v=7',
+    './css/style.css?v=8',
+    './css/dashboard.css?v=8',
+    './js/dashboard.js?v=8',
     './js/db.js',
     './js/csv.js',
     './js/env.js',

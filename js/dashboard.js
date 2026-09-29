@@ -850,6 +850,11 @@ const polyfillImgContainers = (container) => {
 
 function openPreviewModal(card) {
     const overlay = $('modal-preview');
+    const flashcard = $('preview-flashcard');
+    
+    // Reset state
+    flashcard.classList.remove('flipped');
+    
     $('preview-term').innerHTML = renderMarkdown(card.term);
     $('preview-def').innerHTML = renderMarkdown(card.definition);
     $('preview-ex').innerHTML = card.example ? renderMarkdown(card.example) : '';
@@ -858,8 +863,15 @@ function openPreviewModal(card) {
     polyfillImgContainers($('preview-def'));
     polyfillImgContainers($('preview-ex'));
     
+    flashcard.onclick = () => {
+        flashcard.classList.toggle('flipped');
+    };
+    
     overlay.classList.add('active');
-    $('preview-close').onclick = () => overlay.classList.remove('active');
+    $('preview-close').onclick = () => {
+        overlay.classList.remove('active');
+        flashcard.classList.remove('flipped');
+    };
 }
 
 // ===== ADD CARD =====
