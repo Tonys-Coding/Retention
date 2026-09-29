@@ -1008,6 +1008,8 @@ body.theme-earthy .db-main,
 body.theme-space .db-main,
 body.theme-moon .db-main,
 body.theme-cabin .db-main,
-body.theme-matcha .db-main {
+body.theme-matcha .db-main,
+body.theme-kylo .db-main,
+body.theme-tatooine .db-main {
     background: transparent !important;
 }
