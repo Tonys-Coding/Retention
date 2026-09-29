@@ -344,12 +344,23 @@ body.theme-kylo {
 
     background-color: var(--bg-primary);
     background-image: 
-        /* Red fractured/crack slashes (Kintsugi mask repair) */
-        linear-gradient(115deg, transparent calc(30% - 1px), rgba(234, 28, 28, 0.8) 30%, rgba(234, 28, 28, 0.3) calc(30% + 3px), transparent calc(30% + 6px)),
-        linear-gradient(65deg, transparent calc(60% - 1px), rgba(234, 28, 28, 0.8) 60%, rgba(234, 28, 28, 0.3) calc(60% + 3px), transparent calc(60% + 6px)),
-        linear-gradient(145deg, transparent calc(75% - 1px), rgba(234, 28, 28, 0.6) 75%, transparent calc(75% + 4px)),
-        /* Horizontal chrome visor lines */
-        repeating-linear-gradient(0deg, rgba(144, 144, 144, 0.06) 0px, rgba(144, 144, 144, 0.06) 2px, transparent 2px, transparent 12px);
+        /* The Red Kintsugi Cracks */
+        linear-gradient(65deg, transparent calc(25% - 1px), rgba(234, 28, 28, 0.9) 25%, transparent calc(25% + 1px)),
+        linear-gradient(25deg, transparent calc(38% - 1px), rgba(234, 28, 28, 0.9) 38%, transparent calc(38% + 1px)),
+        linear-gradient(-55deg, transparent calc(65% - 1px), rgba(234, 28, 28, 0.9) 65%, transparent calc(65% + 1px)),
+        linear-gradient(-35deg, transparent calc(72% - 1px), rgba(234, 28, 28, 0.9) 72%, transparent calc(72% + 1px)),
+        linear-gradient(80deg, transparent calc(80% - 1px), rgba(234, 28, 28, 0.9) 80%, transparent calc(80% + 1px)),
+        /* The sweeping curved chrome visor bands */
+        radial-gradient(ellipse 150% 120% at 50% -10%, 
+            transparent calc(45% - 1px), 
+            rgba(144, 144, 144, 0.2) 45%, rgba(200, 200, 200, 0.4) calc(45% + 5px), transparent calc(45% + 6px),
+            transparent calc(48% - 1px), 
+            rgba(144, 144, 144, 0.2) 48%, rgba(200, 200, 200, 0.4) calc(48% + 5px), transparent calc(48% + 6px),
+            transparent calc(51% - 1px), 
+            rgba(144, 144, 144, 0.2) 51%, rgba(200, 200, 200, 0.4) calc(51% + 5px), transparent calc(51% + 6px),
+            transparent calc(54% - 1px), 
+            rgba(144, 144, 144, 0.2) 54%, rgba(200, 200, 200, 0.4) calc(54% + 5px), transparent calc(54% + 6px)
+        );
     background-attachment: fixed;
 }
 body.theme-kylo button.primary { background: #3f1b1b; color: #909090; border-color: #ea1c1c; }
