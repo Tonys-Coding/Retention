@@ -14,7 +14,7 @@ Retention is available wherever you need it:
 *   **Web Dashboard:** A sprawling, full-screen desktop experience hosted on GitHub Pages. Perfect for organizing massive decks and dragging-and-dropping textbook PDFs.
 *   **Mobile PWA (Progressive Web App):** Installable directly to your iOS or Android home screen. Designed to behave exactly like a native app, complete with offline capabilities, custom iOS viewport handling to prevent keyboard clipping, and touch-friendly gestures.
 
-### 🔄 Seamless Background Auto-Sync
+###  Seamless Background Auto-Sync
 Never worry about transferring your decks manually again. 
 Retention features a silent, background auto-sync engine built on Google Drive. If you add a flashcard on your desktop Web Dashboard, your Mobile PWA will instantly detect the changes and automatically pull the updates in the background the next time you open it. It features a robust last-write-wins polling system and gracefully handles expired tokens.
 
