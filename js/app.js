@@ -1,6 +1,6 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
-import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
+import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
 
 // State
 let currentDeckId = null;
@@ -190,7 +190,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme !== 'light') document.body.classList.add('theme-' + savedTheme);
 
+    
     await initDB();
+    startAutoSync();
+    window.addEventListener('sync_complete_reload', () => {
+        // Reload UI to show synced changes
+        location.reload();
+    });
+    
     await loadDecks();
     await checkSavedSession();
 });

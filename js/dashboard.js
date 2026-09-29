@@ -1,6 +1,6 @@
 import { isExtension, storage, runtime } from './env.js';
 import { processChunksInPage } from './ai-processor.js';
-import { uploadToDrive, downloadFromDrive, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
+import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 
@@ -146,7 +146,14 @@ async function init() {
     sidebarHome.style.cursor = 'pointer';
     sidebarHome.onclick = () => showHome();
 
+    
     await initDB();
+    startAutoSync();
+    window.addEventListener('sync_complete_reload', () => {
+        // Reload UI to show synced changes
+        location.reload();
+    });
+    
     const savedTheme = localStorage.getItem('theme') || 'light';
     if (savedTheme !== 'light') document.body.classList.add('theme-' + savedTheme);
     

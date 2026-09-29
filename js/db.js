@@ -3,6 +3,12 @@ const DB_VERSION = 3;
 
 export let db;
 
+export const markDbDirty = () => {
+    localStorage.setItem('needs_sync', 'true');
+    window.dispatchEvent(new Event('db_updated'));
+};
+
+
 export const initDB = () => {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -43,7 +49,7 @@ export const addFolder = (name, color, parentId = null) => {
         const transaction = db.transaction(['folders'], 'readwrite');
         const store = transaction.objectStore('folders');
         const request = store.add({ name, color, parentId, createdAt: new Date().toISOString() });
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => { markDbDirty(); resolve(request.result); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
@@ -86,7 +92,7 @@ export const deleteFolder = (id) => {
         const transaction = db.transaction(['folders'], 'readwrite');
         const store = transaction.objectStore('folders');
         const request = store.delete(id);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => { markDbDirty(); resolve(); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
@@ -96,7 +102,7 @@ export const addDeck = (name, folderId = null) => {
         const transaction = db.transaction(['decks'], 'readwrite');
         const store = transaction.objectStore('decks');
         const request = store.add({ name, folderId, createdAt: new Date().toISOString() });
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => { markDbDirty(); resolve(request.result); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
@@ -160,7 +166,7 @@ export const addCard = (card) => {
         if (card.nextReviewDate === undefined) card.nextReviewDate = Date.now();
         
         const request = store.add(card);
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => { markDbDirty(); resolve(request.result); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };
@@ -170,7 +176,7 @@ export const updateCard = (card) => {
         const transaction = db.transaction(['cards'], 'readwrite');
         const store = transaction.objectStore('cards');
         const request = store.put(card);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => { markDbDirty(); resolve(); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
@@ -204,7 +210,7 @@ export const deleteCard = (id) => {
         const transaction = db.transaction(['cards'], 'readwrite');
         const store = transaction.objectStore('cards');
         const request = store.delete(id);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => { markDbDirty(); resolve(); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 }
@@ -221,7 +227,7 @@ export const recordStudyResult = (know) => {
             else data.forgot++;
             store.put(data);
         };
-        transaction.oncomplete = resolve;
+        transaction.oncomplete = () => { markDbDirty(); resolve(); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };

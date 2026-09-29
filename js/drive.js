@@ -81,12 +81,12 @@ export const downloadPdfFromDrive = async (fileId) => {
     return await res.arrayBuffer();
 };
 
-const getBackupFileId = async (token) => {
-    const res = await fetch('https://www.googleapis.com/drive/v3/files?q=name="retention_backup.json" and trashed=false&spaces=drive', {
+const getBackupFile = async (token) => {
+    const res = await fetch('https://www.googleapis.com/drive/v3/files?q=name="retention_backup.json" and trashed=false&spaces=drive&fields=files(id,modifiedTime)', {
         headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
-    if (data.files && data.files.length > 0) return data.files[0].id;
+    if (data.files && data.files.length > 0) return data.files[0];
     return null;
 };
 
@@ -108,7 +108,7 @@ export const uploadToDrive = async () => {
         });
 
         const backupData = JSON.stringify({ decks, folders, cards });
-        const fileId = await getBackupFileId(token);
+        const fileId = (await getBackupFile(token))?.id;
         
         const metadata = {
             name: 'retention_backup.json',
@@ -142,7 +142,7 @@ export const uploadToDrive = async () => {
 export const downloadFromDrive = async () => {
     try {
         const token = await getAuthToken();
-        const fileId = await getBackupFileId(token);
+        const fileId = (await getBackupFile(token))?.id;
         if (!fileId) throw new Error('No backup found on Drive.');
         
         const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -177,4 +177,59 @@ export const downloadFromDrive = async () => {
         console.error(e);
         throw e;
     }
+};
+
+let syncTimer = null;
+let isSyncing = false;
+
+export const startAutoSync = () => {
+    window.addEventListener('db_updated', () => {
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(doAutoSync, 3000); // Debounce 3s
+    });
+    // Run on boot
+    setTimeout(doAutoSync, 2000);
+    
+    // Run on tab focus
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            doAutoSync();
+        }
+    });
+};
+
+export const doAutoSync = async () => {
+    if (isSyncing) return;
+    isSyncing = true;
+    try {
+        const token = await getAuthToken().catch(() => null);
+        if (!token) {
+            isSyncing = false;
+            return; // Not authenticated
+        }
+        
+        const file = await getBackupFile(token);
+        const needsSync = localStorage.getItem('needs_sync');
+        const lastKnownTime = localStorage.getItem('drive_last_modified');
+        
+        if (needsSync === 'true') {
+            // Local changes exist, upload them
+            await uploadToDrive();
+            // Fetch the new time
+            const newFile = await getBackupFile(token);
+            if (newFile) localStorage.setItem('drive_last_modified', newFile.modifiedTime);
+            localStorage.setItem('needs_sync', 'false');
+        } else if (file) {
+            // Check if drive file is newer
+            if (!lastKnownTime || new Date(file.modifiedTime) > new Date(lastKnownTime)) {
+                // Remote is newer!
+                await downloadFromDrive();
+                localStorage.setItem('drive_last_modified', file.modifiedTime);
+                window.dispatchEvent(new Event('sync_complete_reload'));
+            }
+        }
+    } catch (e) {
+        console.error("Auto Sync Error:", e);
+    }
+    isSyncing = false;
 };
