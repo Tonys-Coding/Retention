@@ -10,8 +10,8 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Retention — Dashboard</title>
-    <link href="css/style.css?v=8" rel="stylesheet">
-    <link href="css/dashboard.css?v=8" rel="stylesheet">
+    <link href="css/style.css?v=9" rel="stylesheet">
+    <link href="css/dashboard.css?v=9" rel="stylesheet">
     <script src="js/marked.min.js"></script>
     <!-- Google Identity Services (web OAuth for Drive sync) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -258,20 +258,20 @@
 
     <!-- MODAL: Preview Card -->
     <div class="db-modal-overlay" id="modal-preview">
-        <div style="width: 100%; max-width: 600px; padding: 24px; display: flex; flex-direction: column; align-items: center;">
-            <div class="db-flashcard" id="preview-flashcard" style="width: 100%; aspect-ratio: 1 / 1; min-height: 350px; max-height: 50vh; margin-bottom: 24px; cursor: pointer;">
-                <div class="db-flashcard-inner" style="width: 100%; height: 100%; position: relative; transition: transform 0.5s; transform-style: preserve-3d;">
-                    <div class="db-flashcard-face db-flashcard-face--front" style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%;">
-                        <div id="preview-term" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;"></div>
-                        <div class="hint-text">(Tap to flip)</div>
+        <div style="width: 100%; max-width: 800px; padding: 24px; display: flex; flex-direction: column; align-items: center; max-height: 100vh; overflow-y: auto;">
+            <div class="db-flashcard" id="preview-flashcard" style="margin-bottom: 24px;">
+                <div class="db-flashcard-inner">
+                    <div class="db-flashcard-face">
+                        <div id="preview-term" style="font-size: clamp(18px, 3vw, 32px); font-weight: 800; line-height: 1.4; word-break: break-word; width: 100%;"></div>
+                        <span class="hint-text" style="margin-top: 16px;">(Click to flip)</span>
                     </div>
-                    <div class="db-flashcard-face db-flashcard-face--back" style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%;">
-                        <div id="preview-def" style="width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 16px;"></div>
-                        <div id="preview-ex" style="width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; font-style: italic; color: var(--text-secondary);"></div>
+                    <div class="db-flashcard-face db-flashcard-face--back">
+                        <div id="preview-def" style="font-size: clamp(16px, 2.5vw, 26px); font-weight: 700; line-height: 1.4; word-break: break-word; width: 100%; margin-bottom: 16px;"></div>
+                        <p class="example-text" id="preview-ex"></p>
                     </div>
                 </div>
             </div>
-            <button id="preview-close" class="secondary" style="width: 100%; padding: 16px; font-weight: bold;">Close Preview</button>
+            <button id="preview-close" class="secondary" style="width: 100%; padding: 16px; font-weight: bold;">CLOSE PREVIEW</button>
         </div>
     </div>
 
@@ -280,7 +280,7 @@
 
     <script src="js/confetti.min.js"></script>
     <script src="js/pdf.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=8"></script>
+    <script type="module" src="js/dashboard.js?v=9"></script>
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="db-modal-overlay" style="z-index: 10000;">
