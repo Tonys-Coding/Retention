@@ -330,23 +330,23 @@ body.theme-tatooine button.primary { background: #8c4a22; color: #f4dca6; border
 body.theme-tatooine button.secondary { background: #f4dca6; color: #3d2314; border-color: #3d2314; }
 body.theme-tatooine .maze-bg { display: none !important; }
 
-/* KYLO REN */
+/* KYLO */
 body.theme-kylo {
-    --bg-primary: #121212;
-    --bg-secondary: #1e1e1e;
-    --bg-overlay: rgba(18, 18, 18, 0.95);
-    --text-primary: #e0e0e0;
-    --text-secondary: #a84242;
-    --border-color: #333333;
-    --shadow-color: #000000;
-    --hover-bg: #2a2a2a;
-    --input-bg: #121212;
+    --bg-primary: #000000;
+    --bg-secondary: #120202;
+    --bg-overlay: rgba(0, 0, 0, 0.95);
+    --text-primary: #909090;
+    --text-secondary: #ea1c1c;
+    --border-color: #3f1b1b;
+    --shadow-color: #120202;
+    --hover-bg: #312f2f;
+    --input-bg: #000000;
 
     background-color: var(--bg-primary);
-    background-image: radial-gradient(circle at 50% 50%, rgba(92, 22, 22, 0.05) 0%, transparent 60%);
+    background-image: radial-gradient(circle at 50% 50%, rgba(234, 28, 28, 0.05) 0%, transparent 60%);
 }
-body.theme-kylo button.primary { background: #5c1616; color: #e0e0e0; border-color: #333333; }
-body.theme-kylo button.secondary { background: #1e1e1e; color: #5c1616; border-color: #333333; }
+body.theme-kylo button.primary { background: #3f1b1b; color: #909090; border-color: #ea1c1c; }
+body.theme-kylo button.secondary { background: #120202; color: #909090; border-color: #3f1b1b; }
 body.theme-kylo .maze-bg { display: none !important; }
 
 /* TRANSPARENCY BLOCK */
