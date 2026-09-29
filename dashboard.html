@@ -18,7 +18,7 @@
     <script>
         // Register PWA service worker (only on the open web, not inside the extension)
         if ('serviceWorker' in navigator && !(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id)) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
         }
     </script>
 </head>
@@ -296,7 +296,6 @@
                         </button>
                     </div>
                     
-                    <button id="btn-save-settings" class="primary" style="width: 100%; margin-bottom: 12px; padding: 16px; font-weight: 900; text-transform: uppercase; font-size: 16px;">SAVE KEY</button>
                     <p style="font-size: 14px; margin-top: 0; text-align: center;"><a href="https://openrouter.ai/keys" target="_blank" style="color: var(--text-secondary); text-decoration: underline; font-weight: bold;">Get a key from OpenRouter</a></p>
                 </div>
                 
@@ -323,7 +322,10 @@
                 </div>
             </div>
             
-            <button id="btn-cancel-settings" style="width: 100%; padding: 20px; font-weight: 900; font-size: 18px; text-transform: uppercase;">CLOSE</button>
+            <div style="display: flex; gap: 12px;">
+                <button id="btn-cancel-settings" style="flex: 1; padding: 20px; font-weight: 900; font-size: 18px; text-transform: uppercase;">CLOSE</button>
+                <button id="btn-save-settings" class="primary" style="flex: 1; padding: 20px; font-weight: 900; font-size: 18px; text-transform: uppercase;">SAVE SETTINGS</button>
+            </div>
         </div>
     </div>
 

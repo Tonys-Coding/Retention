@@ -10,21 +10,21 @@
 const CACHE_NAME = 'retention-v1';
 
 const APP_SHELL = [
-    '/dashboard.html',
-    '/css/style.css',
-    '/css/dashboard.css',
-    '/js/dashboard.js',
-    '/js/db.js',
-    '/js/csv.js',
-    '/js/env.js',
-    '/js/ai-processor.js',
-    '/js/drive.js',
-    '/js/marked.min.js',
-    '/js/confetti.min.js',
-    '/js/pdf.min.js',
-    '/js/pdf.worker.min.js',
-    '/icons/icon48.png',
-    '/icons/icon128.png'
+    './dashboard.html',
+    './css/style.css',
+    './css/dashboard.css',
+    './js/dashboard.js',
+    './js/db.js',
+    './js/csv.js',
+    './js/env.js',
+    './js/ai-processor.js',
+    './js/drive.js',
+    './js/marked.min.js',
+    './js/confetti.min.js',
+    './js/pdf.min.js',
+    './js/pdf.worker.min.js',
+    './icons/icon48.png',
+    './icons/icon128.png'
 ];
 
 // ─── Install: pre-cache the app shell ────────────────────────────────
