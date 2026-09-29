@@ -343,7 +343,14 @@ body.theme-kylo {
     --input-bg: #000000;
 
     background-color: var(--bg-primary);
-    background-image: radial-gradient(circle at 50% 50%, rgba(234, 28, 28, 0.05) 0%, transparent 60%);
+    background-image: 
+        /* Red fractured/crack slashes (Kintsugi mask repair) */
+        linear-gradient(115deg, transparent calc(30% - 1px), rgba(234, 28, 28, 0.8) 30%, rgba(234, 28, 28, 0.3) calc(30% + 3px), transparent calc(30% + 6px)),
+        linear-gradient(65deg, transparent calc(60% - 1px), rgba(234, 28, 28, 0.8) 60%, rgba(234, 28, 28, 0.3) calc(60% + 3px), transparent calc(60% + 6px)),
+        linear-gradient(145deg, transparent calc(75% - 1px), rgba(234, 28, 28, 0.6) 75%, transparent calc(75% + 4px)),
+        /* Horizontal chrome visor lines */
+        repeating-linear-gradient(0deg, rgba(144, 144, 144, 0.06) 0px, rgba(144, 144, 144, 0.06) 2px, transparent 2px, transparent 12px);
+    background-attachment: fixed;
 }
 body.theme-kylo button.primary { background: #3f1b1b; color: #909090; border-color: #ea1c1c; }
 body.theme-kylo button.secondary { background: #120202; color: #909090; border-color: #3f1b1b; }
