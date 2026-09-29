@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retention — Dashboard</title>
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/dashboard.css" rel="stylesheet">
+    <script src="js/marked.min.js"></script>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="db-sidebar">
+        <div class="db-sidebar-header" id="sidebar-home">
+            <img src="icons/icon48.png" alt="Logo" width="32" height="32">
+            <h1>Retention</h1>
+        </div>
+        <nav class="db-sidebar-nav" id="sidebar-nav"></nav>
+        <div class="db-sidebar-footer" style="padding: 16px;">
+            <div class="dropdown" id="add-dropdown-container" style="width: 100%; position: relative;">
+                <button id="btn-add-menu" class="primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    ADD NEW...
+                </button>
+                <div class="dropdown-content" id="dropdown-add-menu" style="bottom: 0; left: calc(100% + 20px); top: auto; min-width: 220px;">
+                    <button id="btn-new-folder" style="font-weight: 900; text-transform: uppercase;">NEW FOLDER</button>
+                    <button id="btn-new-deck" style="font-weight: 900; text-transform: uppercase;">NEW DECK</button>
+                    <button id="btn-menu-add-pdf" style="font-weight: 900; text-transform: uppercase;">GENERATE FROM PDF</button>
+                    <button id="btn-menu-add-pdf-drive" style="font-weight: 900; text-transform: uppercase;">IMPORT PDF FROM DRIVE</button>
+                </div>
+            </div>
+            <input type="file" id="file-ai-pdf" accept=".pdf" style="display: none;">
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="db-main">
+        <div class="db-toolbar">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                <button class="icon-btn" id="btn-back" title="Back" style="display:none;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+                </button>
+                <h2 id="main-title">Home</h2>
+                <button class="icon-btn" id="btn-edit-workspace" title="Edit Workspace" style="display:none; padding:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </button>
+            </div>
+            <div class="db-toolbar-actions">
+                <button class="icon-btn" id="btn-open-settings" title="Settings" style="display: flex; align-items: center; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button class="icon-btn" id="btn-theme" title="Toggle Theme">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
+                </button>
+                <button id="btn-restart" class="secondary" style="display:none;padding:8px 20px;">Restart</button>
+                <button id="btn-study" class="primary" style="display:none;padding:8px 20px;">Study</button>
+            </div>
+        </div>
+
+        <div class="db-body" id="main-body">
+
+            <div id="bg-task-banner" style="display: none; background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 12px 16px; margin-bottom: 24px; box-shadow: 4px 4px 0px 0px var(--shadow-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <svg class="ai-sparkle" id="bg-task-spinner" width="18" height="18" viewBox="0 0 24 24" fill="var(--text-primary)" stroke="none">
+                            <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4L12 2z" />
+                        </svg>
+                        <span id="bg-task-title">Generating AI Cards...</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div id="bg-task-percent" style="font-size: 14px; font-weight: bold;">0%</div>
+                        <button id="btn-close-bg-task" style="background: var(--bg-primary); border: 2px solid var(--border-color); cursor: pointer; color: var(--text-primary); font-size: 14px; width: 24px; height: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 0 var(--shadow-color); padding: 0;">✕</button>
+                    </div>
+                </div>
+                <div style="width: 100%; height: 8px; background: var(--bg-primary); border: 2px solid var(--border-color); border-radius: 4px; overflow: hidden;">
+                    <div id="bg-task-fill" style="height: 100%; width: 0%; background: var(--text-primary); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div id="view-stats-bar" class="db-stats-bar" style="display: none;">
+                <div class="db-stat-card">
+                    <div class="db-stat-value" id="db-stat-streak">0</div>
+                    <div class="db-stat-label">Daily Streak</div>
+                </div>
+                <div class="db-stat-card">
+                    <div class="db-stat-value" id="db-stat-accuracy">0%</div>
+                    <div class="db-stat-label">Overall Accuracy</div>
+                </div>
+                <div class="db-stat-card">
+                    <div class="db-stat-value" id="db-stat-mastered">0</div>
+                    <div class="db-stat-label">Cards Mastered</div>
+                </div>
+            </div>
+
+            <!-- Grid view (Home / Folder) -->
+            <div class="db-grid" id="view-grid"></div>
+
+            <!-- Deck Edit View -->
+            <div class="db-deck-edit" id="view-deck">
+                <div class="db-deck-stats" id="deck-mastery">0 cards · 0 mastered</div>
+                <div class="db-deck-cards" id="deck-cards-list"></div>
+
+                <!-- Add Card Form -->
+                <div class="db-add-card">
+                    <h3 style="margin:0 0 12px 0;font-size:18px;font-weight:900;text-transform:uppercase;">Add Card</h3>
+                    <div class="card-mode-toggle" style="margin-bottom:16px;">
+                        <button class="mode-btn active" id="btn-mode-standard">Standard</button>
+                        <button class="mode-btn" id="btn-mode-fitb">Fill-in-the-Blank</button>
+                    </div>
+                    <div id="add-fields-standard">
+                        <input type="text" id="add-term" placeholder="Term / Question">
+                        <input type="text" id="add-def" placeholder="Definition / Answer">
+                        <input type="text" id="add-ex" placeholder="Example (optional)">
+                        
+                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="add-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                            <button id="btn-add-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            </button>
+                            <input type="file" id="add-image-file" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="add-image-preview-container" style="display: none; margin-bottom: 12px; position: relative; max-width: 300px;">
+                            <img id="add-image-preview" src="" style="width: 100%; border: 3px solid var(--border-color); box-sizing: border-box;">
+                            <button id="btn-remove-add-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color); width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="add-fields-fitb" style="display:none;">
+                        <input type="text" id="add-fitb-sentence" placeholder="Full sentence (containing the answer)">
+                        <input type="text" id="add-fitb-answer" placeholder="Answer (1-3 words to blank out)">
+                    </div>
+                    <button id="btn-add-card" class="primary" style="width:100%;margin-top:8px;">Add Card</button>
+                </div>
+            </div>
+
+            <!-- Study view -->
+            <div class="db-study" id="view-study">
+                <div class="db-study-bar">
+                    <span id="study-progress">1 / 10</span>
+                    <span id="study-mastery" style="color:var(--text-secondary);">Mastery: 0%</span>
+                </div>
+                <div class="db-flashcard" id="flashcard">
+                    <div class="db-flashcard-inner">
+                        <div class="db-flashcard-face" id="fc-front">
+                            <img id="fc-img" class="db-flashcard-img" src="" style="display:none;">
+                            <h2 id="fc-term">Term</h2>
+                            <span class="hint-text" id="fc-hint">(Click to flip)</span>
+                        </div>
+                        <div class="db-flashcard-face db-flashcard-face--back" id="fc-back">
+                            <h3 id="fc-def">Definition</h3>
+                            <p class="example-text" id="fc-ex"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="db-cloze-area" id="cloze-area" style="display:none;">
+                    <input type="text" id="cloze-input" placeholder="Type your answer...">
+                    <button id="btn-cloze-check" class="primary">Check</button>
+                </div>
+                <div class="db-study-actions" id="study-actions">
+                    <button id="btn-forgot" class="danger">Forgot (1)</button>
+                    <button id="btn-skip">Skip (2)</button>
+                    <button id="btn-know" class="primary">Know (3)</button>
+                </div>
+            </div>
+
+            <!-- Complete view -->
+            <div class="db-complete" id="view-complete">
+                <h1>Session Complete!</h1>
+                <p>You reviewed <strong id="complete-count">0</strong> cards.</p>
+                <div class="db-complete-actions">
+                    <button id="btn-again" class="primary">Study Again</button>
+                    <button id="btn-home">Back to Home</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL: Add/Edit Item -->
+    <div class="db-modal-overlay" id="modal-add">
+        <div class="db-modal">
+            <h2 id="modal-title">Add New Item</h2>
+            <input type="text" id="modal-name" placeholder="Name">
+            <div id="modal-color-row" style="display:none;">
+                <label style="font-weight:bold;font-size:13px;display:block;margin-bottom:6px;">Folder Color</label>
+                <input type="color" id="modal-color" value="#4488ff" style="width:60px;height:40px;cursor:pointer;border:3px solid var(--border-color);padding:0;">
+            </div>
+            <div class="db-modal-actions">
+                <button id="modal-cancel">Cancel</button>
+                <button id="modal-save" class="primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Confirm -->
+    <div class="db-modal-overlay" id="modal-confirm">
+        <div class="db-modal">
+            <h2>Confirm</h2>
+            <p id="confirm-msg" style="margin:0;font-size:16px;"></p>
+            <div class="db-modal-actions">
+                <button id="confirm-cancel">Cancel</button>
+                <button id="confirm-ok" class="danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Card -->
+    <div class="db-modal-overlay" id="modal-edit-card">
+        <div class="db-modal" style="max-width:600px;">
+            <h2>Edit Card</h2>
+            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Term</label>
+            <textarea id="edit-card-term" rows="3" style="width:100%;"></textarea>
+            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Definition</label>
+            <textarea id="edit-card-def" rows="3" style="width:100%;"></textarea>
+            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Example</label>
+            <input type="text" id="edit-card-ex" placeholder="Example (optional)">
+            
+            <div id="edit-card-image-section">
+                <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Image</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; margin-top: 4px;">
+                    <input type="text" id="edit-image-paste" placeholder="Paste image here..." style="margin-bottom: 0; flex: 1;">
+                    <button id="btn-edit-image" class="secondary" title="Upload Image" style="width: auto; padding: 0 16px; display: flex; align-items: center; justify-content: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    </button>
+                    <input type="file" id="edit-image-file" accept="image/*" style="display: none;">
+                </div>
+                <div id="edit-image-preview-container" style="display: none; margin-bottom: 12px; position: relative; max-width: 300px;">
+                    <img id="edit-image-preview" src="" style="width: 100%; border: 3px solid var(--border-color); box-sizing: border-box;">
+                    <button id="btn-remove-edit-image" class="icon-btn" style="position: absolute; top: 4px; right: 4px; background: var(--bg-secondary); border: 2px solid var(--border-color); width: 24px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="db-modal-actions">
+                <button id="edit-card-cancel">Cancel</button>
+                <button id="edit-card-save" class="primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Preview Card -->
+    <div class="db-modal-overlay" id="modal-preview">
+        <div class="db-modal" style="max-width:600px;">
+            <h2>Card Preview</h2>
+            <div style="border:4px solid var(--border-color);padding:24px;margin-bottom:16px;">
+                <div id="preview-term" style="font-weight:800;font-size:20px;margin-bottom:12px;"></div>
+                <hr style="border:2px solid var(--border-color);margin:12px 0;">
+                <div id="preview-def" style="font-size:16px;margin-bottom:8px;"></div>
+                <div id="preview-ex" style="font-size:14px;font-style:italic;color:var(--text-secondary);"></div>
+            </div>
+            <button id="preview-close" style="width:100%;">Close</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="db-toast" class="db-toast">Message</div>
+
+    <script src="js/confetti.min.js"></script>
+    <script src="js/pdf.min.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="db-modal-overlay" style="z-index: 10000;">
+        <div class="db-modal" style="max-width: 720px; padding: 40px;">
+            <h2 style="margin-top: 0; margin-bottom: 32px; font-size: 32px; text-transform: uppercase;">Settings</h2>
+            
+            <div style="display: flex; gap: 48px; margin-bottom: 40px; align-items: flex-start; flex-wrap: wrap;">
+                <!-- Left: OpenRouter -->
+                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column;">
+                    <h3 style="margin-top: 0; font-size: 20px; border-bottom: 3px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">AI Configuration</h3>
+                    <p style="font-size: 14px; margin-bottom: 16px; color: var(--text-secondary); line-height: 1.5;">To generate flashcards from PDFs automatically, you need an OpenRouter API Key.</p>
+                    
+                    <div style="position: relative; width: 100%; margin-bottom: 16px;">
+                        <input type="password" id="input-api-key" placeholder="Paste API Key..." style="margin-bottom: 0; padding: 14px 48px 14px 14px; width: 100%; box-sizing: border-box; font-size: 16px;">
+                        <button id="btn-toggle-api-key" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: transparent; border: none; box-shadow: none; padding: 4px; cursor: pointer; color: var(--text-primary); display: flex; align-items: center; justify-content: center; height: 100%;">
+                            <svg id="icon-api-key-locked" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <svg id="icon-api-key-unlocked" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        </button>
+                    </div>
+                    
+                    <button id="btn-save-settings" class="primary" style="width: 100%; margin-bottom: 12px; padding: 16px; font-weight: 900; text-transform: uppercase; font-size: 16px;">SAVE KEY</button>
+                    <p style="font-size: 14px; margin-top: 0; text-align: center;"><a href="https://openrouter.ai/keys" target="_blank" style="color: var(--text-secondary); text-decoration: underline; font-weight: bold;">Get a key from OpenRouter</a></p>
+                </div>
+                
+                <!-- Right: Cloud Sync -->
+                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column;">
+                    <h3 style="margin-top: 0; font-size: 20px; border-bottom: 3px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">Cloud Sync</h3>
+                    <p style="font-size: 14px; margin-bottom: 16px; color: var(--text-secondary); line-height: 1.5;">Backup your flashcards to Google Drive. Merge your web dashboard decks with your Chrome extension data seamlessly.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <button id="btn-sync-upload" style="padding: 16px; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            UPLOAD TO DRIVE
+                        </button>
+                        <button id="btn-sync-download" style="padding: 16px; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            DOWNLOAD FROM DRIVE
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="btn-cancel-settings" style="width: 100%; padding: 20px; font-weight: 900; font-size: 18px; text-transform: uppercase;">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Dropzone Overlay -->
+    <div id="dropzone-overlay" class="dropzone-base" style="z-index: 10000; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-overlay); display: none; padding: 24px; flex-direction: column; justify-content: center; align-items: center;">
+        <div id="dropzone-content" style="border: 4px dashed var(--border-color); background: var(--bg-secondary); padding: 48px 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <h2 style="margin-bottom: 12px; font-size: 24px;">Drop PDF to generate cards</h2>
+            <p style="color: var(--text-secondary); text-align: center; font-size: 14px; margin-bottom: 24px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
+            <select id="ai-focus-select" style="padding: 12px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; width: 100%; max-width: 300px; font-weight: bold; margin-bottom: 24px;">
+                <option value="general">Focus: General Summary</option>
+                <option value="dates">Focus: Dates & Events</option>
+                <option value="vocabulary">Focus: Vocabulary / Jargon</option>
+                <option value="formulas">Focus: Formulas & Math</option>
+                <option value="people">Focus: People & Quotes</option>
+            </select>
+            <button id="btn-cancel-dropzone" style="margin-top: 16px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Drive PDF Picker Modal -->
+    <div id="modal-drive-picker" class="db-modal-overlay" style="z-index: 10000;">
+        <div class="db-modal" style="max-width: 600px; width: 90%; height: 80vh; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; margin-bottom: 8px; font-size: 24px;">Select PDF from Drive</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); margin-top: 0; margin-bottom: 16px;">Pick a PDF to generate AI flashcards.</p>
+            <input type="text" id="drive-picker-search" placeholder="Search your PDFs..." style="margin-bottom: 16px; padding: 12px; font-size: 14px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+            <div id="drive-picker-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px; margin-bottom: 16px;"></div>
+            <button id="drive-picker-load-more" style="display: none; margin-bottom: 16px;">Load More</button>
+            <button id="btn-cancel-drive-picker" style="width: 100%; padding: 16px;">Cancel</button>
+        </div>
+    </div>
+
+</body>
+</html>
