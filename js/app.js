@@ -220,7 +220,8 @@ const themeData = [
     { id: 'cabin', name: 'Cozy Cabin', color: '#382215' },
     { id: 'matcha', name: 'Matcha', color: '#d1deb9' },
     { id: 'tatooine', name: 'Tatooine', color: '#e6c280' },
-    { id: 'kylo', name: 'Kylo', color: '#ea1c1c' }
+    { id: 'kylo', name: 'Kylo', color: '#ea1c1c' },
+    { id: 'strawberry', name: 'Strawberry', color: '#FA2A28' }
 ];
 
 const applyTheme = (theme) => {

@@ -368,6 +368,30 @@ body.theme-kylo button.secondary { background: #120202; color: #909090; border-c
 body.theme-kylo .maze-bg { display: none !important; }
 
 /* TRANSPARENCY BLOCK */
+
+/* Strawberry Theme */
+body.theme-strawberry {
+    --bg-primary: #FA2A28;
+    --bg-secondary: #FEC0A9;
+    --bg-overlay: rgba(182, 13, 23, 0.8);
+    --text-primary: #B60D17;
+    --text-secondary: #336B26;
+    --accent-primary: #C9CF56;
+    --border-color: #B60D17;
+    --shadow-color: #B60D17;
+    
+    background-color: var(--bg-primary);
+    background-image: 
+        radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px),
+        radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px);
+    background-size: 60px 80px;
+    background-position: 0 0, 30px 40px;
+}
+body.theme-strawberry button.primary { background: #C9CF56; color: #336B26; border-color: #336B26; box-shadow: 4px 4px 0px 0px #336B26; }
+body.theme-strawberry button.secondary { background: #FEC0A9; color: #B60D17; border-color: #B60D17; }
+body.theme-strawberry button:hover { background: #336B26; color: #C9CF56; border-color: #336B26; box-shadow: 4px 4px 0px 0px #336B26; }
+body.theme-strawberry .maze-bg { display: none !important; }
+
 body.theme-autumn .view,
 body.theme-vaporwave .view,
 body.theme-blueprint .view,
@@ -380,6 +404,7 @@ body.theme-cabin .view,
 body.theme-matcha .view,
 body.theme-tatooine .view,
 body.theme-kylo .view,
+body.theme-strawberry .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
 body.theme-blueprint .list-container,
@@ -391,7 +416,8 @@ body.theme-moon .list-container,
 body.theme-cabin .list-container,
 body.theme-matcha .list-container,
 body.theme-tatooine .list-container,
-body.theme-kylo .list-container {
+body.theme-kylo .list-container,
+body.theme-strawberry .list-container {
     background: transparent !important;
 }
 
