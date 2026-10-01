@@ -191,6 +191,7 @@ const buildBackup = async () => {
         decks: await getDecks(),
         cards: await readAll('cards'),
         stats: await getStats(),
+        quizResults: await readAll('quizResults'),
         exportedAt: new Date().toISOString()
     };
     // Only once customized, so a default list never overwrites another device's
@@ -247,7 +248,8 @@ const restoreBackup = async (token, file) => {
         await restoreFavorites(data.preferences.themeFavorites);
     }
 
-    const storeNames = ['folders', 'decks', 'cards', 'stats'].filter(name => Array.isArray(data[name]));
+    // Older backups may lack a store (e.g. quizResults); leave that local data alone
+    const storeNames = ['folders', 'decks', 'cards', 'stats', 'quizResults'].filter(name => Array.isArray(data[name]));
     if (storeNames.length === 0) return;
     await new Promise((resolve, reject) => {
         const tx = db.transaction(storeNames, 'readwrite');

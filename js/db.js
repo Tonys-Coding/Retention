@@ -1,7 +1,7 @@
 import { storage } from './env.js';
 
 const DB_NAME = 'RetentionDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export let db;
 
@@ -29,6 +29,9 @@ export const initDB = () => {
 
         request.onsuccess = (event) => {
             db = event.target.result;
+            // Another context (popup, dashboard tab, background worker) is upgrading the
+            // database: release this connection so the upgrade isn't blocked
+            db.onversionchange = () => db.close();
             resolve(db);
         };
 
@@ -51,6 +54,11 @@ export const initDB = () => {
             if (!db.objectStoreNames.contains('folders')) {
                 const folderStore = db.createObjectStore('folders', { keyPath: 'id', autoIncrement: true });
                 folderStore.createIndex('parentId', 'parentId', { unique: false });
+            }
+
+            // v4: quiz attempts, kept separate from study stats and card mastery
+            if (!db.objectStoreNames.contains('quizResults')) {
+                db.createObjectStore('quizResults', { keyPath: 'id', autoIncrement: true });
             }
         };
     });
@@ -291,5 +299,40 @@ export const getStats = () => {
         request.onsuccess = () => resolve(request.result);
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
+    });
+};
+
+export const getAllCards = () => {
+    return new Promise((resolve, reject) => {
+        const request = db.transaction(['cards'], 'readonly').objectStore('cards').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+    });
+};
+
+// ─── Quiz results (separate from study stats; never change card mastery) ───
+export const addQuizResult = (result) => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['quizResults'], 'readwrite');
+        const request = transaction.objectStore('quizResults').add(result);
+        request.onsuccess = () => { markDbDirty(); resolve(request.result); };
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+    });
+};
+
+export const updateQuizResult = (result) => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['quizResults'], 'readwrite');
+        const request = transaction.objectStore('quizResults').put(result);
+        request.onsuccess = () => { markDbDirty(); resolve(); };
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
+    });
+};
+
+export const getQuizResults = () => {
+    return new Promise((resolve, reject) => {
+        const request = db.transaction(['quizResults'], 'readonly').objectStore('quizResults').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => { e.preventDefault(); reject(request.error); };
     });
 };

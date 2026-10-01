@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retention Flashcards</title>
-    <link href="css/style.css?v=18" rel="stylesheet">
+    <link href="css/style.css?v=20" rel="stylesheet">
     <script src="js/pdf.min.js"></script>
     <script src="js/marked.min.js"></script>
 </head>
@@ -88,6 +88,7 @@
             </div>
             <div style="display: flex; gap: 8px; flex-shrink: 0;">
                 <button id="btn-quick-10" class="secondary" title="Quick 10 Study" style="padding: 8px; display: none;">Quick 10</button>
+                <button id="btn-deck-quiz" class="secondary" title="Quick Quiz: 10 questions" style="padding: 8px;">Quiz</button>
                 <button id="btn-start-study" class="primary" title="Traditional Study" style="padding: 8px;">Study</button>
             </div>
         </div>
@@ -172,13 +173,26 @@
         </div>
     </div>
 
+    <!-- Quick Quiz View -->
+    <div id="view-quiz" class="view">
+        <div class="header" style="justify-content: flex-start; gap: 12px;">
+            <button class="icon-btn" id="btn-back-quiz" aria-label="Back" style="display: flex; align-items: center; justify-content: center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <h2 id="quiz-view-title" style="margin: 0; font-size: 18px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Quick Quiz</h2>
+        </div>
+        <div class="list-container">
+            <div id="quiz-root"></div>
+        </div>
+    </div>
+
     <!-- Study Complete View -->
     <div id="view-study-complete" class="view">
         <div class="header">
             <button class="icon-btn" id="btn-back-details-complete" style="display: flex; align-items: center; justify-content: center;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             </button>
-            <h2>Quiz Complete</h2>
+            <h2>Study Complete</h2>
         </div>
         <div class="list-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 16px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -434,6 +448,6 @@
     </div>
     <script src="js/confetti.min.js"></script>
 
-    <script type="module" src="js/app.js?v=18"></script>
+    <script type="module" src="js/app.js?v=20"></script>
 </body>
 </html>

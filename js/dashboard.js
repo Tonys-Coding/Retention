@@ -2,10 +2,12 @@ import { isExtension, storage, runtime } from './env.js';
 import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
-import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
+import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getQuizResults, getAllCards } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
+import { startQuiz } from './quiz-ui.js';
+import { summarizeQuizResults } from './quiz.js';
 import { renderThemesLibrary } from './themes-library.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
@@ -41,6 +43,9 @@ const dom = {
     mainTitle: $('main-title'),
     btnBack: $('btn-back'),
     btnStudy: $('btn-study'),
+    btnQuiz: $('btn-quiz'),
+    viewQuiz: $('view-quiz'),
+    viewQuizStats: $('view-quiz-stats'),
     btnRestart: $('btn-restart'),
     btnEditWorkspace: $('btn-edit-workspace'),
     viewStatsBar: $('view-stats-bar'),
@@ -131,6 +136,13 @@ function showContextMenu(e, items) {
 }
 
 // ===== INIT =====
+// Resolves a #quiz-deck-<id> / #quiz-folder-<id> link to a quiz source
+async function findQuizSource(type, id) {
+    const items = type === 'deck' ? await getDecks() : await getFolders();
+    const item = items.find((x) => x.id === id);
+    return item ? { type, id, name: item.name } : null;
+}
+
 async function init() {
     initTheme();
 
@@ -173,10 +185,17 @@ async function init() {
     await refreshSidebar();
     // Always open on the main dashboard, scrolled to the top
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    if (location.hash === '#themes') {
-        // Opened from the extension popup's "Manage themes"; drop the hash so a reload lands on home
-        history.replaceState(null, '', location.pathname + location.search);
+    // Links from the extension popup: #themes, #quiz-deck-<id>, #quiz-folder-<id>.
+    // Drop the hash so a reload lands on the main dashboard.
+    const hash = location.hash;
+    if (hash) history.replaceState(null, '', location.pathname + location.search);
+    const quizLink = hash.match(/^#quiz-(deck|folder)-(\d+)$/);
+    const quizSource = quizLink ? await findQuizSource(quizLink[1], Number(quizLink[2])) : null;
+    if (hash === '#themes') {
         showThemes();
+    } else if (quizSource) {
+        await showHome(); // so Back from the quiz returns home
+        showQuiz(quizSource);
     } else {
         await showHome();
     }
@@ -370,6 +389,7 @@ async function refreshSidebar() {
 function folderMenuItems(folder) {
     return [
         { label: 'Study All', action: () => startStudyFolder(folder.id, folder.name) },
+        { label: 'Quiz', action: () => showQuiz({ type: 'folder', id: folder.id, name: folder.name }) },
         { label: 'Edit Folder', action: () => promptRename('folder', folder) },
         { label: 'Move to…', action: () => promptMove('folder', folder) },
         { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(folder) },
@@ -402,6 +422,7 @@ async function showDeckMenu(e, deck) {
     
     const menuItems = [
         { label: 'Study', action: () => startStudyDeck(deck.id, deck.name) },
+        { label: 'Quiz', action: () => showQuiz({ type: 'deck', id: deck.id, name: deck.name }) },
         { label: 'Edit Cards', action: () => openDeckEdit(deck.id, deck.name) }
     ];
     
@@ -541,10 +562,15 @@ async function loadStats() {
     dom.statStreak.textContent = streak;
     const total = totalKnow + totalForgot;
     dom.statAccuracy.textContent = total === 0 ? '0%' : Math.round((totalKnow / total) * 100) + '%';
-    dom.statMastered.textContent = totalKnow;
+    // Cards currently marked mastered (matches the popup), not the number of "Know" answers
+    const allCards = await getAllCards();
+    dom.statMastered.textContent = allCards.filter((c) => c.status === 'mastered').length;
 }
 
 function hideAll() {
+    dom.viewQuiz.classList.remove('active');
+    dom.viewQuizStats.style.display = 'none';
+    dom.btnQuiz.style.display = 'none';
     $('view-themes').classList.remove('active');
     $('btn-sidebar-themes').classList.remove('active');
     dom.viewGrid.style.display = 'none';
@@ -571,12 +597,41 @@ function showThemes() {
     window.scrollTo(0, 0);
 }
 
+// Where the Back button returns to from a quiz
+let quizBack = () => showHome();
+
+/** Opens the quiz screen for a deck or folder. */
+function showQuiz(source) {
+    const from = currentView;
+    if (from === 'deck') { const id = editingDeckId, name = editingDeckName; quizBack = () => openDeckEdit(id, name); }
+    else if (from === 'folder') { const id = currentFolderId, name = currentFolderName; quizBack = () => showFolder(id, name); }
+    else quizBack = () => showHome();
+    currentView = 'quiz';
+    hideAll();
+    dom.mainTitle.textContent = `Quiz: ${source.name}`;
+    dom.btnBack.style.display = 'block';
+    dom.btnStudy.style.display = 'none';
+    dom.viewQuiz.classList.add('active');
+    startQuiz(dom.viewQuiz, { source, onExit: () => quizBack() });
+    window.scrollTo(0, 0);
+}
+
+async function loadQuizStats() {
+    const summary = summarizeQuizResults(await getQuizResults());
+    if (!summary.attempts) return;
+    $('db-quiz-count').textContent = summary.attempts;
+    $('db-quiz-average').textContent = `${summary.average}%`;
+    $('db-quiz-best').textContent = `${summary.best}%`;
+    if (currentView === 'home') dom.viewQuizStats.style.display = 'flex';
+}
+
 async function showHome() {
     currentView = 'home';
     currentFolderId = null;
     hideAll();
     await loadStats();
     dom.viewStatsBar.style.display = 'flex';
+    loadQuizStats().catch(console.error);
     dom.mainTitle.textContent = getWorkspaceName();
     dom.btnEditWorkspace.style.display = 'block';
     dom.btnBack.style.display = 'none';
@@ -641,6 +696,8 @@ async function showFolder(folderId, folderName) {
     dom.btnBack.style.display = 'block';
     dom.btnStudy.style.display = 'inline-block';
     dom.btnStudy.onclick = () => startStudyFolder(folderId, folderName);
+    dom.btnQuiz.style.display = 'inline-block';
+    dom.btnQuiz.onclick = () => showQuiz({ type: 'folder', id: folderId, name: folderName });
     dom.viewGrid.style.display = 'grid';
     highlightNav(`f-${folderId}`);
 
@@ -778,6 +835,8 @@ async function openDeckEdit(deckId, deckName) {
     dom.btnBack.style.display = 'block';
     dom.btnStudy.style.display = 'inline-block';
     dom.btnStudy.onclick = () => startStudyDeck(deckId, deckName);
+    dom.btnQuiz.style.display = 'inline-block';
+    dom.btnQuiz.onclick = () => showQuiz({ type: 'deck', id: deckId, name: deckName });
     dom.viewDeck.classList.add('active');
     highlightNav(`d-${deckId}`);
     await loadDeckCards();
@@ -1298,7 +1357,9 @@ function setupEvents() {
     };
 
     dom.btnBack.onclick = () => {
-        if (currentView === 'study' || currentView === 'complete') {
+        if (currentView === 'quiz') {
+            quizBack();
+        } else if (currentView === 'study' || currentView === 'complete') {
             if (editingDeckId) openDeckEdit(editingDeckId, editingDeckName);
             else if (currentFolderId) showFolder(currentFolderId, currentFolderName);
             else showHome();

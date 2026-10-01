@@ -1560,3 +1560,14 @@ body.theme-tatooine .db-main {
         cursor: default;
     }
 }
+
+/* ===== QUIZ VIEW ===== */
+.db-quiz {
+    display: none;
+    width: 100%;
+    max-width: 880px;
+}
+
+.db-quiz.active {
+    display: flex;
+}

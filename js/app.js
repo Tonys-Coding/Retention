@@ -3,6 +3,7 @@ import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvIm
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
+import { startQuiz } from './quiz-ui.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 
@@ -115,8 +116,37 @@ const views = {
     deckDetails: document.getElementById('view-deck-details'),
     study: document.getElementById('view-study'),
     studyComplete: document.getElementById('view-study-complete'),
-    stats: document.getElementById('view-stats')
+    stats: document.getElementById('view-stats'),
+    quiz: document.getElementById('view-quiz')
 };
+
+// ─── Quick Quiz (10 questions; full quiz options live in the dashboard) ───
+let quizReturnView = 'decks';
+
+const leaveQuickQuiz = () => {
+    if (quizReturnView === 'deckDetails') {
+        loadCards();
+        showView('deckDetails');
+    } else {
+        loadDecks(document.getElementById('input-search').value.trim());
+        showView('decks');
+    }
+};
+
+const startQuickQuiz = (deckId, deckName, returnView) => {
+    quizReturnView = returnView;
+    document.getElementById('quiz-view-title').textContent = `Quick Quiz: ${deckName}`;
+    showView('quiz');
+    startQuiz(document.getElementById('quiz-root'), {
+        source: { type: 'deck', id: deckId, name: deckName },
+        quick: true,
+        onExit: leaveQuickQuiz,
+        onOpenDashboard: () => chrome.tabs.create({ url: `dashboard.html#quiz-deck-${deckId}` })
+    });
+};
+
+document.getElementById('btn-back-quiz').addEventListener('click', () => leaveQuickQuiz());
+document.getElementById('btn-deck-quiz').addEventListener('click', () => startQuickQuiz(currentDeckId, currentDeckName, 'deckDetails'));
 
 const showView = (viewName) => {
     Object.values(views).forEach(v => v.classList.remove('active'));
@@ -528,6 +558,7 @@ const loadDecks = async (searchQuery = '') => {
                 <div class="dropdown-content" id="dropdown-${deck.id}">
                     <button class="btn-deck-edit" data-id="${deck.id}">Edit</button>
                     <button class="btn-deck-rename" data-id="${deck.id}">Rename</button>
+                    <button class="btn-deck-quiz" data-id="${deck.id}">Quick Quiz</button>
                     <button class="btn-deck-move" data-id="${deck.id}">Move to…</button>
                     <button class="btn-deck-export" data-id="${deck.id}">Export</button>
                     <button class="btn-deck-delete" data-id="${deck.id}">Delete</button>
@@ -592,6 +623,12 @@ const loadDecks = async (searchQuery = '') => {
             renameInput.value = deck.name;
             document.getElementById('modal-rename-deck').style.display = 'flex';
             renameInput.focus();
+        });
+
+        el.querySelector('.btn-deck-quiz').addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            startQuickQuiz(deck.id, deck.name, 'decks');
         });
 
         el.querySelector('.btn-deck-move').addEventListener('click', (e) => {
