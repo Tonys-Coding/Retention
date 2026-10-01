@@ -1,6 +1,6 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
-import { openMovePicker, deleteFolderKeepContents } from './workspace.js';
-import { exportDeckToCSV, parseCSV } from './csv.js';
+import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
+import { exportDeckToCSV } from './csv.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 
@@ -704,34 +704,26 @@ document.getElementById('btn-continue-import').addEventListener('click', () => {
 });
 
 document.getElementById('file-import').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = [...e.target.files];
+    e.target.value = '';
+    if (files.length === 0) return;
     
-    if (file.type === 'application/pdf') {
-        await handlePDFUpload(file);
-        e.target.value = '';
-        return;
+    const isPdf = (file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    const pdfs = files.filter(isPdf);
+    const csvs = files.filter(file => !isPdf(file));
+    
+    if (csvs.length > 0) {
+        if (csvs.length > 1) showToast(`Importing ${csvs.length} CSV files...`);
+        const result = await importCsvFiles(csvs, currentFolderId);
+        loadDecks();
+        showToast(describeCsvImport(result, getCurrentLocationName()));
     }
     
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-        const csvText = event.target.result;
-        const cards = parseCSV(csvText);
-        if (cards.length > 0) {
-            const deckName = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
-            const deckId = await addDeck(deckName, currentFolderId);
-            for (const card of cards) {
-                card.deckId = deckId;
-                await addCard(card);
-            }
-            loadDecks();
-            showToast(`Imported ${cards.length} cards into "${deckName}" in "${getCurrentLocationName()}"`);
-        } else {
-            showToast("No cards found or invalid CSV format.");
-        }
-        e.target.value = '';
-    };
-    reader.readAsText(file);
+    // AI generation runs one PDF at a time
+    if (pdfs.length > 0) {
+        if (pdfs.length > 1) showToast(`Only one PDF can be processed at a time. Generating from "${pdfs[0].name}".`);
+        await handlePDFUpload(pdfs[0]);
+    }
 });
 
 const openDeck = async (id, name) => {

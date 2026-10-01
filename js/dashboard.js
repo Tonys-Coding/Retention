@@ -3,8 +3,8 @@ import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
-import { exportDeckToCSV, parseCSV } from './csv.js';
-import { openMovePicker, deleteFolderKeepContents, getLocationName } from './workspace.js';
+import { exportDeckToCSV } from './csv.js';
+import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
 // ===== SVG ICONS =====
 const ICON = {
@@ -1688,27 +1688,13 @@ if (document.getElementById('btn-menu-import-csv')) {
         document.getElementById('file-import-csv').click();
     });
     document.getElementById('file-import-csv').addEventListener('change', async (e) => {
-        const file = e.target.files[0];
+        const files = [...e.target.files];
         e.target.value = '';
-        if (!file) return;
-        try {
-            const cards = parseCSV(await file.text());
-            if (cards.length === 0) {
-                showToast('No cards found or invalid CSV format.');
-                return;
-            }
-            const deckName = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
-            const deckId = await addDeck(deckName, currentFolderId);
-            for (const card of cards) {
-                await addCard({ ...card, deckId });
-            }
-            const location = currentFolderId ? currentFolderName : getWorkspaceName();
-            showToast(`Imported ${cards.length} cards into "${deckName}" in "${location}"`);
-            await refreshWorkspaceViews();
-        } catch (err) {
-            console.error(err);
-            showToast('CSV Error: ' + err.message);
-        }
+        if (files.length === 0) return;
+        if (files.length > 1) showToast(`Importing ${files.length} CSV files...`);
+        const result = await importCsvFiles(files, currentFolderId);
+        showToast(describeCsvImport(result, currentFolderId ? currentFolderName : getWorkspaceName()));
+        await refreshWorkspaceViews();
     });
 }
 

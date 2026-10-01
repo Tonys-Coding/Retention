@@ -33,6 +33,9 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 
 ###  Infinite Organization & Study Flows
 *   **Nested Folders & Drag-and-Drop:** Organize decks into folders, and nest folders within folders infinitely. Easily drag decks across your workspace.
+*   **Move To…:** Every deck and folder's ⋮ menu has a "Move to…" option that opens a tree of your entire workspace, so you can relocate anything in one tap (works on desktop and mobile, where drag-and-drop isn't practical).
+*   **Create Where You Are:** New folders, new decks, and imports (CSV, PDF, and Google Drive PDFs) are created inside the folder you currently have open instead of the workspace root.
+*   **Bulk CSV Import:** Select as many CSV files as you like at once; each becomes its own deck. Files with no cards are skipped and listed so nothing fails silently. Decks can also be exported back to CSV.
 *   **Bulk Studying:** Click "Study Decks" on any folder to instantly aggregate and shuffle every flashcard from all of its child decks into one massive study session.
 *   **State Persistence:** If you accidentally close the app mid-session, Retention remembers your exact place and drops you right back to the card you were studying.
 

@@ -6,7 +6,8 @@
  * losing their contents, and the "Move to…" destination picker.
  */
 
-import { getFolders, getDecks, updateFolder, updateDeck, deleteFolder } from './db.js';
+import { getFolders, getDecks, updateFolder, updateDeck, deleteFolder, addDeck, addCard } from './db.js';
+import { parseCSV } from './csv.js';
 
 const FOLDER_SVG = (color) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="${color || 'none'}" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
 const HOME_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
@@ -38,6 +39,51 @@ export const getLocationName = async (folderId, rootName) => {
 export const moveItem = (type, item, targetFolderId) => type === 'folder'
     ? updateFolder(item.id, undefined, undefined, targetFolderId)
     : updateDeck(item.id, undefined, targetFolderId);
+
+/**
+ * Imports one or more CSV files into folderId (null = workspace root),
+ * each file becoming its own deck named after the file. A file that
+ * fails or contains no cards is skipped without stopping the rest.
+ *
+ * @returns {Promise<{ decks: { name: string, cards: number }[], skipped: string[] }>}
+ */
+export const importCsvFiles = async (files, folderId) => {
+    const decks = [];
+    const skipped = [];
+    for (const file of files) {
+        try {
+            const cards = parseCSV(await file.text());
+            if (cards.length === 0) {
+                skipped.push(file.name);
+                continue;
+            }
+            const name = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
+            const deckId = await addDeck(name, folderId);
+            for (const card of cards) {
+                await addCard({ ...card, deckId });
+            }
+            decks.push({ name, cards: cards.length });
+        } catch (err) {
+            console.error(`CSV import failed for ${file.name}:`, err);
+            skipped.push(file.name);
+        }
+    }
+    return { decks, skipped };
+};
+
+/** Toast text summarising an importCsvFiles() result. */
+export const describeCsvImport = ({ decks, skipped }, locationName) => {
+    if (decks.length === 0) {
+        return skipped.length > 1 ? 'No cards found in the selected CSV files.' : 'No cards found or invalid CSV format.';
+    }
+    let message = decks.length === 1
+        ? `Imported ${decks[0].cards} cards into "${decks[0].name}" in "${locationName}"`
+        : `Imported ${decks.length} decks (${decks.reduce((sum, d) => sum + d.cards, 0)} cards) into "${locationName}"`;
+    if (skipped.length > 0) {
+        message += ` · Skipped ${skipped.length} file${skipped.length > 1 ? 's' : ''} with no cards: ${skipped.join(', ')}`;
+    }
+    return message;
+};
 
 /**
  * Deletes a folder, moving its decks and sub-folders up into the
