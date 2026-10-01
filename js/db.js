@@ -109,6 +109,45 @@ export const deleteFolder = (id) => {
     });
 };
 
+/**
+ * Moves folders/decks whose parent folder no longer exists back to the
+ * workspace root (older versions could leave sub-folders orphaned when
+ * their parent was deleted, making them invisible).
+ * Deliberately does not mark the DB dirty: it is an idempotent local repair,
+ * and flagging it at startup could upload stale data over a newer backup.
+ */
+export const reparentOrphans = () => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['folders', 'decks'], 'readwrite');
+        const folderStore = transaction.objectStore('folders');
+        const deckStore = transaction.objectStore('decks');
+        let repaired = 0;
+        const foldersReq = folderStore.getAll();
+        foldersReq.onsuccess = () => {
+            const folderIds = new Set(foldersReq.result.map(f => f.id));
+            foldersReq.result.forEach(f => {
+                if (f.parentId != null && (!folderIds.has(f.parentId) || f.parentId === f.id)) {
+                    f.parentId = null;
+                    folderStore.put(f);
+                    repaired++;
+                }
+            });
+            const decksReq = deckStore.getAll();
+            decksReq.onsuccess = () => {
+                decksReq.result.forEach(d => {
+                    if (d.folderId != null && !folderIds.has(d.folderId)) {
+                        d.folderId = null;
+                        deckStore.put(d);
+                        repaired++;
+                    }
+                });
+            };
+        };
+        transaction.oncomplete = () => resolve(repaired);
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
+    });
+};
+
 export const addDeck = (name, folderId = null) => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['decks'], 'readwrite');

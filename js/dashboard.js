@@ -2,8 +2,9 @@ import { isExtension, storage, runtime } from './env.js';
 import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
-import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats } from './db.js';
-import { exportDeckToCSV } from './csv.js';
+import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
+import { exportDeckToCSV, parseCSV } from './csv.js';
+import { openMovePicker, deleteFolderKeepContents, getLocationName } from './workspace.js';
 
 // ===== SVG ICONS =====
 const ICON = {
@@ -149,6 +150,7 @@ async function init() {
 
     
     await initDB();
+    await reparentOrphans().catch(console.error);
     startAutoSync();
     window.addEventListener('sync_complete_reload', () => {
         // Reload UI to show synced changes
@@ -314,11 +316,7 @@ async function refreshSidebar() {
                 childContainer.classList.toggle('collapsed');
                 fRow.querySelector('.db-nav-toggle').classList.toggle('rotated');
             };
-            fRow.querySelector('.db-nav-menu').onclick = (e) => showContextMenu(e, [
-                { label: 'Study All', action: () => startStudyFolder(folder.id, folder.name) },
-                { label: 'Edit Folder', action: () => promptRename('folder', folder) },
-                { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(folder) },
-            ]);
+            fRow.querySelector('.db-nav-menu').onclick = (e) => showContextMenu(e, folderMenuItems(folder));
             
             container.appendChild(fRow);
             container.appendChild(childContainer);
@@ -402,6 +400,34 @@ async function refreshSidebar() {
     }
 }
 
+function folderMenuItems(folder) {
+    return [
+        { label: 'Study All', action: () => startStudyFolder(folder.id, folder.name) },
+        { label: 'Edit Folder', action: () => promptRename('folder', folder) },
+        { label: 'Move to…', action: () => promptMove('folder', folder) },
+        { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(folder) },
+    ];
+}
+
+// Re-renders the sidebar and whichever grid view is showing
+async function refreshWorkspaceViews() {
+    await refreshSidebar();
+    if (currentView === 'home') await showHome();
+    else if (currentView === 'folder') await showFolder(currentFolderId, currentFolderName);
+}
+
+function promptMove(type, item) {
+    openMovePicker({
+        type,
+        item,
+        rootName: getWorkspaceName(),
+        onMoved: async (targetId, targetName) => {
+            showToast(`Moved "${item.name}" to "${targetName}"`);
+            await refreshWorkspaceViews();
+        }
+    });
+}
+
 async function showDeckMenu(e, deck) {
     const cards = await getCardsByDeck(deck.id);
     const cardCount = cards.length;
@@ -417,6 +443,7 @@ async function showDeckMenu(e, deck) {
     
     menuItems.push(
         { label: 'Rename', action: () => promptRename('deck', deck) },
+        { label: 'Move to…', action: () => promptMove('deck', deck) },
         { label: 'Export CSV', action: () => {
             if (!cards.length) showToast('No cards to export.');
             else exportDeckToCSV(deck.name, cards);
@@ -430,6 +457,7 @@ async function showDeckMenu(e, deck) {
 function promptRenameWorkspace() {
     const overlay = $('modal-add');
     dom.modalTitle.textContent = 'Edit Workspace';
+    $('modal-location').style.display = 'none';
     dom.modalName.value = getWorkspaceName();
     dom.modalColorRow.style.display = 'none';
     overlay.classList.add('active');
@@ -449,6 +477,7 @@ function promptRenameWorkspace() {
 async function promptRename(type, item) {
     const overlay = $('modal-add');
     dom.modalTitle.textContent = type === 'folder' ? 'Edit Folder' : 'Rename Deck';
+    $('modal-location').style.display = 'none';
     dom.modalName.value = item.name;
     dom.modalColorRow.style.display = type === 'folder' ? 'block' : 'none';
     if (type === 'folder') dom.modalColor.value = item.color || '#4488ff';
@@ -476,12 +505,9 @@ async function promptRename(type, item) {
 }
 
 async function confirmDeleteFolder(f) {
-    if (await showConfirm(`Delete folder "${f.name}"? Decks inside will be moved to workspace.`)) {
-        const decks = await getDecks();
-        for (const d of decks.filter(dk => dk.folderId === f.id)) {
-            await updateDeck(d.id, d.name, null);
-        }
-        await deleteFolder(f.id);
+    const parentName = await getLocationName(f.parentId ?? null, getWorkspaceName());
+    if (await showConfirm(`Delete folder "${f.name}"? Its decks and sub-folders will be moved to "${parentName}".`)) {
+        await deleteFolderKeepContents(f);
         await refreshSidebar();
         if (currentFolderId === f.id) showHome();
         else if (currentView === 'home') showHome();
@@ -590,11 +616,7 @@ async function showHome() {
         dom.viewGrid.appendChild(makeGridCard(
             getFolderIcon(f.color), f.name, `${folderDecks.length} decks`,
             () => showFolder(f.id, f.name),
-            (e) => showContextMenu(e, [
-                { label: 'Study All', action: () => startStudyFolder(f.id, f.name) },
-                { label: 'Edit Folder', action: () => promptRename('folder', f) },
-                { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(f) },
-            ]),
+            (e) => showContextMenu(e, folderMenuItems(f)),
             f.color,
             null,
             dragData,
@@ -656,11 +678,7 @@ async function showFolder(folderId, folderName) {
         dom.viewGrid.appendChild(makeGridCard(
             getFolderIcon(f.color), f.name, `${nestedDecks.length} decks`,
             () => showFolder(f.id, f.name),
-            (e) => showContextMenu(e, [
-                { label: 'Study All', action: () => startStudyFolder(f.id, f.name) },
-                { label: 'Edit Folder', action: () => promptRename('folder', f) },
-                { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(f) },
-            ]),
+            (e) => showContextMenu(e, folderMenuItems(f)),
             f.color,
             null,
             dragData,
@@ -1283,9 +1301,16 @@ function setupEvents() {
 
     // Modal (new item)
     let addMode = '';
+    const showCreateLocation = () => {
+        const hint = $('modal-location');
+        hint.innerHTML = 'Will be created in <strong></strong>';
+        hint.querySelector('strong').textContent = currentFolderId ? currentFolderName : getWorkspaceName();
+        hint.style.display = 'block';
+    };
     $('btn-new-folder').onclick = () => {
         addMode = 'folder';
         dom.modalTitle.textContent = 'New Folder';
+        showCreateLocation();
         dom.modalColorRow.style.display = 'block';
         dom.modalName.value = '';
         dom.modalOverlay.classList.add('active');
@@ -1295,6 +1320,7 @@ function setupEvents() {
     $('btn-new-deck').onclick = () => {
         addMode = 'deck';
         dom.modalTitle.textContent = 'New Deck';
+        showCreateLocation();
         dom.modalColorRow.style.display = 'none';
         dom.modalName.value = '';
         dom.modalOverlay.classList.add('active');
@@ -1305,7 +1331,7 @@ function setupEvents() {
     modalSaveDefault = async () => {
         const name = dom.modalName.value.trim();
         if (!name) return;
-        if (addMode === 'folder') await addFolder(name, dom.modalColor.value);
+        if (addMode === 'folder') await addFolder(name, dom.modalColor.value, currentFolderId);
         else await addDeck(name, currentFolderId);
         dom.modalOverlay.classList.remove('active');
         await refreshSidebar();
@@ -1655,6 +1681,36 @@ const handlePDFUpload = async (file) => {
         console.error(err);
     }
 };
+
+// CSV IMPORT (into the folder currently open)
+if (document.getElementById('btn-menu-import-csv')) {
+    document.getElementById('btn-menu-import-csv').addEventListener('click', () => {
+        document.getElementById('file-import-csv').click();
+    });
+    document.getElementById('file-import-csv').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+            const cards = parseCSV(await file.text());
+            if (cards.length === 0) {
+                showToast('No cards found or invalid CSV format.');
+                return;
+            }
+            const deckName = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
+            const deckId = await addDeck(deckName, currentFolderId);
+            for (const card of cards) {
+                await addCard({ ...card, deckId });
+            }
+            const location = currentFolderId ? currentFolderName : getWorkspaceName();
+            showToast(`Imported ${cards.length} cards into "${deckName}" in "${location}"`);
+            await refreshWorkspaceViews();
+        } catch (err) {
+            console.error(err);
+            showToast('CSV Error: ' + err.message);
+        }
+    });
+}
 
 if (document.getElementById('btn-menu-add-pdf')) {
     document.getElementById('btn-menu-add-pdf').addEventListener('click', () => {

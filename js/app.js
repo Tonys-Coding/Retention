@@ -1,4 +1,5 @@
-import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
+import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
+import { openMovePicker, deleteFolderKeepContents } from './workspace.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
@@ -193,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     
     await initDB();
+    await reparentOrphans().catch(console.error);
     startAutoSync();
     window.addEventListener('sync_complete_reload', () => {
         // Reload UI to show synced changes
@@ -308,6 +310,38 @@ document.getElementById('workspace-title').textContent = getWorkspaceName();
 
 let folderPath = []; // Array of {id, name} for breadcrumbs
 
+// Name of the folder currently open (or the workspace at the root)
+const getCurrentLocationName = () => folderPath.length > 0 ? folderPath[folderPath.length - 1].name : getWorkspaceName();
+
+// Opens an item's ⋮ menu upward when it would be cut off at the bottom of the list
+const positionDropdown = (dropdown) => {
+    dropdown.classList.remove('drop-up');
+    if (!dropdown.classList.contains('show')) return;
+    const container = dropdown.closest('.list-container');
+    if (!container) return;
+    const bounds = container.getBoundingClientRect();
+    const menuRect = dropdown.querySelector('.dropdown-content').getBoundingClientRect();
+    const btnRect = dropdown.getBoundingClientRect();
+    if (menuRect.bottom > bounds.bottom && btnRect.top - bounds.top > bounds.bottom - btnRect.bottom) {
+        dropdown.classList.add('drop-up');
+    }
+};
+
+// Reloads the list, keeping any active search
+const reloadDeckList = () => loadDecks(document.getElementById('input-search').value.trim());
+
+const promptMove = (type, item) => {
+    openMovePicker({
+        type,
+        item,
+        rootName: getWorkspaceName(),
+        onMoved: (targetId, targetName) => {
+            showToast(`Moved "${item.name}" to "${targetName}"`);
+            reloadDeckList();
+        }
+    });
+};
+
 const loadDecks = async (searchQuery = '') => {
     let allDecks = await getDecks();
     let allFolders = await getFolders();
@@ -395,6 +429,7 @@ const loadDecks = async (searchQuery = '') => {
                 <div class="dropdown-content" id="dropdown-folder-${folder.id}">
                     <button class="btn-folder-study" data-id="${folder.id}">Study Decks</button>
                     <button class="btn-folder-edit" data-id="${folder.id}">Edit</button>
+                    <button class="btn-folder-move" data-id="${folder.id}">Move to…</button>
                     <button class="btn-folder-delete" data-id="${folder.id}">Delete</button>
                 </div>
             </div>
@@ -479,6 +514,7 @@ const loadDecks = async (searchQuery = '') => {
                 if (d !== dropdown) d.classList.remove('show');
             });
             dropdown.classList.toggle('show');
+            positionDropdown(dropdown);
         });
         
         el.querySelector('.btn-folder-study').addEventListener('click', async (e) => {
@@ -501,19 +537,19 @@ const loadDecks = async (searchQuery = '') => {
             openAddItemModal('folder', folder);
         });
 
+        el.querySelector('.btn-folder-move').addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            promptMove('folder', folder);
+        });
+
         el.querySelector('.btn-folder-delete').addEventListener('click', async (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');
-            if (await showConfirm(`Delete folder "${folder.name}"? Decks inside will be moved to workspace.`)) {
-                const childrenDecks = allDecks.filter(d => d.folderId === folder.id);
-                for (let d of childrenDecks) {
-                    await updateDeck(d.id, d.name, null);
-                }
-                const childrenFolders = allFolders.filter(f => f.parentId === folder.id);
-                for (let f of childrenFolders) {
-                    await updateFolder(f.id, f.name, f.color, null);
-                }
-                await deleteFolder(folder.id);
+            const parent = allFolders.find(f => f.id === folder.parentId);
+            const parentName = parent ? parent.name : getWorkspaceName();
+            if (await showConfirm(`Delete folder "${folder.name}"? Its decks and sub-folders will be moved to "${parentName}".`)) {
+                await deleteFolderKeepContents(folder);
                 loadDecks();
             }
         });
@@ -543,6 +579,7 @@ const loadDecks = async (searchQuery = '') => {
                 <div class="dropdown-content" id="dropdown-${deck.id}">
                     <button class="btn-deck-edit" data-id="${deck.id}">Edit</button>
                     <button class="btn-deck-rename" data-id="${deck.id}">Rename</button>
+                    <button class="btn-deck-move" data-id="${deck.id}">Move to…</button>
                     <button class="btn-deck-export" data-id="${deck.id}">Export</button>
                     <button class="btn-deck-delete" data-id="${deck.id}">Delete</button>
                 </div>
@@ -580,6 +617,7 @@ const loadDecks = async (searchQuery = '') => {
                 if (d !== dropdown) d.classList.remove('show');
             });
             dropdown.classList.toggle('show');
+            positionDropdown(dropdown);
         });
 
         el.querySelector('.btn-deck-edit').addEventListener('click', async (e) => {
@@ -605,6 +643,12 @@ const loadDecks = async (searchQuery = '') => {
             renameInput.value = deck.name;
             document.getElementById('modal-rename-deck').style.display = 'flex';
             renameInput.focus();
+        });
+
+        el.querySelector('.btn-deck-move').addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            promptMove('deck', deck);
         });
 
         el.querySelector('.btn-deck-export').addEventListener('click', async (e) => {
@@ -674,14 +718,14 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
         const csvText = event.target.result;
         const cards = parseCSV(csvText);
         if (cards.length > 0) {
-            const deckName = file.name.replace('.csv', '') || 'Imported Deck';
-            const deckId = await addDeck(deckName);
+            const deckName = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
+            const deckId = await addDeck(deckName, currentFolderId);
             for (const card of cards) {
                 card.deckId = deckId;
                 await addCard(card);
             }
             loadDecks();
-            showToast(`Imported ${cards.length} cards into "${deckName}"`);
+            showToast(`Imported ${cards.length} cards into "${deckName}" in "${getCurrentLocationName()}"`);
         } else {
             showToast("No cards found or invalid CSV format.");
         }
@@ -1791,6 +1835,15 @@ const openAddItemModal = (type, editFolder = null) => {
     document.getElementById('btn-save-add-item').textContent = editFolder ? 'Save' : 'Create';
     
     document.getElementById('add-item-name').value = editFolder ? editFolder.name : '';
+    
+    const locationHint = document.getElementById('add-item-location');
+    if (editFolder) {
+        locationHint.style.display = 'none';
+    } else {
+        locationHint.innerHTML = 'Will be created in <strong></strong>';
+        locationHint.querySelector('strong').textContent = getCurrentLocationName();
+        locationHint.style.display = 'block';
+    }
     
     if (type === 'folder') {
         document.getElementById('add-item-title').textContent = editFolder ? 'Edit Folder' : 'New Folder';
