@@ -3,7 +3,19 @@ const DB_VERSION = 3;
 
 export let db;
 
+// Key used to flag unsynced writes made by the extension's background service worker
+export const BG_SYNC_FLAG = 'bg_needs_sync';
+
 export const markDbDirty = () => {
+    // The extension's background service worker has no window or localStorage.
+    // Throwing here (inside an IndexedDB success handler) would abort the write,
+    // so flag the change in chrome.storage for the UI's next auto-sync instead.
+    if (typeof window === 'undefined') {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.set({ [BG_SYNC_FLAG]: true });
+        }
+        return;
+    }
     localStorage.setItem('needs_sync', 'true');
     window.dispatchEvent(new Event('db_updated'));
 };
@@ -77,7 +89,7 @@ export const updateFolder = (id, newName, newColor, newParentId = undefined) => 
             if (newColor !== undefined) folder.color = newColor;
             if (newParentId !== undefined) folder.parentId = newParentId;
             const putReq = store.put(folder);
-            putReq.onsuccess = () => resolve();
+            putReq.onsuccess = () => { markDbDirty(); resolve(); };
             putReq.onerror = () => reject(putReq.error);
         };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
@@ -129,7 +141,7 @@ export const updateDeck = (id, newName, folderId = undefined) => {
             if (newName !== undefined) deck.name = newName;
             if (folderId !== undefined) deck.folderId = folderId;
             const putReq = store.put(deck);
-            putReq.onsuccess = () => resolve();
+            putReq.onsuccess = () => { markDbDirty(); resolve(); };
             putReq.onerror = () => reject(putReq.error);
         };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
@@ -150,7 +162,7 @@ export const deleteDeck = (id) => {
             request.result.forEach(cardId => cardStore.delete(cardId));
         };
         
-        transaction.oncomplete = () => resolve();
+        transaction.oncomplete = () => { markDbDirty(); resolve(); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 }

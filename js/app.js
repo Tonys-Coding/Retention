@@ -1,6 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult } from './db.js';
 import { exportDeckToCSV, parseCSV } from './csv.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
+import { AI_FOCUS_OPTIONS } from './ai.js';
 
 // State
 let currentDeckId = null;
@@ -1330,9 +1331,14 @@ document.getElementById('btn-remove-image').addEventListener('click', () => {
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 
+const focusSelect = document.getElementById('input-ai-focus');
+focusSelect.innerHTML = Object.entries(AI_FOCUS_OPTIONS)
+    .map(([value, opt]) => `<option value="${value}">${opt.label}</option>`).join('');
+
 document.getElementById('btn-open-settings').addEventListener('click', () => {
-    chrome.storage.local.get(['openrouter_api_key'], (res) => {
+    chrome.storage.local.get(['openrouter_api_key', 'ai_focus'], (res) => {
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
+        focusSelect.value = res.ai_focus || 'general';
         document.getElementById('input-api-key').type = 'password';
         document.getElementById('icon-api-key-locked').style.display = 'block';
         document.getElementById('icon-api-key-unlocked').style.display = 'none';
@@ -1367,10 +1373,14 @@ document.getElementById('btn-save-settings').addEventListener('click', () => {
     } else {
         chrome.storage.local.remove('openrouter_api_key');
     }
+    chrome.storage.local.set({ 'ai_focus': focusSelect.value });
     document.getElementById('modal-settings').style.display = 'none';
+    showToast("Settings saved.");
 });
 
 const dropzone = document.getElementById('dropzone-overlay');
+// Uploads replace the overlay with a loader; restore the prompt on the next drag
+const dropzoneDefaultHtml = dropzone.innerHTML;
 
 let dragCounter = 0;
 document.body.addEventListener('dragenter', (e) => {
@@ -1378,6 +1388,7 @@ document.body.addEventListener('dragenter', (e) => {
     if (!e.dataTransfer.types.includes('Files')) return;
     dragCounter++;
     if (views.decks.classList.contains('active')) {
+        if (dragCounter === 1) dropzone.innerHTML = dropzoneDefaultHtml;
         dropzone.style.display = 'flex';
         dropzone.classList.remove('dropzone-loading');
     }

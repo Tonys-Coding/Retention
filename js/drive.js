@@ -1,4 +1,4 @@
-import { getDecks, getFolders, db } from './db.js';
+import { getDecks, getFolders, getStats, db, BG_SYNC_FLAG } from './db.js';
 import { isExtension } from './env.js';
 
 // ─── Web OAuth state ─────────────────────────────────────────────────
@@ -119,6 +119,7 @@ export const uploadToDrive = async () => {
         // Gather all data
         const decks = await getDecks();
         const folders = await getFolders();
+        const stats = await getStats();
         
         // Gather all cards
         const cards = await new Promise((resolve, reject) => {
@@ -129,7 +130,7 @@ export const uploadToDrive = async () => {
             request.onerror = () => reject(request.error);
         });
 
-        const backupData = JSON.stringify({ decks, folders, cards });
+        const backupData = JSON.stringify({ decks, folders, cards, stats });
         const fileId = (await getBackupFile(token))?.id;
         
         const metadata = {
@@ -177,28 +178,25 @@ export const downloadFromDrive = async () => {
     if (!res.ok) throw new Error('Failed to download from Drive');
         const data = await res.json();
         
-        // Restore data
-        if (data.folders) {
-            const fTx = db.transaction(['folders'], 'readwrite');
-            const fStore = fTx.objectStore('folders');
-            fStore.clear();
-            data.folders.forEach(f => fStore.add(f));
-        }
-        if (data.decks) {
-            const dTx = db.transaction(['decks'], 'readwrite');
-            const dStore = dTx.objectStore('decks');
-            dStore.clear();
-            data.decks.forEach(d => dStore.add(d));
-        }
-        if (data.cards) {
-            const cTx = db.transaction(['cards'], 'readwrite');
-            const cStore = cTx.objectStore('cards');
-            cStore.clear();
-            data.cards.forEach(c => cStore.add(c));
+        // Restore data in a single transaction so a partial restore can't happen,
+        // and wait for it to commit before callers reload the page.
+        const storeNames = ['folders', 'decks', 'cards', 'stats'].filter(name => Array.isArray(data[name]));
+        if (storeNames.length > 0) {
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(storeNames, 'readwrite');
+                storeNames.forEach(name => {
+                    const store = tx.objectStore(name);
+                    store.clear();
+                    data[name].forEach(item => store.put(item));
+                });
+                tx.oncomplete = () => resolve();
+                tx.onerror = (e) => { e.preventDefault(); reject(tx.error); };
+                tx.onabort = () => reject(tx.error || new Error('Restore aborted'));
+            });
         }
         
         if (file) localStorage.setItem('drive_last_modified', file.modifiedTime);
-        localStorage.setItem('needs_sync', 'false');
+        await clearSyncFlags();
         
         return true;
     } catch (e) {
@@ -209,6 +207,22 @@ export const downloadFromDrive = async () => {
 
 let syncTimer = null;
 let isSyncing = false;
+
+// Changes made by the extension's background worker (e.g. right-click cards,
+// PDF decks) are flagged in chrome.storage, since it has no localStorage.
+const hasPendingChanges = async () => {
+    if (localStorage.getItem('needs_sync') === 'true') return true;
+    if (isExtension) {
+        const res = await chrome.storage.local.get([BG_SYNC_FLAG]);
+        return !!res[BG_SYNC_FLAG];
+    }
+    return false;
+};
+
+export const clearSyncFlags = async () => {
+    localStorage.setItem('needs_sync', 'false');
+    if (isExtension) await chrome.storage.local.remove(BG_SYNC_FLAG);
+};
 
 export const startAutoSync = () => {
     window.addEventListener('db_updated', () => {
@@ -237,16 +251,16 @@ export const doAutoSync = async () => {
         }
         
         const file = await getBackupFile(token);
-        const needsSync = localStorage.getItem('needs_sync');
+        const needsSync = await hasPendingChanges();
         const lastKnownTime = localStorage.getItem('drive_last_modified');
         
-        if (needsSync === 'true') {
+        if (needsSync) {
             // Local changes exist, upload them
             await uploadToDrive();
             // Fetch the new time
             const newFile = await getBackupFile(token);
             if (newFile) localStorage.setItem('drive_last_modified', newFile.modifiedTime);
-            localStorage.setItem('needs_sync', 'false');
+            await clearSyncFlags();
         } else if (file) {
             // Check if drive file is newer
             if (!lastKnownTime || new Date(file.modifiedTime) > new Date(lastKnownTime)) {

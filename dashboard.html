@@ -301,6 +301,9 @@
                         </button>
                     </div>
                     
+                    <label for="input-ai-focus" style="display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px;">PDF Generation Focus</label>
+                    <select id="input-ai-focus" style="padding: 12px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 16px;"></select>
+                    
                     <p style="font-size: 14px; margin-top: 0; text-align: center;"><a href="https://openrouter.ai/keys" target="_blank" style="color: var(--text-secondary); text-decoration: underline; font-weight: bold;">Get a key from OpenRouter</a></p>
                 </div>
                 
@@ -340,13 +343,6 @@
         <div id="dropzone-content" style="border: 4px dashed var(--border-color); background: var(--bg-secondary); padding: 48px 24px; box-shadow: 8px 8px 0px 0px var(--shadow-color); width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
             <h2 style="margin-bottom: 12px; font-size: 24px;">Drop PDF to generate cards</h2>
             <p style="color: var(--text-secondary); text-align: center; font-size: 14px; margin-bottom: 24px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
-            <select id="ai-focus-select" style="padding: 12px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; width: 100%; max-width: 300px; font-weight: bold; margin-bottom: 24px;">
-                <option value="general">Focus: General Summary</option>
-                <option value="dates">Focus: Dates & Events</option>
-                <option value="vocabulary">Focus: Vocabulary / Jargon</option>
-                <option value="formulas">Focus: Formulas & Math</option>
-                <option value="people">Focus: People & Quotes</option>
-            </select>
             <button id="btn-cancel-dropzone" style="margin-top: 16px;">Cancel</button>
         </div>
     </div>

@@ -277,7 +277,9 @@
                     <svg id="icon-api-key-unlocked" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
                 </button>
             </div>
-            <button id="btn-save-settings" class="primary" style="width: 100%; margin-bottom: 8px;">Save Key</button>
+            <label for="input-ai-focus" style="display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px;">PDF Generation Focus</label>
+            <select id="input-ai-focus" style="padding: 8px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; width: 100%; margin-bottom: 8px;"></select>
+            <button id="btn-save-settings" class="primary" style="width: 100%; margin-bottom: 8px;">Save Settings</button>
             <p style="font-size: 10px; color: var(--text-secondary); margin-top: 0; margin-bottom: 24px;"><a href="https://openrouter.ai/keys" target="_blank" style="color: inherit;">Get a key from OpenRouter</a></p>
             
             <h3 style="margin-top: 0;">Cloud Sync</h3>
@@ -295,12 +297,6 @@
     <div id="dropzone-overlay" class="dropzone-base">
         <h2 style="margin-bottom: 8px;">Drop PDF to generate cards</h2>
         <p style="color: var(--text-secondary); text-align: center; font-size: 14px; padding: 0 16px; margin-bottom: 16px;">We'll use AI to automatically extract key terms and definitions for your flashcards.</p>
-        <select id="ai-focus-select" style="padding: 8px; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; width: 80%; max-width: 250px;">
-            <option value="default">Default (Key Terms & Definitions)</option>
-            <option value="dates">Focus on Dates & Historical Events</option>
-            <option value="code">Focus on Code Snippets & Syntax</option>
-            <option value="language">Focus on Language Translation</option>
-        </select>
     </div>
     <!-- Toast Notification -->
     <div id="toast" style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-primary); color: var(--bg-primary); padding: 12px 24px; border-radius: 24px; font-weight: bold; font-size: 14px; z-index: 1000; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">Message</div>

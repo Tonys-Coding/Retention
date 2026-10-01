@@ -1,5 +1,6 @@
 import { isExtension, storage, runtime } from './env.js';
-import { processChunksInPage } from './ai-processor.js';
+import { processPdfChunks } from './ai-processor.js';
+import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats } from './db.js';
 import { exportDeckToCSV } from './csv.js';
@@ -1143,8 +1144,13 @@ function checkCloze() {
 
 function handleResult(isCorrect) {
     if (!hasRevealed) return;
-    if (isCorrect === true) { studyStats.know++; recordStudyResult(true); }
-    else if (isCorrect === false) { studyStats.forgot++; recordStudyResult(false); }
+    if (isCorrect === true || isCorrect === false) {
+        const card = studyCards[studyIndex];
+        if (isCorrect) studyStats.know++; else studyStats.forgot++;
+        recordStudyResult(isCorrect);
+        card.status = isCorrect ? 'mastered' : 'learning';
+        updateCard(card).catch(console.error);
+    }
     studyIndex++;
     saveProgress();
     renderCard();
@@ -1455,10 +1461,17 @@ storage.get(['pdfProgress', 'web_google_client_id']).then(res => {
 });
 
 // SETTINGS & API KEY
+const focusSelect = document.getElementById('input-ai-focus');
+if (focusSelect) {
+    focusSelect.innerHTML = Object.entries(AI_FOCUS_OPTIONS)
+        .map(([value, opt]) => `<option value="${value}">${opt.label}</option>`).join('');
+}
+
 if (document.getElementById('btn-open-settings')) {
     document.getElementById('btn-open-settings').addEventListener('click', async () => {
-        const res = await storage.get(['openrouter_api_key', 'web_google_client_id']);
+        const res = await storage.get(['openrouter_api_key', 'web_google_client_id', 'ai_focus']);
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
+        if (focusSelect) focusSelect.value = res.ai_focus || 'general';
         document.getElementById('input-api-key').type = 'password';
         document.getElementById('icon-api-key-locked').style.display = 'block';
         document.getElementById('icon-api-key-unlocked').style.display = 'none';
@@ -1480,6 +1493,7 @@ if (document.getElementById('btn-save-settings')) {
         } else {
             storage.remove('openrouter_api_key');
         }
+        if (focusSelect) storage.set({ 'ai_focus': focusSelect.value });
         
         if (!isExtension) {
             const googleKey = document.getElementById('input-google-client-id').value.trim();
@@ -1612,7 +1626,7 @@ const handlePDFUpload = async (file) => {
             });
         } else {
             // Web / PWA: process directly in-page
-            processChunksInPage(textChunks, deckName, targetFolder);
+            processPdfChunks(textChunks, deckName, targetFolder);
         }
         
         if (dropzoneOverlay) {

@@ -19,16 +19,16 @@ Never worry about transferring your decks manually again.
 Retention features a silent, background auto-sync engine built on Google Drive. If you add a flashcard on your desktop Web Dashboard, your Mobile PWA will instantly detect the changes and automatically pull the updates in the background the next time you open it. It features a robust last-write-wins polling system and gracefully handles expired tokens.
 
 ###  Massive Theming Engine
-Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 14 custom styles:
+Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 17 custom styles:
 *   **Classics:** Light, Dark.
-*   **Aesthetics:** Vaporwave, Autumn, Blueprint, Neopop, Composition, Earthy, Space, Moon, Cabin, Matcha.
+*   **Aesthetics:** Terminal, Vaporwave, Autumn, Blueprint, Neo-Pop, Composition, Dracula, Earthy, Space, Moon, Cozy Cabin, Matcha, Strawberry.
 *   **Star Wars Collection:** Tatooine (desert hues) and **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures).
 
 ###  AI-Powered Flashcard Generation (OpenRouter)
 Don't waste hours typing out flashcards manually. Supply an OpenRouter API key and let the AI do the heavy lifting:
 *   **Drag & Drop PDFs:** Drag any local PDF directly onto the Web Dashboard dropzone.
 *   **Google Drive PDF Picker:** Browse and select PDFs directly from your cloud storage.
-*   **Focus Modifiers:** Tell the AI exactly what to extract (e.g., *Dates & Events*, *Formulas & Math*, *Vocabulary / Jargon*, *People & Quotes*).
+*   **Focus Modifiers:** Choose in Settings what the AI should prioritize when generating from PDFs (e.g., *Dates & Events*, *Formulas & Math*, *Vocabulary / Jargon*, *People & Quotes*, *Code & Syntax*, *Language Translation*).
 *   **Context Menu Magic:** Highlight text on any website, right-click, and select "Add to Retention (AI)" to instantly beam a generated flashcard into your Inbox.
 
 ###  Infinite Organization & Study Flows

@@ -113,7 +113,8 @@ export const storage = isExtension ? chromeStorage : webStorage;
 
 const chromeRuntime = {
     sendMessage(msg) {
-        chrome.runtime.sendMessage(msg);
+        // Rejects with "Receiving end does not exist" when no page is open to listen
+        chrome.runtime.sendMessage(msg)?.catch?.(() => {});
     },
     onMessage(callback) {
         chrome.runtime.onMessage.addListener(callback);
