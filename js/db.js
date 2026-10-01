@@ -1,23 +1,23 @@
+import { storage } from './env.js';
+
 const DB_NAME = 'RetentionDB';
 const DB_VERSION = 3;
 
 export let db;
 
-// Key used to flag unsynced writes made by the extension's background service worker
-export const BG_SYNC_FLAG = 'bg_needs_sync';
+// Storage key holding the time of the latest local change not yet synced to Drive
+export const SYNC_DIRTY_KEY = 'sync_dirty_at';
 
 export const markDbDirty = () => {
-    // The extension's background service worker has no window or localStorage.
-    // Throwing here (inside an IndexedDB success handler) would abort the write,
-    // so flag the change in chrome.storage for the UI's next auto-sync instead.
-    if (typeof window === 'undefined') {
-        if (typeof chrome !== 'undefined' && chrome.storage) {
-            chrome.storage.local.set({ [BG_SYNC_FLAG]: true });
-        }
-        return;
+    // Runs inside IndexedDB success handlers: it must never throw, or the write is
+    // aborted. Works in pages and in the extension's background service worker
+    // (via env.js storage: chrome.storage in the extension, localStorage on web).
+    try {
+        storage.set({ [SYNC_DIRTY_KEY]: Date.now() })?.catch?.(console.error);
+        globalThis.dispatchEvent?.(new Event('db_updated'));
+    } catch (e) {
+        console.error('markDbDirty failed:', e);
     }
-    localStorage.setItem('needs_sync', 'true');
-    window.dispatchEvent(new Event('db_updated'));
 };
 
 

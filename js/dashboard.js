@@ -1,7 +1,7 @@
 import { isExtension, storage, runtime } from './env.js';
 import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
-import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth } from './drive.js';
+import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
@@ -85,10 +85,11 @@ function showToast(msg) {
 const getWorkspaceName = () => localStorage.getItem('workspace_name') || 'My Workspace';
 
 // ===== CONFIRM =====
-function showConfirm(message, okText = 'Delete', isDanger = true) {
+function showConfirm(message, okText = 'Delete', isDanger = true, cancelText = 'Cancel') {
     return new Promise(resolve => {
         const overlay = $('modal-confirm');
         $('confirm-msg').textContent = message;
+        $('confirm-cancel').textContent = cancelText;
         const okBtn = $('confirm-ok');
         okBtn.textContent = okText;
         okBtn.className = isDanger ? 'danger' : 'primary';
@@ -1537,6 +1538,7 @@ if (document.getElementById('btn-open-settings')) {
         const res = await storage.get(['openrouter_api_key', 'web_google_client_id', 'ai_focus']);
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
         if (focusSelect) focusSelect.value = res.ai_focus || 'general';
+        renderSyncStatus();
         document.getElementById('input-api-key').type = 'password';
         document.getElementById('icon-api-key-locked').style.display = 'block';
         document.getElementById('icon-api-key-unlocked').style.display = 'none';
@@ -1599,40 +1601,75 @@ if (document.getElementById('btn-toggle-api-key')) {
 }
 
 // SYNC
+// ===== DRIVE SYNC UI =====
+// Both this device and Drive changed since the last sync: ask, never overwrite silently
+setConflictHandler(async ({ remoteModified }) => {
+    const useDrive = await showConfirm(conflictMessage(remoteModified), 'Use Drive version', false, "Keep this device's");
+    return useDrive ? 'drive' : 'local';
+});
+
+async function renderSyncStatus() {
+    const info = await getSyncInfo();
+    const statusEl = $('sync-status-text');
+    if (statusEl) statusEl.textContent = describeSyncInfo(info);
+
+    const state = info.status?.state;
+    const showBanner = info.connected && (state === 'paused' || state === 'conflict');
+    $('sync-banner').style.display = showBanner ? 'flex' : 'none';
+    if (showBanner) {
+        $('sync-banner-text').textContent = state === 'paused'
+            ? 'Sync paused: your Google sign-in expired, so this device may be out of date.'
+            : 'Sync paused: this device and your Drive backup both changed.';
+        $('btn-sync-banner').textContent = state === 'paused' ? 'Reconnect' : 'Choose version';
+    }
+}
+
+// Runs from the click so the Google sign-in popup isn't blocked
+$('btn-sync-banner').onclick = () => doAutoSync({ interactive: true });
+onSyncStatusChange(renderSyncStatus);
+renderSyncStatus();
+
 if (document.getElementById('btn-sync-upload')) {
     document.getElementById('btn-sync-upload').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-sync-upload');
+        // Start sign-in inside the click so mobile browsers allow the popup
+        const signIn = getAuthToken(true);
+        signIn.catch(() => {});
+        if (!await showConfirm("Replace your Google Drive backup with this device's flashcards? Changes made on your other devices since they last synced will be overwritten.", 'Upload')) return;
         try {
-            document.getElementById('btn-sync-upload').innerText = 'UPLOADING...';
-            document.getElementById('btn-sync-upload').disabled = true;
+            btn.innerText = 'UPLOADING...';
+            btn.disabled = true;
+            await signIn;
             await uploadToDrive();
-            localStorage.setItem('needs_sync', 'false');
-            // Remote time is updated in autoSync, but manually it might lag. Let autoSync handle time fetch.
             showToast("Successfully uploaded to Google Drive!");
         } catch (e) {
             showToast("Upload failed: " + e.message);
         } finally {
-            document.getElementById('btn-sync-upload').innerText = 'UPLOAD TO DRIVE';
-            document.getElementById('btn-sync-upload').disabled = false;
+            btn.innerText = 'UPLOAD TO DRIVE';
+            btn.disabled = false;
+            renderSyncStatus();
         }
     });
 }
 
 if (document.getElementById('btn-sync-download')) {
     document.getElementById('btn-sync-download').addEventListener('click', async () => {
-        if (!confirm("This will merge downloaded flashcards with your current data. Continue?")) return;
+        const btn = document.getElementById('btn-sync-download');
+        const signIn = getAuthToken(true);
+        signIn.catch(() => {});
+        if (!await showConfirm("Replace this device's flashcards with your Google Drive backup? Changes on this device that haven't synced yet will be lost.", 'Download')) return;
         try {
-            document.getElementById('btn-sync-download').innerText = 'DOWNLOADING...';
-            document.getElementById('btn-sync-download').disabled = true;
+            btn.innerText = 'DOWNLOADING...';
+            btn.disabled = true;
+            await signIn;
             await downloadFromDrive();
-            localStorage.setItem('needs_sync', 'false');
-            showToast("Successfully downloaded and merged from Google Drive!");
-            setTimeout(() => location.reload(), 1000);
-            if (typeof renderDecksView === 'function') renderDecksView(); // Refresh UI
+            showToast("Downloaded from Google Drive. Reloading...");
+            setTimeout(() => location.reload(), 800);
         } catch (e) {
             showToast("Download failed: " + e.message);
-        } finally {
-            document.getElementById('btn-sync-download').innerText = 'DOWNLOAD FROM DRIVE';
-            document.getElementById('btn-sync-download').disabled = false;
+            btn.innerText = 'DOWNLOAD FROM DRIVE';
+            btn.disabled = false;
+            renderSyncStatus();
         }
     });
 }
@@ -1890,6 +1927,7 @@ if (document.getElementById('btn-add-menu')) {
 
 
 runtime.onMessage((msg) => {
+    if (msg.action === 'SYNC_RELOAD') location.reload();
     if (msg.action === 'REFRESH_DECKS') {
         if (typeof refreshSidebar === 'function') refreshSidebar();
         if (typeof showHome === 'function') {

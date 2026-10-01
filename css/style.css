@@ -1253,3 +1253,29 @@ textarea { flex-shrink: 0; min-height: 80px; }
 .location-hint strong {
     color: var(--text-primary);
 }
+
+/* ===== SYNC STATUS ===== */
+.sync-status-text {
+    margin-bottom: 12px;
+}
+
+.sync-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 3px solid var(--border-color);
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.sync-banner span {
+    flex: 1 1 220px;
+    min-width: 0;
+}

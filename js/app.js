@@ -1,7 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
-import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive } from './drive.js';
+import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 
 // State
@@ -76,10 +76,11 @@ chrome.storage.local.get(['pdfProgress'], (res) => {
     if (res.pdfProgress) updateProgressBanner(res.pdfProgress);
 });
 
-const showConfirm = (message, okText = "Delete", isDanger = true) => {
+const showConfirm = (message, okText = "Delete", isDanger = true, cancelText = "Cancel") => {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-confirm');
         document.getElementById('confirm-message').textContent = message;
+        document.getElementById('btn-cancel-confirm').textContent = cancelText;
         modal.style.display = 'flex';
         
         const btnOk = document.getElementById('btn-ok-confirm');
@@ -1375,6 +1376,7 @@ document.getElementById('btn-open-settings').addEventListener('click', () => {
     chrome.storage.local.get(['openrouter_api_key', 'ai_focus'], (res) => {
         document.getElementById('input-api-key').value = res.openrouter_api_key || '';
         focusSelect.value = res.ai_focus || 'general';
+        renderSyncStatus();
         document.getElementById('input-api-key').type = 'password';
         document.getElementById('icon-api-key-locked').style.display = 'block';
         document.getElementById('icon-api-key-unlocked').style.display = 'none';
@@ -1987,38 +1989,56 @@ document.getElementById('input-search').addEventListener('input', (e) => {
 });
 
 
+// ===== DRIVE SYNC UI =====
+// Both this device and Drive changed since the last sync: ask, never overwrite silently
+setConflictHandler(async ({ remoteModified }) => {
+    const useDrive = await showConfirm(conflictMessage(remoteModified), 'Use Drive version', false, "Keep this device's");
+    return useDrive ? 'drive' : 'local';
+});
+
+const renderSyncStatus = async () => {
+    document.getElementById('sync-status-text').textContent = describeSyncInfo(await getSyncInfo());
+};
+onSyncStatusChange(renderSyncStatus);
+
 document.getElementById('btn-sync-upload').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-sync-upload');
+    const signIn = getAuthToken(true);
+    signIn.catch(() => {});
+    if (!await showConfirm("Replace your Google Drive backup with this device's flashcards? Changes made on your other devices since they last synced will be overwritten.", 'Upload')) return;
     try {
-        const btn = document.getElementById('btn-sync-upload');
         btn.textContent = 'Uploading...';
+        await signIn;
         await uploadToDrive();
-            localStorage.setItem('needs_sync', 'false');
-            // Remote time is updated in autoSync, but manually it might lag. Let autoSync handle time fetch.
         showToast("Successfully backed up to Google Drive!");
     } catch (e) {
         showToast("Error: " + (e.message || e));
     } finally {
-        document.getElementById('btn-sync-upload').textContent = 'Upload to Drive';
+        btn.textContent = 'Upload to Drive';
+        renderSyncStatus();
     }
 });
 
 document.getElementById('btn-sync-download').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-sync-download');
+    const signIn = getAuthToken(true);
+    signIn.catch(() => {});
+    if (!await showConfirm("Replace this device's flashcards with your Google Drive backup? Changes on this device that haven't synced yet will be lost.", 'Download')) return;
     try {
-        const btn = document.getElementById('btn-sync-download');
         btn.textContent = 'Downloading...';
+        await signIn;
         await downloadFromDrive();
-        localStorage.setItem('needs_sync', 'false');
         showToast("Successfully restored from Google Drive!");
-        setTimeout(() => location.reload(), 1000);
-        loadDecks();
+        setTimeout(() => location.reload(), 800);
     } catch (e) {
         showToast("Error: " + (e.message || e));
-    } finally {
-        document.getElementById('btn-sync-download').textContent = 'Download from Drive';
+        btn.textContent = 'Download from Drive';
+        renderSyncStatus();
     }
 });
 
 chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === 'SYNC_RELOAD') location.reload();
     if (msg.action === 'REFRESH_DECKS') {
         loadDecks();
     }

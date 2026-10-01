@@ -1,6 +1,11 @@
 import { initDB, addDeck, getDecks, addCard } from './db.js';
 import { processPdfChunks } from './ai-processor.js';
 import { requestCompletion, parseAIJson, buildSelectionPrompt, SELECTION_SYSTEM_PROMPT } from './ai.js';
+import { startBackgroundSync } from './drive.js';
+
+// Uploads changes to Google Drive even after the popup closes, including
+// cards created here from the right-click menu or PDF generation
+startBackgroundSync();
 
 const notify = (title, message) => {
     chrome.notifications.create(Date.now().toString(), {

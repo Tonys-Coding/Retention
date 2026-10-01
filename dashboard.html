@@ -10,8 +10,8 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Retention — Dashboard</title>
-    <link href="css/style.css?v=14" rel="stylesheet">
-    <link href="css/dashboard.css?v=14" rel="stylesheet">
+    <link href="css/style.css?v=15" rel="stylesheet">
+    <link href="css/dashboard.css?v=15" rel="stylesheet">
     <script src="js/marked.min.js"></script>
     <!-- Google Identity Services (web OAuth for Drive sync) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -76,6 +76,10 @@
 
         <div class="db-body" id="main-body">
 
+            <div id="sync-banner" class="sync-banner" role="status" style="display: none;">
+                <span id="sync-banner-text"></span>
+                <button id="btn-sync-banner" class="primary">Reconnect</button>
+            </div>
             <div id="bg-task-banner" style="display: none; background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 12px 16px; margin-bottom: 24px; box-shadow: 4px 4px 0px 0px var(--shadow-color);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <div style="font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px;">
@@ -283,7 +287,7 @@
 
     <script src="js/confetti.min.js"></script>
     <script src="js/pdf.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=14"></script>
+    <script type="module" src="js/dashboard.js?v=15"></script>
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="db-modal-overlay" style="z-index: 10000;">
@@ -313,7 +317,8 @@
                 <!-- Right: Cloud Sync -->
                 <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column;">
                     <h3 style="margin-top: 0; font-size: 20px; border-bottom: 3px solid var(--border-color); padding-bottom: 8px; margin-bottom: 16px;">Cloud Sync</h3>
-                    <p style="font-size: 14px; margin-bottom: 16px; color: var(--text-secondary); line-height: 1.5;">Backup your flashcards to Google Drive. Merge your web dashboard decks with your Chrome extension data seamlessly.</p>
+                    <p style="font-size: 14px; margin-bottom: 8px; color: var(--text-secondary); line-height: 1.5;">Your flashcards sync automatically between the Chrome extension, web, and mobile through your Google Drive.</p>
+                    <p id="sync-status-text" class="location-hint sync-status-text"></p>
                     
                     <div id="web-oauth-section" style="display: none; margin-bottom: 16px;">
                         <label style="font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: block;">Web OAuth Client ID</label>

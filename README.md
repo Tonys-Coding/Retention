@@ -16,7 +16,11 @@ Retention is available wherever you need it:
 
 ###  Seamless Background Auto-Sync
 Never worry about transferring your decks manually again. 
-Retention features a silent, background auto-sync engine built on Google Drive. If you add a flashcard on your desktop Web Dashboard, your Mobile PWA will instantly detect the changes and automatically pull the updates in the background the next time you open it. It features a robust last-write-wins polling system and gracefully handles expired tokens.
+Retention features a background auto-sync engine built on Google Drive. Every device keeps a full offline copy of your workspace and syncs it through a single backup file in your own Drive:
+*   **Changes upload automatically** a moment after you make them. In the Chrome extension the background service worker finishes the upload even if you close the popup, including cards created from the right-click menu.
+*   **Other devices pull updates** when you open the app or switch back to it, then refresh to show them.
+*   **No silent overwrites:** if a device was offline (or its sign-in expired) while you made changes elsewhere, Retention asks whether to keep the Drive version or this device's version instead of guessing.
+*   **Visible status:** Settings shows when you last synced. On the web/mobile app, Google sign-in expires after about an hour; when that happens a "Sync paused" banner offers a one-tap **Reconnect** so your phone never quietly falls out of date.
 
 ###  Massive Theming Engine
 Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 17 custom styles:
@@ -69,7 +73,8 @@ Retention was built to be lightning fast, zero-dependency, and incredibly resili
 *   **Frontend:** 100% Vanilla HTML, CSS, and JavaScript. No React, no build steps, no bloat.
 *   **Database:** IndexedDB (`js/db.js`). All flashcards are stored instantly and securely on your local device for true offline capabilities.
 *   **Service Workers:** `sw.js` aggressively caches the app shell, CSS, and JS so the mobile app boots instantly without an internet connection.
-*   **Cloud Sync:** Google Identity Services (GIS) handles OAuth securely, saving access tokens to `localStorage` to allow silent background polling to the Google Drive API (`js/drive.js`).
+*   **Cloud Sync:** `js/drive.js` syncs IndexedDB with a `retention_backup.json` file via the Google Drive API. The extension authenticates with `chrome.identity`; the web/PWA uses Google Identity Services (GIS) tokens. Sync state lives in `chrome.storage` (extension, shared with the background worker) or `localStorage` (web).
+*   **Hosting:** GitHub Pages serves the web/mobile app from the `gh-pages` branch, so pushes to `main` must also be pushed to `gh-pages` to deploy.
 *   **Parsing:** Uses `marked.js` for Markdown parsing and `pdf.js` for extracting text from dense textbooks.
 
 ---
