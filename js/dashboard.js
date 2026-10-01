@@ -227,10 +227,24 @@ const toggleThemeMenu = (e) => {
     $('sidebar-home').onclick = () => showHome();
     setupEvents();
     await refreshSidebar();
-    showHome();
+    // Always open on the main dashboard, scrolled to the top
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    await showHome();
+    window.scrollTo(0, 0);
 }
 
 // ===== SIDEBAR =====
+// Folder ids expanded in the sidebar tree. Empty on every page load, so the
+// dashboard always opens with all folders collapsed; kept across re-renders.
+const expandedFolders = new Set();
+
+function setFolderExpanded(childContainer, expanded) {
+    childContainer.classList.toggle('collapsed', !expanded);
+    childContainer.previousElementSibling?.querySelector('.db-nav-toggle')?.classList.toggle('rotated', !expanded);
+    const id = Number(childContainer.dataset.folderId);
+    if (expanded) expandedFolders.add(id); else expandedFolders.delete(id);
+}
+
 const getFolderIcon = (color) => {
     return `<svg width="16" height="16" viewBox="0 0 24 24" fill="${color || 'none'}" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
 };
@@ -305,6 +319,10 @@ async function refreshSidebar() {
             
             const childContainer = document.createElement('div');
             childContainer.className = 'db-nav-children';
+            childContainer.dataset.folderId = folder.id;
+            const isExpanded = expandedFolders.has(folder.id);
+            childContainer.classList.toggle('collapsed', !isExpanded);
+            fRow.querySelector('.db-nav-toggle').classList.toggle('rotated', !isExpanded);
             
             fRow.onclick = (e) => {
                 if (e.target.closest('.db-nav-toggle') || e.target.closest('.db-nav-menu')) return;
@@ -313,8 +331,7 @@ async function refreshSidebar() {
             
             fRow.querySelector('.db-nav-toggle').onclick = (e) => {
                 e.stopPropagation();
-                childContainer.classList.toggle('collapsed');
-                fRow.querySelector('.db-nav-toggle').classList.toggle('rotated');
+                setFolderExpanded(childContainer, childContainer.classList.contains('collapsed'));
             };
             fRow.querySelector('.db-nav-menu').onclick = (e) => showContextMenu(e, folderMenuItems(folder));
             
@@ -525,9 +542,18 @@ async function confirmDeleteDeck(d) {
 }
 
 function highlightNav(id) {
+    let activeEl = null;
     dom.sidebarNav.querySelectorAll('.db-nav-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.id === id);
+        const isActive = el.dataset.id === id;
+        el.classList.toggle('active', isActive);
+        if (isActive) activeEl = el;
     });
+    // Expand the folders that contain the active item so it's visible
+    let container = activeEl?.parentElement?.closest('.db-nav-children');
+    while (container) {
+        setFolderExpanded(container, true);
+        container = container.parentElement?.closest('.db-nav-children');
+    }
 }
 
 // ===== VIEWS =====
@@ -704,6 +730,16 @@ async function showFolder(folderId, folderName) {
 }
 
 
+// Sets text with line-break opportunities after _ - . / so names like
+// "01_Internet_Overview_and_Protocols" wrap at word boundaries
+function setBreakableText(el, text) {
+    el.textContent = '';
+    String(text).split(/(?<=[_\-./])/).forEach((part, i) => {
+        if (i > 0) el.appendChild(document.createElement('wbr'));
+        el.appendChild(document.createTextNode(part));
+    });
+}
+
 function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop) {
     const card = document.createElement('div');
     card.className = 'db-card';
@@ -715,9 +751,9 @@ function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickSt
     }
     
     card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-            <h3>${icon} ${title}</h3>
-            <button class="db-card-menu">${ICON.dots}</button>
+        <div class="db-card-header">
+            <h3>${icon}<span class="db-card-title"></span></h3>
+            <button class="db-card-menu" title="Options">${ICON.dots}</button>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: auto;">
             <span class="db-card-meta">${meta}</span>
@@ -725,6 +761,9 @@ function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickSt
         </div>
     `;
     
+    const titleEl = card.querySelector('.db-card-title');
+    setBreakableText(titleEl, title);
+    titleEl.title = title;
     card.querySelector('h3').style.cursor = 'pointer';
     card.querySelector('h3').onclick = onClick;
     card.querySelector('.db-card-menu').onclick = onMenu;
