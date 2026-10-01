@@ -10,8 +10,8 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Retention — Dashboard</title>
-    <link href="css/style.css?v=22" rel="stylesheet">
-    <link href="css/dashboard.css?v=22" rel="stylesheet">
+    <link href="css/style.css?v=23" rel="stylesheet">
+    <link href="css/dashboard.css?v=23" rel="stylesheet">
     <script src="js/marked.min.js"></script>
     <!-- Google Identity Services (web OAuth for Drive sync) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -47,6 +47,7 @@
                     <button id="btn-new-quiz" style="font-weight: 900; text-transform: uppercase;">NEW QUIZ DECK</button>
                     <button id="btn-menu-add-pdf" style="font-weight: 900; text-transform: uppercase;">GENERATE FROM PDF</button>
                     <button id="btn-menu-add-pdf-drive" style="font-weight: 900; text-transform: uppercase;">IMPORT PDF FROM DRIVE</button>
+                    <button id="btn-menu-ai-quiz" style="font-weight: 900; text-transform: uppercase;">GENERATE QUIZ WITH AI</button>
                     <button id="btn-menu-import-csv" style="font-weight: 900; text-transform: uppercase;">IMPORT CSV</button>
                 </div>
             </div>
@@ -227,6 +228,13 @@
         </div>
     </div>
 
+    <!-- MODAL: Generate practice quiz with AI (js/ai-quiz.js) -->
+    <div class="db-modal-overlay" id="modal-ai-quiz">
+        <div class="db-modal" style="max-width:560px;max-height:90vh;overflow-y:auto;">
+            <h2>Generate Practice Quiz</h2>
+            <div id="ai-quiz-form"></div>
+        </div>
+    </div>
     <!-- MODAL: CSV import instructions -->
     <div class="db-modal-overlay" id="modal-import-help">
         <div class="db-modal" style="max-width:520px;max-height:90vh;overflow-y:auto;">
@@ -313,7 +321,7 @@
 
     <script src="js/confetti.min.js"></script>
     <script src="js/pdf.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=22"></script>
+    <script type="module" src="js/dashboard.js?v=23"></script>
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="db-modal-overlay" style="z-index: 10000;">

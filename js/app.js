@@ -4,6 +4,7 @@ import { exportDeckToCSV } from './csv.js';
 import { escapeHtml } from './utils.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderImportHelp } from './import-help.js';
+import { renderAiQuizForm } from './ai-quiz.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
@@ -53,7 +54,7 @@ const updateProgressBanner = (progress) => {
     const percent = Math.round((progress.current / progress.total) * 100) || 0;
     
     if (progress.status === 'saving') {
-        document.getElementById('bg-task-title').textContent = 'Saving Cards...';
+        document.getElementById('bg-task-title').textContent = progress.kind === 'quiz' ? 'Saving Questions...' : 'Saving Cards...';
     } else {
         document.getElementById('bg-task-title').textContent = `Analyzing "${progress.deckName}"`;
     }
@@ -1811,10 +1812,24 @@ const renderDriveFiles = (files, append = false) => {
                 
                 const arrayBuffer = await downloadPdfFromDrive(file.id);
                 const pdfFile = new File([arrayBuffer], file.name, { type: 'application/pdf' });
-                await handlePDFUpload(pdfFile);
+                if (drivePdfHandler) {
+                    // Picked for the AI quiz form, not flashcard generation
+                    const deliver = drivePdfHandler;
+                    drivePdfHandler = null;
+                    dropzone.style.display = 'none';
+                    dropzone.classList.remove('dropzone-loading');
+                    dropzone.innerHTML = dropzoneDefaultHtml;
+                    deliver(pdfFile);
+                } else {
+                    await handlePDFUpload(pdfFile);
+                }
             } catch (err) {
                 document.getElementById('dropzone-overlay').style.display = 'none';
                 showToast("Drive Error: " + err.message);
+                if (drivePdfHandler) {
+                    drivePdfHandler = null;
+                    document.getElementById('modal-ai-quiz').style.display = 'flex';
+                }
             }
         });
         listContainer.appendChild(el);
@@ -1839,6 +1854,7 @@ const loadDrivePdfs = async (append = false) => {
 };
 
 document.getElementById('btn-menu-add-pdf-drive').addEventListener('click', () => {
+    drivePdfHandler = null;
     document.getElementById('drive-picker-search').value = '';
     currentDriveQuery = '';
     currentDrivePageToken = '';
@@ -1868,6 +1884,39 @@ document.getElementById('btn-drive-picker-load-more').addEventListener('click', 
 
 document.getElementById('btn-cancel-drive-picker').addEventListener('click', () => {
     document.getElementById('modal-drive-picker').style.display = 'none';
+    if (drivePdfHandler) {
+        drivePdfHandler = null;
+        document.getElementById('modal-ai-quiz').style.display = 'flex';
+    }
+});
+
+// ─── Generate practice quiz with AI ──────────────────────────────────
+// Set while the AI quiz form is choosing a PDF from Google Drive
+let drivePdfHandler = null;
+
+document.getElementById('btn-menu-ai-quiz').addEventListener('click', () => {
+    const modal = document.getElementById('modal-ai-quiz');
+    renderAiQuizForm(document.getElementById('ai-quiz-form'), {
+        onCancel: () => { modal.style.display = 'none'; },
+        onPickDrive: (deliver) => {
+            modal.style.display = 'none';
+            document.getElementById('btn-menu-add-pdf-drive').click();
+            // Set after opening the picker, whose button handler clears it
+            drivePdfHandler = (file) => {
+                modal.style.display = 'flex';
+                deliver(file);
+            };
+        },
+        onGenerate: async ({ textChunks, deckName, quiz }) => {
+            const { openrouter_api_key: apiKey } = await chrome.storage.local.get(['openrouter_api_key']);
+            if (!apiKey) throw new Error('Add your OpenRouter API key in Settings first.');
+            // The background worker keeps going after the popup closes
+            chrome.runtime.sendMessage({ action: 'PROCESS_PDF_CHUNKS', textChunks, deckName, folderId: currentFolderId, kind: 'quiz', quiz });
+            modal.style.display = 'none';
+            showToast(`Generating "${deckName}". You'll get a notification when it's ready.`);
+        }
+    });
+    modal.style.display = 'flex';
 });
 
 document.getElementById('btn-cancel-add-item').addEventListener('click', () => {

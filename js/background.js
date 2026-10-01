@@ -22,6 +22,19 @@ chrome.runtime.onInstalled.addListener(() => {
         title: "Add to Retention (AI)",
         contexts: ["selection"]
     });
+    chrome.contextMenus.create({
+        id: "generate-retention-quiz",
+        title: "Make practice quiz (AI)",
+        contexts: ["selection"]
+    });
+});
+
+// Right-click → "Make practice quiz (AI)": a quiz deck from the selected text
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId !== "generate-retention-quiz" || !info.selectionText) return;
+    const title = (tab?.title || 'Selection').trim();
+    const deckName = `Quiz: ${title.length > 48 ? `${title.slice(0, 47)}…` : title}`;
+    processPdfChunks([info.selectionText], deckName, null, { notify, kind: 'quiz', quiz: { count: 'auto' } }).catch(console.error);
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -90,7 +103,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // Process PDF Chunks in the background
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'PROCESS_PDF_CHUNKS') {
-        processPdfChunks(request.textChunks, request.deckName, request.folderId, { notify }).catch(console.error);
+        processPdfChunks(request.textChunks, request.deckName, request.folderId, {
+            notify,
+            kind: request.kind === 'quiz' ? 'quiz' : 'flashcards',
+            quiz: request.quiz
+        }).catch(console.error);
         sendResponse({status: 'started'});
     }
 });

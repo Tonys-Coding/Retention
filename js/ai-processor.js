@@ -1,7 +1,8 @@
 /**
- * ai-processor.js — PDF → Flashcards AI Processing
+ * ai-processor.js — AI generation from text chunks (PDFs, pasted notes,
+ * selected web text): flashcard decks or practice quiz decks.
  *
- * Processes PDF text chunks through OpenRouter, writing progress to the
+ * Processes text chunks through OpenRouter, writing progress to the
  * storage abstraction layer so the progress banner updates live.
  *
  * Runs in two places:
@@ -15,16 +16,31 @@
 
 import { initDB, addDeck, addCard } from './db.js';
 import { storage, runtime } from './env.js';
-import { requestCompletion, parseAIJson, buildPdfPrompt, PDF_SYSTEM_PROMPT } from './ai.js';
+import {
+    requestCompletion, parseAIJson, buildPdfPrompt, PDF_SYSTEM_PROMPT,
+    buildQuizPrompt, QUIZ_SYSTEM_PROMPT, QUIZ_QUESTION_TYPES, quizCardFromAI
+} from './ai.js';
+
+const normalizeQuestion = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /**
  * @param {string[]} textChunks
  * @param {string} deckName
  * @param {number|null} folderId
- * @param {{ notify?: (title: string, message: string) => void }} [options]
+ * @param {{ notify?: (title: string, message: string) => void, kind?: 'flashcards'|'quiz',
+ *           quiz?: { count?: number|'auto', types?: string[] } }} [options]
  *   notify — optional system-notification hook (used by the extension)
+ *   kind   — 'quiz' builds a practice quiz deck instead of flashcards
+ *   quiz   — question count ('auto' scales with the material) and question types
  */
-export async function processPdfChunks(textChunks, deckName, folderId, { notify = () => {} } = {}) {
+export async function processPdfChunks(textChunks, deckName, folderId, { notify = () => {}, kind = 'flashcards', quiz = {} } = {}) {
+    const isQuiz = kind === 'quiz';
+    const requestedTypes = (quiz.types || []).filter((t) => QUIZ_QUESTION_TYPES.includes(t));
+    const quizTypes = requestedTypes.length ? requestedTypes : QUIZ_QUESTION_TYPES;
+    const quizCount = Number.isInteger(quiz.count) && quiz.count > 0 ? quiz.count : null;
+    // Spread a requested count across chunks; trimmed to the exact count at the end
+    const perChunkTarget = quizCount ? Math.max(1, Math.ceil(quizCount / textChunks.length)) : null;
+    const unit = isQuiz ? 'questions' : 'flashcards';
     const res = await storage.get(['openrouter_api_key', 'ai_focus']);
     const apiKey = res.openrouter_api_key;
     const focus = res.ai_focus || 'general';
@@ -32,28 +48,33 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
     if (!apiKey) {
         notify('Retention API Error', 'Cannot process PDF. Please set your OpenRouter API key.');
         await storage.set({
-            pdfProgress: { status: 'error', errorMsg: 'No API key set.', deckName }
+            pdfProgress: { status: 'error', errorMsg: 'No API key set.', deckName, kind }
         });
         return;
     }
 
-    notify('PDF Processing Started', `Analyzing ${textChunks.length} sections of "${deckName}" in the background...`);
+    notify(isQuiz ? 'Writing Practice Quiz' : 'PDF Processing Started', `Analyzing ${textChunks.length} section${textChunks.length === 1 ? '' : 's'} of "${deckName}" in the background...`);
 
     let allFlashcards = [];
 
     await storage.set({
-        pdfProgress: { status: 'running', current: 0, total: textChunks.length, deckName }
+        pdfProgress: { status: 'running', current: 0, total: textChunks.length, deckName, kind }
     });
 
     for (let i = 0; i < textChunks.length; i++) {
         await storage.set({
-            pdfProgress: { status: 'running', current: i, total: textChunks.length, deckName }
+            pdfProgress: { status: 'running', current: i, total: textChunks.length, deckName, kind }
         });
 
-        const messages = [
-            { role: 'system', content: PDF_SYSTEM_PROMPT },
-            { role: 'user', content: buildPdfPrompt(textChunks[i], focus) }
-        ];
+        const messages = isQuiz
+            ? [
+                { role: 'system', content: QUIZ_SYSTEM_PROMPT },
+                { role: 'user', content: buildQuizPrompt(textChunks[i], { types: quizTypes, focus, target: perChunkTarget }) }
+            ]
+            : [
+                { role: 'system', content: PDF_SYSTEM_PROMPT },
+                { role: 'user', content: buildPdfPrompt(textChunks[i], focus) }
+            ];
 
         let retries = 3;
         let success = false;
@@ -84,7 +105,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
                     // Hard auth/quota error: abort the entire PDF job
                     if (response.status === 401 || response.status === 402 || response.status === 403) {
                         await storage.set({
-                            pdfProgress: { status: 'error', errorMsg: `API Error: ${errMsg}`, deckName }
+                            pdfProgress: { status: 'error', errorMsg: `API Error: ${errMsg}`, deckName, kind }
                         });
                         return;
                     }
@@ -114,7 +135,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
                 // Out of retries on a timeout: fail the whole job so it doesn't hang invisibly
                 if (retries === 0 && isTimeout) {
                     await storage.set({
-                        pdfProgress: { status: 'error', errorMsg: 'AI model timed out after 60s. The free tier may be heavily congested.', deckName }
+                        pdfProgress: { status: 'error', errorMsg: 'AI model timed out after 60s. The free tier may be heavily congested.', deckName, kind }
                     });
                     return;
                 }
@@ -131,27 +152,47 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
 
     // ─── Save to IndexedDB ───────────────────────────────────────────
     await storage.set({
-        pdfProgress: { status: 'saving', current: textChunks.length, total: textChunks.length, deckName }
+        pdfProgress: { status: 'saving', current: textChunks.length, total: textChunks.length, deckName, kind }
     });
 
-    const validCards = allFlashcards.filter(c => c && c.term && c.definition);
+    let validCards;
+    if (isQuiz) {
+        // Validate every AI question, drop duplicates across chunks, then trim to the requested count
+        const seen = new Set();
+        validCards = allFlashcards
+            .map((q) => quizCardFromAI(q, quizTypes))
+            .filter((c) => {
+                if (!c) return false;
+                const key = normalizeQuestion(c.term);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        if (quizCount) validCards = validCards.slice(0, quizCount);
+    } else {
+        validCards = allFlashcards.filter(c => c && c.term && c.definition);
+    }
 
     if (validCards.length > 0) {
         try {
             await initDB();
-            const finalDeckName = deckName || 'AI Generated Deck';
-            const deckId = await addDeck(finalDeckName, folderId);
+            const finalDeckName = deckName || (isQuiz ? 'AI Practice Quiz' : 'AI Generated Deck');
+            const deckId = await addDeck(finalDeckName, folderId, isQuiz ? 'quiz' : 'flashcards');
             for (const card of validCards) {
-                await addCard({
-                    deckId: deckId,
-                    term: card.term,
-                    definition: card.definition,
-                    status: 'new',
-                    type: card.type === 'cloze' ? 'cloze' : 'standard'
-                });
+                if (isQuiz) {
+                    await addCard({ ...card, deckId, example: '', status: 'new' });
+                } else {
+                    await addCard({
+                        deckId: deckId,
+                        term: card.term,
+                        definition: card.definition,
+                        status: 'new',
+                        type: card.type === 'cloze' ? 'cloze' : 'standard'
+                    });
+                }
             }
 
-            notify('PDF Processing Complete!', `Successfully created ${validCards.length} flashcards in "${finalDeckName}".`);
+            notify(isQuiz ? 'Practice Quiz Ready!' : 'PDF Processing Complete!', `Successfully created ${validCards.length} ${unit} in "${finalDeckName}".`);
 
             // Tell any open UI to refresh
             runtime.sendMessage({ action: 'REFRESH_DECKS' });
@@ -164,13 +205,13 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
         } catch (e) {
             console.error("DB Save Error:", e);
             await storage.set({
-                pdfProgress: { status: 'error', errorMsg: 'Failed to save to database.', deckName }
+                pdfProgress: { status: 'error', errorMsg: 'Failed to save to database.', deckName, kind }
             });
         }
     } else {
-        notify('PDF Processing Failed', `Could not generate any flashcards for "${deckName}".`);
+        notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Could not generate any ${unit} for "${deckName}".`);
         await storage.set({
-            pdfProgress: { status: 'error', errorMsg: 'AI returned no usable flashcards. Try a different PDF or try again later.', deckName }
+            pdfProgress: { status: 'error', errorMsg: `AI returned no usable ${unit}. Try different material or try again later.`, deckName, kind }
         });
     }
 }

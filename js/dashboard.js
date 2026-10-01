@@ -10,6 +10,7 @@ import { renderThemesLibrary } from './themes-library.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderQuizEditor } from './quiz-editor.js';
 import { renderImportHelp } from './import-help.js';
+import { renderAiQuizForm } from './ai-quiz.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
 // ===== SVG ICONS =====
@@ -1582,7 +1583,7 @@ const updateProgressBanner = (progress) => {
     const percent = Math.round((progress.current / progress.total) * 100) || 0;
     
     if (progress.status === 'saving') {
-        document.getElementById('bg-task-title').textContent = 'Saving Cards...';
+        document.getElementById('bg-task-title').textContent = progress.kind === 'quiz' ? 'Saving Questions...' : 'Saving Cards...';
     } else {
         document.getElementById('bg-task-title').textContent = `Analyzing "${progress.deckName}"`;
     }
@@ -1851,6 +1852,42 @@ const handlePDFUpload = async (file) => {
     }
 };
 
+// ===== AI PRACTICE QUIZ GENERATION =====
+// Set while the AI quiz form is choosing a PDF from Google Drive
+let drivePdfHandler = null;
+
+function openAiQuizModal() {
+    const modal = $('modal-ai-quiz');
+    renderAiQuizForm($('ai-quiz-form'), {
+        onCancel: () => modal.classList.remove('active'),
+        onPickDrive: (deliver) => {
+            modal.classList.remove('active');
+            document.getElementById('btn-menu-add-pdf-drive').click();
+            // Set after opening the picker, whose button handler clears it
+            drivePdfHandler = (file) => {
+                modal.classList.add('active');
+                deliver(file);
+            };
+        },
+        onGenerate: async ({ textChunks, deckName, quiz }) => {
+            const { openrouter_api_key: apiKey } = await storage.get(['openrouter_api_key']);
+            if (!apiKey) throw new Error('Add your OpenRouter API key in Settings first.');
+            const folderId = currentFolderId ?? null;
+            if (isExtension) {
+                // The background worker keeps going even if this tab is closed
+                chrome.runtime.sendMessage({ action: 'PROCESS_PDF_CHUNKS', textChunks, deckName, folderId, kind: 'quiz', quiz });
+            } else {
+                processPdfChunks(textChunks, deckName, folderId, { kind: 'quiz', quiz });
+            }
+            modal.classList.remove('active');
+            showToast(`Generating "${deckName}". Progress shows at the top.`);
+        }
+    });
+    modal.classList.add('active');
+}
+
+document.getElementById('btn-menu-ai-quiz')?.addEventListener('click', openAiQuizModal);
+
 // CSV IMPORT (into the folder currently open)
 if (document.getElementById('btn-menu-import-csv')) {
     // Show the CSV format instructions first (unless turned off)
@@ -1974,10 +2011,22 @@ const loadDrivePdfs = async (append = false) => {
                 try {
                     const blob = await downloadPdfFromDrive(file.id);
                     const pdfFile = new File([blob], file.name, { type: 'application/pdf' });
-                    await handlePDFUpload(pdfFile);
+                    if (drivePdfHandler) {
+                        // Picked for the AI quiz form, not flashcard generation
+                        const deliver = drivePdfHandler;
+                        drivePdfHandler = null;
+                        document.getElementById('dropzone-overlay').style.display = 'none';
+                        deliver(pdfFile);
+                    } else {
+                        await handlePDFUpload(pdfFile);
+                    }
                 } catch (err) {
                     document.getElementById('dropzone-overlay').style.display = 'none';
                     showToast("Drive Error: " + err.message);
+                    if (drivePdfHandler) {
+                        drivePdfHandler = null;
+                        $('modal-ai-quiz').classList.add('active');
+                    }
                 }
             });
             listContainer.appendChild(el);
@@ -1993,6 +2042,7 @@ const loadDrivePdfs = async (append = false) => {
 
 if (document.getElementById('btn-menu-add-pdf-drive')) {
     document.getElementById('btn-menu-add-pdf-drive').addEventListener('click', () => {
+        drivePdfHandler = null;
         document.getElementById('modal-drive-picker').style.display = 'flex';
         document.getElementById('drive-picker-search').value = '';
         loadDrivePdfs();
@@ -2001,6 +2051,10 @@ if (document.getElementById('btn-menu-add-pdf-drive')) {
 if (document.getElementById('btn-cancel-drive-picker')) {
     document.getElementById('btn-cancel-drive-picker').addEventListener('click', () => {
         document.getElementById('modal-drive-picker').style.display = 'none';
+        if (drivePdfHandler) {
+            drivePdfHandler = null;
+            $('modal-ai-quiz').classList.add('active');
+        }
     });
 }
 if (document.getElementById('drive-picker-search')) {

@@ -1590,10 +1590,6 @@ body.theme-tatooine .db-main {
     gap: 14px;
 }
 
-.qe-types .mode-btn:not(:last-child) {
-    border-right: 2px solid var(--border-color);
-}
-
 .qe-field {
     display: flex;
     flex-direction: column;

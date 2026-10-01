@@ -45,6 +45,7 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 *   **Google Drive PDF Picker:** Browse and select PDFs directly from your cloud storage.
 *   **Focus Modifiers:** Choose in Settings what the AI should prioritize when generating from PDFs (e.g., *Dates & Events*, *Formulas & Math*, *Vocabulary / Jargon*, *People & Quotes*, *Code & Syntax*, *Language Translation*).
 *   **Context Menu Magic:** Highlight text on any website, right-click, and select "Add to Retention (AI)" to instantly beam a generated flashcard into your Inbox.
+*   **Practice quizzes too:** The same AI can write multiple choice, true/false and fill-in-the-blank practice quizzes (see Practice Quiz Decks below).
 
 ###  Practice Quiz Decks
 Alongside flashcard decks, Retention has **practice quiz decks** (with their own test-sheet icon) for exam-style review:
@@ -53,7 +54,8 @@ Alongside flashcard decks, Retention has **practice quiz decks** (with their own
 *   **Results:** Score, time, and your best score; **Retake test** or **Retake missed** questions. Quiz scores are tracked separately and never change flashcard mastery.
 *   **Create them your way:** Import a quiz CSV, or use **Add New → New Quiz Deck** and **Edit Questions** in the dashboard. Quiz decks can be renamed, moved, exported, and synced like any other deck.
 *   **Quiz CSV format:** `Question, Type, Answer, Choice A, Choice B, Choice C, Choice D, Explanation` with Type `mcq`, `tf`, or `fitb` (mcq Answer = the correct letter; tf Answer = True/False; fitb uses `___` for the blank and `|` between accepted answers). The downloadable **AI Prompt** (in the import instructions) teaches any AI chatbot to write both flashcard and quiz CSVs.
-*   **Coming next:** AI-generated practice quizzes straight from your PDFs and notes.
+*   **Generate quizzes with AI:** **Add New → Generate Quiz with AI** (popup, web, and mobile) turns a PDF, a PDF from Google Drive, or pasted notes into a practice quiz deck in the folder you have open. Pick how many questions (Auto, 10, 20, 30) and which types to include; your Settings focus modifier applies too. Every question is checked before it's saved (one correct answer, distinct choices, short blanks) and duplicates are dropped. In the extension it runs in the background, so you can close the popup.
+*   **Right-click quizzes:** Highlight text on any page, right-click, and choose **Make practice quiz (AI)** to turn it into a quiz deck.
 
 ###  Infinite Organization & Study Flows
 *   **Nested Folders & Drag-and-Drop:** Organize decks into folders, and nest folders within folders infinitely. Easily drag decks across your workspace.
