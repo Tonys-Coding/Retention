@@ -1,6 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
+import { initTheme, toggleThemeMenu } from './themes.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 
@@ -190,8 +191,7 @@ const checkSavedSession = async () => {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme !== 'light') document.body.classList.add('theme-' + savedTheme);
+    initTheme();
 
     
     await initDB();
@@ -208,69 +208,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
-const themeData = [
-    { id: 'light', name: 'Light', color: '#ffffff' },
-    { id: 'dark', name: 'Dark', color: '#121212' },
-    { id: 'autumn', name: 'Autumn', color: '#c25e29' },
-    { id: 'terminal', name: 'Terminal', color: '#4ade80' },
-    { id: 'vaporwave', name: 'Vaporwave', color: '#ff71ce' },
-    { id: 'blueprint', name: 'Blueprint', color: '#0a3d91' },
-    { id: 'neopop', name: 'Neo-Pop', color: '#a7f3d0' },
-    { id: 'composition', name: 'Composition', color: '#fdf6e3' },
-    { id: 'dracula', name: 'Dracula', color: '#282a36' },
-    { id: 'earthy', name: 'Earthy', color: '#3b5240' },
-    { id: 'space', name: 'Space', color: '#04050a' },
-    { id: 'moon', name: 'Moon', color: '#8a8d91' },
-    { id: 'cabin', name: 'Cozy Cabin', color: '#382215' },
-    { id: 'matcha', name: 'Matcha', color: '#d1deb9' },
-    { id: 'tatooine', name: 'Tatooine', color: '#e6c280' },
-    { id: 'kylo', name: 'Kylo', color: '#ea1c1c' },
-    { id: 'strawberry', name: 'Strawberry', color: '#FA2A28' }
-];
-
-const applyTheme = (theme) => {
-    document.body.className = document.body.className.replace(/theme-\w+/g, '').replace('dark-mode', '').trim();
-    if (theme !== 'light') document.body.classList.add('theme-' + theme);
-    localStorage.setItem('theme', theme);
-};
-
-let themeMenuEl = null;
-const toggleThemeMenu = (e) => {
+// Palette button: favorites only. The full library lives in the dashboard.
+document.getElementById('btn-toggle-theme').addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!themeMenuEl) {
-        themeMenuEl = document.createElement('div');
-        themeMenuEl.className = 'theme-menu';
-        themeData.forEach(t => {
-            const opt = document.createElement('div');
-            opt.className = 'theme-option';
-            opt.innerHTML = `<div class="theme-color-box" style="background-color: ${t.color};"></div> <span>${t.name}</span>`;
-            opt.onclick = () => {
-                applyTheme(t.id);
-                showToast(`Theme: ${t.name}`);
-                themeMenuEl.style.display = 'none';
-            };
-            themeMenuEl.appendChild(opt);
-        });
-        document.body.appendChild(themeMenuEl);
-        
-        document.addEventListener('click', (ev) => {
-            if (!themeMenuEl.contains(ev.target)) {
-                themeMenuEl.style.display = 'none';
-            }
-        });
-    }
-    
-    if (themeMenuEl.style.display === 'flex') {
-        themeMenuEl.style.display = 'none';
-    } else {
-        const rect = e.currentTarget.getBoundingClientRect();
-        themeMenuEl.style.top = (rect.bottom + 8) + 'px';
-        themeMenuEl.style.right = (window.innerWidth - rect.right) + 'px';
-        themeMenuEl.style.display = 'flex';
-    }
-};
-
-document.getElementById('btn-toggle-theme').addEventListener('click', toggleThemeMenu);
+    toggleThemeMenu(e.currentTarget, {
+        onBrowse: () => chrome.tabs.create({ url: 'dashboard.html#themes' }),
+        browseLabel: 'Manage themes',
+        browseHint: 'Browse, star and reorder in the dashboard',
+        external: true
+    });
+});
 
 document.getElementById('btn-expand-dashboard').addEventListener('click', () => {
     chrome.tabs.create({ url: 'dashboard.html' });

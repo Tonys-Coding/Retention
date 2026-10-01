@@ -4,6 +4,8 @@ import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
 import { exportDeckToCSV } from './csv.js';
+import { initTheme, toggleThemeMenu } from './themes.js';
+import { renderThemesLibrary } from './themes-library.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
 // ===== SVG ICONS =====
@@ -129,6 +131,7 @@ function showContextMenu(e, items) {
 
 // ===== INIT =====
 async function init() {
+    initTheme();
 
     const sidebarHome = document.getElementById('sidebar-home');
     sidebarHome.addEventListener('dragover', (e) => {
@@ -158,79 +161,24 @@ async function init() {
         location.reload();
     });
     
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme !== 'light') document.body.classList.add('theme-' + savedTheme);
-    
-
-const themeData = [
-    { id: 'light', name: 'Light', color: '#ffffff' },
-    { id: 'dark', name: 'Dark', color: '#121212' },
-    { id: 'autumn', name: 'Autumn', color: '#c25e29' },
-    { id: 'terminal', name: 'Terminal', color: '#4ade80' },
-    { id: 'vaporwave', name: 'Vaporwave', color: '#ff71ce' },
-    { id: 'blueprint', name: 'Blueprint', color: '#0a3d91' },
-    { id: 'neopop', name: 'Neo-Pop', color: '#a7f3d0' },
-    { id: 'composition', name: 'Composition', color: '#fdf6e3' },
-    { id: 'dracula', name: 'Dracula', color: '#282a36' },
-    { id: 'earthy', name: 'Earthy', color: '#3b5240' },
-    { id: 'space', name: 'Space', color: '#04050a' },
-    { id: 'moon', name: 'Moon', color: '#8a8d91' },
-    { id: 'cabin', name: 'Cozy Cabin', color: '#382215' },
-    { id: 'matcha', name: 'Matcha', color: '#d1deb9' },
-    { id: 'tatooine', name: 'Tatooine', color: '#e6c280' },
-    { id: 'kylo', name: 'Kylo', color: '#ea1c1c' },
-    { id: 'strawberry', name: 'Strawberry', color: '#FA2A28' }
-];
-
-const applyTheme = (theme) => {
-    document.body.className = document.body.className.replace(/theme-\w+/g, '').replace('dark-mode', '').trim();
-    if (theme !== 'light') document.body.classList.add('theme-' + theme);
-    localStorage.setItem('theme', theme);
-};
-
-let themeMenuEl = null;
-const toggleThemeMenu = (e) => {
-    e.stopPropagation();
-    if (!themeMenuEl) {
-        themeMenuEl = document.createElement('div');
-        themeMenuEl.className = 'theme-menu';
-        themeData.forEach(t => {
-            const opt = document.createElement('div');
-            opt.className = 'theme-option';
-            opt.innerHTML = `<div class="theme-color-box" style="background-color: ${t.color};"></div> <span>${t.name}</span>`;
-            opt.onclick = () => {
-                applyTheme(t.id);
-                showToast(`Theme: ${t.name}`);
-                themeMenuEl.style.display = 'none';
-            };
-            themeMenuEl.appendChild(opt);
-        });
-        document.body.appendChild(themeMenuEl);
-        
-        document.addEventListener('click', (ev) => {
-            if (!themeMenuEl.contains(ev.target)) {
-                themeMenuEl.style.display = 'none';
-            }
-        });
-    }
-    
-    if (themeMenuEl.style.display === 'flex') {
-        themeMenuEl.style.display = 'none';
-    } else {
-        const rect = e.currentTarget.getBoundingClientRect();
-        themeMenuEl.style.top = (rect.bottom + 8) + 'px';
-        themeMenuEl.style.right = (window.innerWidth - rect.right) + 'px';
-        themeMenuEl.style.display = 'flex';
-    }
-};
-
-    $('btn-theme').onclick = toggleThemeMenu;
+    $('btn-theme').onclick = (e) => toggleThemeMenu(e.currentTarget, {
+        onBrowse: showThemes,
+        browseLabel: 'Browse all themes',
+        browseHint: 'Star and reorder favorites there'
+    });
+    $('btn-sidebar-themes').onclick = showThemes;
     $('sidebar-home').onclick = () => showHome();
     setupEvents();
     await refreshSidebar();
     // Always open on the main dashboard, scrolled to the top
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    await showHome();
+    if (location.hash === '#themes') {
+        // Opened from the extension popup's "Manage themes"; drop the hash so a reload lands on home
+        history.replaceState(null, '', location.pathname + location.search);
+        showThemes();
+    } else {
+        await showHome();
+    }
     window.scrollTo(0, 0);
 }
 
@@ -597,6 +545,8 @@ async function loadStats() {
 }
 
 function hideAll() {
+    $('view-themes').classList.remove('active');
+    $('btn-sidebar-themes').classList.remove('active');
     dom.viewGrid.style.display = 'none';
     dom.viewStatsBar.style.display = 'none';
     dom.viewStudy.classList.remove('active');
@@ -607,6 +557,19 @@ function hideAll() {
     dom.mainBody.querySelectorAll('.db-empty').forEach(e => e.remove());
 }
 
+
+function showThemes() {
+    currentView = 'themes';
+    hideAll();
+    dom.mainTitle.textContent = 'Themes';
+    dom.btnBack.style.display = 'block';
+    dom.btnStudy.style.display = 'none';
+    highlightNav('');
+    $('btn-sidebar-themes').classList.add('active');
+    renderThemesLibrary($('view-themes'));
+    $('view-themes').classList.add('active');
+    window.scrollTo(0, 0);
+}
 
 async function showHome() {
     currentView = 'home';

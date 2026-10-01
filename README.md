@@ -28,6 +28,12 @@ Retention features a beautiful, brutalist, high-contrast aesthetic—featuring t
 *   **Aesthetics:** Terminal, Vaporwave, Autumn, Blueprint, Neo-Pop, Composition, Dracula, Earthy, Space, Moon, Cozy Cabin, Matcha, Strawberry.
 *   **Star Wars Collection:** Tatooine (desert hues) and **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures).
 
+**Themes Library & Favorites**
+*   **Themes Library:** A dedicated page in the dashboard (sidebar **Themes**, or **Browse all themes** in the palette menu) shows every theme as a large live preview with its real colors and background artwork. Search, filter by Favorites / Light / Dark, and apply any theme with one click.
+*   **Favorites:** Star the themes you love. The palette button becomes a quick menu of just your favorites for one-click switching, in the extension popup, the web dashboard, and the mobile app.
+*   **Reorder:** Drag favorites into the order you want (or tap **Reorder** and use the arrows on touch screens and keyboards). The quick menu follows that order.
+*   **Extension hand-off:** In the popup, **Manage themes** opens the full library in the dashboard.
+
 ###  AI-Powered Flashcard Generation (OpenRouter)
 Don't waste hours typing out flashcards manually. Supply an OpenRouter API key and let the AI do the heavy lifting:
 *   **Drag & Drop PDFs:** Drag any local PDF directly onto the Web Dashboard dropzone.
