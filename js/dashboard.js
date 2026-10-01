@@ -4,6 +4,7 @@ import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans } from './db.js';
 import { exportDeckToCSV } from './csv.js';
+import { escapeHtml } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { renderThemesLibrary } from './themes-library.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
@@ -241,7 +242,7 @@ async function refreshSidebar() {
             fRow.innerHTML = `
                 <span class="db-nav-toggle">${ICON.chevron}</span>
                 ${getFolderIcon(folder.color)}
-                <span class="db-nav-label">${folder.name}</span>
+                <span class="db-nav-label">${escapeHtml(folder.name)}</span>
                 <span class="db-nav-count">${nestedDecks.length + nestedFolders.length}</span>
                 <button class="db-nav-menu">${ICON.dots}</button>
             `;
@@ -296,7 +297,7 @@ async function refreshSidebar() {
                 dEl.className = 'db-nav-item db-nav-item--sub';
                 dEl.dataset.id = `d-${d.id}`;
                 dEl.style.paddingLeft = `${8 + ((level + 1) * 16)}px`;
-                dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${d.name}</span><button class="db-nav-menu">${ICON.dots}</button>`;
+                dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
                 
                 // Drag start for deck
                 dEl.draggable = true;
@@ -347,7 +348,7 @@ async function refreshSidebar() {
             const dEl = document.createElement('div');
             dEl.className = 'db-nav-item';
             dEl.dataset.id = `d-${d.id}`;
-            dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${d.name}</span><button class="db-nav-menu">${ICON.dots}</button>`;
+            dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
             
             // Drag start for deck
             dEl.draggable = true;
@@ -380,6 +381,7 @@ async function refreshWorkspaceViews() {
     await refreshSidebar();
     if (currentView === 'home') await showHome();
     else if (currentView === 'folder') await showFolder(currentFolderId, currentFolderName);
+    else if (currentView === 'deck') highlightNav(`d-${editingDeckId}`);
 }
 
 function promptMove(type, item) {
@@ -452,21 +454,19 @@ async function promptRename(type, item) {
     // Temporarily override save
     $('modal-save').onclick = async () => {
         const name = dom.modalName.value.trim();
-        if (!name) return;
+        if (!name) { showToast('Name required.'); return; }
         if (type === 'folder') await updateFolder(item.id, name, dom.modalColor.value);
         else await updateDeck(item.id, name);
+        item.name = name;
         overlay.classList.remove('active');
-        await refreshSidebar();
-        if (currentView === 'folder' && currentFolderId === item.id) {
-            currentFolderName = name;
-            dom.mainTitle.textContent = name;
-        }
-        if (currentView === 'deck' && editingDeckId === item.id) {
-            editingDeckName = name;
-            dom.mainTitle.textContent = name;
-        }
-        if (currentView === 'home') showHome();
         rebindModalSave();
+
+        // Folder and deck ids come from separate stores, so only compare like with like
+        if (type === 'folder' && currentFolderId === item.id) currentFolderName = name;
+        if (type === 'deck' && editingDeckId === item.id) editingDeckName = name;
+        if (currentView === 'deck' && type === 'deck' && editingDeckId === item.id) dom.mainTitle.textContent = name;
+        await refreshWorkspaceViews();
+        showToast(`Renamed to "${name}"`);
     };
 }
 
@@ -801,8 +801,8 @@ async function loadDeckCards() {
         el.className = 'db-card-row';
         el.innerHTML = `
             <div class="db-card-row-content" title="Click to edit">
-                <div class="db-card-row-term">${card.term}${card.type === 'cloze' ? ' <span class="pill">fitb</span>' : ''}</div>
-                <div class="db-card-row-def">${card.definition}</div>
+                <div class="db-card-row-term">${escapeHtml(card.term)}${card.type === 'cloze' ? ' <span class="pill">fitb</span>' : ''}</div>
+                <div class="db-card-row-def">${escapeHtml(card.definition)}</div>
             </div>
             <div class="db-card-row-actions">
                 <button class="icon-btn btn-preview" title="Preview">${ICON.eye}</button>
@@ -825,31 +825,51 @@ async function loadDeckCards() {
 // ===== CARD MODALS =====
 function openEditCardModal(card) {
     const overlay = $('modal-edit-card');
+    const isCloze = card.type === 'cloze';
+    $('edit-card-term-label').textContent = isCloze ? 'Full sentence' : 'Term';
+    $('edit-card-def-label').textContent = isCloze ? 'Answer (word to hide)' : 'Definition';
+    $('edit-card-ex-label').style.display = isCloze ? 'none' : '';
+    $('edit-card-ex').style.display = isCloze ? 'none' : '';
     $('edit-card-term').value = card.term;
     $('edit-card-def').value = card.definition;
     $('edit-card-ex').value = card.example || '';
     
     $('edit-image-paste').value = '';
     editPastedImage = null;
-    if (card.image && card.type !== 'cloze') {
+    if (card.image && !isCloze) {
         $('edit-image-preview').src = card.image;
         $('edit-image-preview-container').style.display = 'block';
     } else {
         $('edit-image-preview').src = '';
         $('edit-image-preview-container').style.display = 'none';
     }
-    $('edit-card-image-section').style.display = card.type === 'cloze' ? 'none' : 'block';
+    $('edit-card-image-section').style.display = isCloze ? 'none' : 'block';
 
     overlay.classList.add('active');
     $('edit-card-save').onclick = async () => {
-        card.term = $('edit-card-term').value.trim();
-        card.definition = $('edit-card-def').value.trim();
-        card.example = $('edit-card-ex').value.trim();
-        if (editPastedImage) card.image = editPastedImage;
-        else if ($('edit-image-preview-container').style.display === 'none') card.image = null;
-        
-        if (!card.term || !card.definition) { showToast('Term and Definition required.'); return; }
-        await updateCard(card);
+        const term = $('edit-card-term').value.trim();
+        const definition = $('edit-card-def').value.trim();
+        // Validate before changing anything, so a failed save leaves the card untouched
+        if (!term || !definition) {
+            showToast(isCloze ? 'Sentence and answer required.' : 'Term and Definition required.');
+            return;
+        }
+        if (isCloze && !term.includes('___') && !term.toLowerCase().includes(definition.toLowerCase())) {
+            showToast('The answer must appear in the sentence.');
+            return;
+        }
+        let image = card.image || null;
+        if (isCloze) image = null;
+        else if (editPastedImage) image = editPastedImage;
+        else if ($('edit-image-preview-container').style.display === 'none') image = null;
+
+        await updateCard({
+            ...card,
+            term,
+            definition,
+            example: isCloze ? '' : $('edit-card-ex').value.trim(),
+            image
+        });
         overlay.classList.remove('active');
         loadDeckCards();
     };
@@ -1331,6 +1351,9 @@ function setupEvents() {
         rebindModalSave();
     };
     $('modal-cancel').onclick = () => dom.modalOverlay.classList.remove('active');
+    dom.modalName.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); $('modal-save').click(); }
+    });
     modalSaveDefault = async () => {
         const name = dom.modalName.value.trim();
         if (!name) return;
@@ -1440,7 +1463,7 @@ const updateProgressBanner = (progress) => {
     if (banner) banner.style.display = 'block';
     
     if (progress.status === 'error') {
-        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${progress.errorMsg || 'Failed'}</span>`;
+        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${escapeHtml(progress.errorMsg || 'Failed')}</span>`;
         document.getElementById('bg-task-percent').textContent = '';
         document.getElementById('bg-task-fill').style.width = '100%';
         document.getElementById('bg-task-fill').style.backgroundColor = 'red';
@@ -1819,7 +1842,7 @@ const loadDrivePdfs = async (append = false) => {
         result.files.forEach(file => {
             const el = document.createElement('div');
             el.style.cssText = 'padding:12px; border:2px solid var(--border-color); background:var(--bg-secondary); cursor:pointer; display:flex; justify-content:space-between; align-items:center;';
-            el.innerHTML = `<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85%;">${file.name}</span> <span style="font-size:12px; color:var(--text-secondary);">Select</span>`;
+            el.innerHTML = `<span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:85%;">${escapeHtml(file.name)}</span> <span style="font-size:12px; color:var(--text-secondary);">Select</span>`;
             
             el.addEventListener('mouseenter', () => el.style.background = 'var(--hover-bg)');
             el.addEventListener('mouseleave', () => el.style.background = 'var(--bg-secondary)');
@@ -1844,7 +1867,7 @@ const loadDrivePdfs = async (append = false) => {
         loadMoreBtn.style.display = drivePickerNextPageToken ? 'block' : 'none';
         
     } catch (err) {
-        if (!append) listContainer.innerHTML = `<div style="color:var(--border-color); text-align:center; padding:20px;">${err.message}</div>`;
+        if (!append) listContainer.innerHTML = `<div style="color:var(--border-color); text-align:center; padding:20px;">${escapeHtml(err.message)}</div>`;
     }
 };
 

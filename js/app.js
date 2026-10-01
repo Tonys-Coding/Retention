@@ -1,6 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
+import { escapeHtml } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
@@ -38,7 +39,7 @@ const updateProgressBanner = (progress) => {
     banner.style.display = 'block';
     
     if (progress.status === 'error') {
-        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${progress.errorMsg || 'Failed'}</span>`;
+        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${escapeHtml(progress.errorMsg || 'Failed')}</span>`;
         document.getElementById('bg-task-percent').textContent = '';
         document.getElementById('bg-task-fill').style.width = '100%';
         document.getElementById('bg-task-fill').style.backgroundColor = 'red';
@@ -314,7 +315,7 @@ const loadDecks = async (searchQuery = '') => {
         backEl.style.cursor = 'pointer';
         backEl.innerHTML = `<div style="font-weight: bold; display: flex; align-items: center; gap: 8px;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back to ${folderPath.length > 1 ? folderPath[folderPath.length-2].name : getWorkspaceName()}
+            Back to ${escapeHtml(folderPath.length > 1 ? folderPath[folderPath.length-2].name : getWorkspaceName())}
         </div>`;
         backEl.addEventListener('click', () => {
             folderPath.pop();
@@ -368,7 +369,7 @@ const loadDecks = async (searchQuery = '') => {
         el.innerHTML = `
             <div class="deck-item-info" title="Open Folder" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="${folder.color || 'var(--bg-secondary)'}" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                <div class="deck-title-text">${folder.name}</div>
+                <div class="deck-title-text">${escapeHtml(folder.name)}</div>
             </div>
             <div class="dropdown">
                 <button class="icon-btn btn-deck-menu" data-id="${folder.id}" style="display: flex; align-items: center; justify-content: center;">
@@ -516,7 +517,7 @@ const loadDecks = async (searchQuery = '') => {
             <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                 <svg width="20" height="24" viewBox="0 0 28 36" style="flex-shrink: 0; overflow: visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>
                 <div style="min-width: 0;">
-                    <div class="deck-title-text">${deck.name}</div>
+                    <div class="deck-title-text">${escapeHtml(deck.name)}</div>
                     <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
                 </div>
             </div>
@@ -708,9 +709,9 @@ const loadCards = async () => {
         
         el.innerHTML = `
             <div class="card-content-area" style="cursor: pointer; flex: 1; min-width: 0;">
-                <div class="term" style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.term} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
-                <div class="definition" style="color: var(--text-secondary); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${card.definition}</div>
-                <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${card.status.toUpperCase()}</div>
+                <div class="term" style="margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(card.term)} ${card.type === 'cloze' ? `<span class="pill">cloze</span>` : ''} ${card.image ? ` <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` : ''}</div>
+                <div class="definition" style="color: var(--text-secondary); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(card.definition)}</div>
+                <div style="margin-top: 8px; font-size: 10px; font-weight: bold;">Status: ${escapeHtml((card.status || 'new').toUpperCase())}</div>
             </div>
             <div class="card-actions" style="display: flex; gap: 8px; flex-direction: column; justify-content: center;">
                 <button class="icon-btn btn-preview-card" data-id="${card.id}" title="Preview Card" style="border: 2px solid var(--border-color); background: var(--bg-secondary);">
@@ -1512,16 +1513,15 @@ const openEditCardModal = (card) => {
     currentEditCardId = card.id;
     currentEditPastedImage = card.image || null;
     
-    if (card.type === 'cloze') {
-        document.getElementById('btn-edit-mode-fitb').click();
-        document.getElementById('edit-input-fitb-sentence').value = card.term || '';
-        document.getElementById('edit-input-fitb-answer').value = card.definition || '';
-    } else {
-        document.getElementById('btn-edit-mode-card').click();
-        document.getElementById('edit-input-term').value = card.term || '';
-        document.getElementById('edit-input-def').value = card.definition || '';
-        document.getElementById('edit-input-ex').value = card.example || '';
-    }
+    // Fill both modes so switching Card <-> Fill in the Blank never shows
+    // (or saves) text left over from a previously edited card
+    const isCloze = card.type === 'cloze';
+    document.getElementById(isCloze ? 'btn-edit-mode-fitb' : 'btn-edit-mode-card').click();
+    document.getElementById('edit-input-term').value = isCloze ? '' : (card.term || '');
+    document.getElementById('edit-input-def').value = isCloze ? '' : (card.definition || '');
+    document.getElementById('edit-input-ex').value = isCloze ? '' : (card.example || '');
+    document.getElementById('edit-input-fitb-sentence').value = isCloze ? (card.term || '') : '';
+    document.getElementById('edit-input-fitb-answer').value = isCloze ? (card.definition || '') : '';
     
     document.getElementById('edit-input-image-paste').value = '';
     
@@ -1540,6 +1540,14 @@ document.getElementById('btn-cancel-edit-card').addEventListener('click', () => 
     document.getElementById('modal-edit-card').style.display = 'none';
 });
 
+// Applies edits on top of the stored card so its study progress (status and
+// scheduling fields) survives; switching card type starts it over as new
+const editedCard = (changes) => {
+    const original = currentCards.find(c => c.id === currentEditCardId) || { id: currentEditCardId, deckId: currentDeckId };
+    const typeChanged = (original.type === 'cloze' ? 'cloze' : 'standard') !== changes.type;
+    return { ...original, ...changes, status: typeChanged ? 'new' : (original.status || 'new') };
+};
+
 document.getElementById('btn-save-edit-card').addEventListener('click', async () => {
     if (!currentEditCardId) return;
     
@@ -1552,21 +1560,12 @@ document.getElementById('btn-save-edit-card').addEventListener('click', async ()
             return;
         }
         
-        if (!sentence.toLowerCase().includes(answer.toLowerCase())) {
+        if (!sentence.includes('___') && !sentence.toLowerCase().includes(answer.toLowerCase())) {
             showToast("The answer must appear in the sentence.");
             return;
         }
         
-        await updateCard({
-            id: currentEditCardId,
-            deckId: currentDeckId,
-            term: sentence,
-            definition: answer,
-            example: '',
-            status: 'new',
-            image: null,
-            type: 'cloze'
-        });
+        await updateCard(editedCard({ term: sentence, definition: answer, example: '', image: null, type: 'cloze' }));
         document.getElementById('modal-edit-card').style.display = 'none';
         loadCards();
     } else {
@@ -1575,16 +1574,7 @@ document.getElementById('btn-save-edit-card').addEventListener('click', async ()
         const ex = document.getElementById('edit-input-ex').value.trim();
         
         if (term && def) {
-            await updateCard({
-                id: currentEditCardId,
-                deckId: currentDeckId,
-                term,
-                definition: def,
-                example: ex,
-                status: 'new',
-                image: currentEditPastedImage,
-                type: 'standard'
-            });
+            await updateCard(editedCard({ term, definition: def, example: ex, image: currentEditPastedImage, type: 'standard' }));
             document.getElementById('modal-edit-card').style.display = 'none';
             loadCards();
         } else {
@@ -1834,7 +1824,7 @@ const renderDriveFiles = (files, append = false) => {
         el.style.background = 'var(--bg-primary)';
         el.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span style="font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${file.name}</span>
+            <span style="font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">${escapeHtml(file.name)}</span>
         `;
         el.addEventListener('click', async () => {
             document.getElementById('modal-drive-picker').style.display = 'none';
@@ -1868,7 +1858,7 @@ const loadDrivePdfs = async (append = false) => {
         currentDrivePageToken = data.nextPageToken || '';
         loadMoreBtn.style.display = currentDrivePageToken ? 'block' : 'none';
     } catch (e) {
-        if (!append) listContainer.innerHTML = `<p style="font-size: 14px; text-align: center; color: #ff4444;">${e.message}</p>`;
+        if (!append) listContainer.innerHTML = `<p style="font-size: 14px; text-align: center; color: #ff4444;">${escapeHtml(e.message)}</p>`;
         showToast("Drive Error: " + e.message);
     }
 };
@@ -1918,6 +1908,7 @@ document.getElementById('btn-save-add-item').addEventListener('click', async () 
         const color = document.getElementById('add-folder-color').value;
         if (editingFolderId) {
             await updateFolder(editingFolderId, name, color);
+            folderPath.forEach(p => { if (p.id === editingFolderId) p.name = name; });
         } else {
             await addFolder(name, color, currentFolderId);
         }

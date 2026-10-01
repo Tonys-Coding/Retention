@@ -181,9 +181,7 @@ function renderGrid() {
         title.id = `tl-collection-${collection.id}`;
         title.textContent = collection.name;
         title.appendChild(el('span', 'tl-group-count', String(themes.length)));
-        const description = el('p', 'tl-group-desc');
-        description.textContent = collection.description;
-        head.append(title, description);
+        head.appendChild(title);
         const grid = el('div', 'tl-grid');
         themes.forEach((t) => grid.appendChild(renderThemeCard(t, favs, activeId)));
         section.append(head, grid);

@@ -10,8 +10,8 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <link rel="manifest" href="manifest.webmanifest">
     <title>Retention — Dashboard</title>
-    <link href="css/style.css?v=17" rel="stylesheet">
-    <link href="css/dashboard.css?v=17" rel="stylesheet">
+    <link href="css/style.css?v=18" rel="stylesheet">
+    <link href="css/dashboard.css?v=18" rel="stylesheet">
     <script src="js/marked.min.js"></script>
     <!-- Google Identity Services (web OAuth for Drive sync) -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -238,11 +238,11 @@
     <div class="db-modal-overlay" id="modal-edit-card">
         <div class="db-modal" style="max-width:600px;">
             <h2>Edit Card</h2>
-            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Term</label>
+            <label id="edit-card-term-label" for="edit-card-term" style="font-weight:bold;font-size:12px;text-transform:uppercase;">Term</label>
             <textarea id="edit-card-term" rows="3" style="width:100%;"></textarea>
-            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Definition</label>
+            <label id="edit-card-def-label" for="edit-card-def" style="font-weight:bold;font-size:12px;text-transform:uppercase;">Definition</label>
             <textarea id="edit-card-def" rows="3" style="width:100%;"></textarea>
-            <label style="font-weight:bold;font-size:12px;text-transform:uppercase;">Example</label>
+            <label id="edit-card-ex-label" for="edit-card-ex" style="font-weight:bold;font-size:12px;text-transform:uppercase;">Example</label>
             <input type="text" id="edit-card-ex" placeholder="Example (optional)">
             
             <div id="edit-card-image-section">
@@ -293,7 +293,7 @@
 
     <script src="js/confetti.min.js"></script>
     <script src="js/pdf.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=17"></script>
+    <script type="module" src="js/dashboard.js?v=18"></script>
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="db-modal-overlay" style="z-index: 10000;">

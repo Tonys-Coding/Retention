@@ -15,13 +15,13 @@ export const FAVORITES_KEY = 'theme_favorites';
 
 /** Collections shown in the Themes library, in display order. */
 export const THEME_COLLECTIONS = [
-    { id: 'monochrome', name: 'Monochrome', description: 'High-contrast black and white, nothing to distract you.' },
-    { id: 'retro', name: 'Retro Tech', description: 'Green-screen terminals, code-editor darks and 80s synth grids.' },
-    { id: 'paper', name: 'Paper & Print', description: 'Notebook lines, drafting grids and comic-book halftones.' },
-    { id: 'cozy', name: 'Cozy & Earthy', description: 'Autumn plaid, forest greens and warm log-cabin wood.' },
-    { id: 'cafe', name: 'Café Treats', description: 'Soft matcha and strawberry pastels.' },
-    { id: 'celestial', name: 'Celestial', description: 'Starfields and lunar craters.' },
-    { id: 'starwars', name: 'Star Wars', description: 'Tatooine’s twin suns and Kylo Ren’s fractured mask.' }
+    { id: 'monochrome', name: 'Monochrome' },
+    { id: 'retro', name: 'Retro Tech' },
+    { id: 'paper', name: 'Paper & Print' },
+    { id: 'cozy', name: 'Cozy & Earthy' },
+    { id: 'cafe', name: 'Café Treats' },
+    { id: 'celestial', name: 'Celestial' },
+    { id: 'starwars', name: 'Star Wars' }
 ];
 
 const CHECKER = (c) => `linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%), linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%)`;

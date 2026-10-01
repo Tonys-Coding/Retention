@@ -1309,8 +1309,7 @@ body.theme-tatooine .db-main {
     gap: 24px;
 }
 
-/* Collection heading: title + description in one card so the text stays
-   legible over any theme's background artwork */
+/* Collection heading card: stays legible over any theme's background artwork */
 .tl-group-head {
     align-self: flex-start;
     display: flex;
@@ -1331,12 +1330,6 @@ body.theme-tatooine .db-main {
     box-shadow: none;
 }
 
-.tl-group-desc {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-secondary);
-}
 
 .tl-group-title {
     align-self: flex-start;
