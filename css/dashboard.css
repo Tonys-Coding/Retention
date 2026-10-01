@@ -1309,6 +1309,35 @@ body.theme-tatooine .db-main {
     gap: 24px;
 }
 
+/* Collection heading: title + description in one card so the text stays
+   legible over any theme's background artwork */
+.tl-group-head {
+    align-self: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 12px 18px;
+    background: var(--bg-secondary);
+    border: 3px solid var(--border-color);
+    box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.tl-group-head .tl-group-title {
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+.tl-group-desc {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
 .tl-group-title {
     align-self: flex-start;
     display: flex;

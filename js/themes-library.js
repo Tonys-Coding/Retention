@@ -8,7 +8,7 @@
  */
 
 import {
-    THEMES, THEME_GROUPS, getTheme, isDarkTheme, paintThemeBackground, createThemeTile,
+    THEMES, THEME_COLLECTIONS, getTheme, isDarkTheme, paintThemeBackground, createThemeTile,
     getActiveThemeId, applyTheme, getFavorites, toggleFavorite, moveFavorite
 } from './themes.js';
 
@@ -170,17 +170,23 @@ function renderGrid() {
     const results = root.querySelector('.tl-results');
     results.innerHTML = '';
     let shown = 0;
-    THEME_GROUPS.forEach((group) => {
-        const themes = THEMES.filter((t) => t.group === group && matches(t));
+    THEME_COLLECTIONS.forEach((collection) => {
+        const themes = THEMES.filter((t) => t.collection === collection.id && matches(t));
         if (themes.length === 0) return;
         shown += themes.length;
         const section = el('section', 'tl-group');
+        section.setAttribute('aria-labelledby', `tl-collection-${collection.id}`);
+        const head = el('div', 'tl-group-head');
         const title = el('h2', 'tl-group-title');
-        title.textContent = group;
+        title.id = `tl-collection-${collection.id}`;
+        title.textContent = collection.name;
         title.appendChild(el('span', 'tl-group-count', String(themes.length)));
+        const description = el('p', 'tl-group-desc');
+        description.textContent = collection.description;
+        head.append(title, description);
         const grid = el('div', 'tl-grid');
         themes.forEach((t) => grid.appendChild(renderThemeCard(t, favs, activeId)));
-        section.append(title, grid);
+        section.append(head, grid);
         results.appendChild(section);
     });
     if (shown === 0) {

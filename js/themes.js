@@ -7,55 +7,67 @@
  * only drive previews and swatches, so keep them in sync with style.css.
  */
 
-const THEME_KEY = 'theme';
-const FAVORITES_KEY = 'theme_favorites';
+import { markDbDirty } from './db.js';
+import { storage } from './env.js';
 
-export const THEME_GROUPS = ['Classics', 'Aesthetics', 'Star Wars Collection'];
+const THEME_KEY = 'theme';
+export const FAVORITES_KEY = 'theme_favorites';
+
+/** Collections shown in the Themes library, in display order. */
+export const THEME_COLLECTIONS = [
+    { id: 'monochrome', name: 'Monochrome', description: 'High-contrast black and white, nothing to distract you.' },
+    { id: 'retro', name: 'Retro Tech', description: 'Green-screen terminals, code-editor darks and 80s synth grids.' },
+    { id: 'paper', name: 'Paper & Print', description: 'Notebook lines, drafting grids and comic-book halftones.' },
+    { id: 'cozy', name: 'Cozy & Earthy', description: 'Autumn plaid, forest greens and warm log-cabin wood.' },
+    { id: 'cafe', name: 'Café Treats', description: 'Soft matcha and strawberry pastels.' },
+    { id: 'celestial', name: 'Celestial', description: 'Starfields and lunar craters.' },
+    { id: 'starwars', name: 'Star Wars', description: 'Tatooine’s twin suns and Kylo Ren’s fractured mask.' }
+];
 
 const CHECKER = (c) => `linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%), linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%)`;
 const KYLO_CRACKS = 'linear-gradient(65deg, transparent calc(25% - 1px), rgba(234, 28, 28, 0.9) 25%, transparent calc(25% + 1px)), linear-gradient(25deg, transparent calc(38% - 1px), rgba(234, 28, 28, 0.9) 38%, transparent calc(38% + 1px)), linear-gradient(-55deg, transparent calc(65% - 1px), rgba(234, 28, 28, 0.9) 65%, transparent calc(65% + 1px)), linear-gradient(-35deg, transparent calc(72% - 1px), rgba(234, 28, 28, 0.9) 72%, transparent calc(72% + 1px)), linear-gradient(80deg, transparent calc(80% - 1px), rgba(234, 28, 28, 0.9) 80%, transparent calc(80% + 1px))';
 const KYLO_VISOR = 'radial-gradient(620px 330px at 50% -90px, transparent calc(45% - 1px), rgba(144, 144, 144, 0.2) 45%, rgba(200, 200, 200, 0.4) calc(45% + 6px), transparent calc(45% + 7px), transparent calc(48% - 1px), rgba(144, 144, 144, 0.2) 48%, rgba(200, 200, 200, 0.4) calc(48% + 6px), transparent calc(48% + 7px), transparent calc(51% - 1px), rgba(144, 144, 144, 0.2) 51%, rgba(200, 200, 200, 0.4) calc(51% + 6px), transparent calc(51% + 7px), transparent calc(54% - 1px), rgba(144, 144, 144, 0.2) 54%, rgba(200, 200, 200, 0.4) calc(54% + 6px), transparent calc(54% + 7px))';
 
 /**
- * Every theme: `bg`/`card`/`text`/`sub`/`border`/`shadow` mirror the theme's
+ * Every theme (grouped by `collection`): `bg`/`card`/`text`/`sub`/`border`/`shadow` mirror the theme's
  * --bg-primary/--bg-secondary/--text-primary/--text-secondary/--border-color/
  * --shadow-color; `btnBg`/`btnText` its primary button; `img`/`size`/`pos` its
  * body background artwork (`tileImg` is a simplified version for tiny swatches).
  */
 export const THEMES = [
-    { id: 'light', name: 'Light', group: 'Classics', bg: '#ffffff', card: '#ffffff', text: '#000000', sub: '#666666', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
+    { id: 'light', name: 'Light', collection: 'monochrome', bg: '#ffffff', card: '#ffffff', text: '#000000', sub: '#666666', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
         pattern: 'Checker', img: CHECKER('rgba(0, 0, 0, 0.05)'), size: '20px 20px', pos: '0 0, 10px 10px' },
-    { id: 'dark', name: 'Dark', group: 'Classics', bg: '#121212', card: '#1e1e1e', text: '#e5e5e5', sub: '#a0a0a0', border: '#404040', shadow: '#000000', btnBg: '#e5e5e5', btnText: '#121212',
+    { id: 'dark', name: 'Dark', collection: 'monochrome', bg: '#121212', card: '#1e1e1e', text: '#e5e5e5', sub: '#a0a0a0', border: '#404040', shadow: '#000000', btnBg: '#e5e5e5', btnText: '#121212',
         pattern: 'Checker', img: CHECKER('rgba(64, 64, 64, 0.08)'), size: '20px 20px', pos: '0 0, 10px 10px' },
-    { id: 'autumn', name: 'Autumn', group: 'Aesthetics', bg: '#c25e29', card: '#f4ebd8', text: '#2d1b0f', sub: '#5c3924', border: '#2d1b0f', shadow: '#2d1b0f', btnBg: '#2d1b0f', btnText: '#f4ebd8',
+    { id: 'autumn', name: 'Autumn', collection: 'cozy', bg: '#c25e29', card: '#f4ebd8', text: '#2d1b0f', sub: '#5c3924', border: '#2d1b0f', shadow: '#2d1b0f', btnBg: '#2d1b0f', btnText: '#f4ebd8',
         pattern: 'Plaid', img: 'repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(45, 27, 15, 0.1) 40px, rgba(45, 27, 15, 0.1) 80px), repeating-linear-gradient(180deg, transparent, transparent 40px, rgba(45, 27, 15, 0.1) 40px, rgba(45, 27, 15, 0.1) 80px)' },
-    { id: 'terminal', name: 'Terminal', group: 'Aesthetics', bg: '#0a0a0a', card: '#111111', text: '#4ade80', sub: '#22c55e', border: '#22c55e', shadow: '#166534', btnBg: '#4ade80', btnText: '#0a0a0a',
+    { id: 'terminal', name: 'Terminal', collection: 'retro', bg: '#0a0a0a', card: '#111111', text: '#4ade80', sub: '#22c55e', border: '#22c55e', shadow: '#166534', btnBg: '#4ade80', btnText: '#0a0a0a',
         pattern: 'Checker', img: CHECKER('rgba(34, 197, 94, 0.06)'), size: '20px 20px', pos: '0 0, 10px 10px' },
-    { id: 'vaporwave', name: 'Vaporwave', group: 'Aesthetics', bg: '#ff71ce', card: '#01cdfe', text: '#000000', sub: '#ffffff', border: '#000000', shadow: '#b967ff', btnBg: '#b967ff', btnText: '#ffffff',
+    { id: 'vaporwave', name: 'Vaporwave', collection: 'retro', bg: '#ff71ce', card: '#01cdfe', text: '#000000', sub: '#ffffff', border: '#000000', shadow: '#b967ff', btnBg: '#b967ff', btnText: '#ffffff',
         pattern: 'Grid', img: 'linear-gradient(rgba(255, 255, 255, 0.4) 2px, transparent 2px), linear-gradient(90deg, rgba(255, 255, 255, 0.4) 2px, transparent 2px)', size: '30px 30px' },
-    { id: 'blueprint', name: 'Blueprint', group: 'Aesthetics', bg: '#0a3d91', card: '#ffffff', text: '#0a3d91', sub: '#062a66', border: '#000000', shadow: '#000000', btnBg: '#0a3d91', btnText: '#ffffff',
+    { id: 'blueprint', name: 'Blueprint', collection: 'paper', bg: '#0a3d91', card: '#ffffff', text: '#0a3d91', sub: '#062a66', border: '#000000', shadow: '#000000', btnBg: '#0a3d91', btnText: '#ffffff',
         pattern: 'Drafting grid', img: 'linear-gradient(rgba(255, 255, 255, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.3) 1px, transparent 1px), linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)', size: '40px 40px, 40px 40px, 10px 10px, 10px 10px' },
-    { id: 'neopop', name: 'Neo-Pop', group: 'Aesthetics', bg: '#a7f3d0', card: '#fbcfe8', text: '#000000', sub: '#333333', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#a7f3d0',
+    { id: 'neopop', name: 'Neo-Pop', collection: 'paper', bg: '#a7f3d0', card: '#fbcfe8', text: '#000000', sub: '#333333', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#a7f3d0',
         pattern: 'Halftone', img: 'radial-gradient(#000000 15%, transparent 15%)', size: '20px 20px' },
-    { id: 'composition', name: 'Composition', group: 'Aesthetics', bg: '#fdf6e3', card: '#ffffff', text: '#000000', sub: '#444444', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
+    { id: 'composition', name: 'Composition', collection: 'paper', bg: '#fdf6e3', card: '#ffffff', text: '#000000', sub: '#444444', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
         pattern: 'Notebook paper', img: 'linear-gradient(90deg, transparent 40px, #ff4d6d 40px, #ff4d6d 43px, transparent 43px), repeating-linear-gradient(0deg, transparent, transparent 27px, #3b82f6 27px, #3b82f6 29px)' },
-    { id: 'dracula', name: 'Dracula', group: 'Aesthetics', bg: '#15161e', card: '#282a36', text: '#f8f8f2', sub: '#bd93f9', border: '#ff5555', shadow: '#000000', btnBg: '#ff5555', btnText: '#ffffff',
+    { id: 'dracula', name: 'Dracula', collection: 'retro', bg: '#15161e', card: '#282a36', text: '#f8f8f2', sub: '#bd93f9', border: '#ff5555', shadow: '#000000', btnBg: '#ff5555', btnText: '#ffffff',
         pattern: 'Solid', img: 'none' },
-    { id: 'earthy', name: 'Earthy', group: 'Aesthetics', bg: '#3b5240', card: '#e0d5c1', text: '#1f140c', sub: '#4a3626', border: '#1f140c', shadow: '#1f140c', btnBg: '#1f140c', btnText: '#e0d5c1',
+    { id: 'earthy', name: 'Earthy', collection: 'cozy', bg: '#3b5240', card: '#e0d5c1', text: '#1f140c', sub: '#4a3626', border: '#1f140c', shadow: '#1f140c', btnBg: '#1f140c', btnText: '#e0d5c1',
         pattern: 'Ripples', img: 'repeating-radial-gradient(circle at 0 0, transparent, transparent 40px, rgba(31, 20, 12, 0.1) 40px, rgba(31, 20, 12, 0.1) 42px)' },
-    { id: 'space', name: 'Space', group: 'Aesthetics', bg: '#04050a', card: '#101423', text: '#e2e8f0', sub: '#8b99af', border: '#00f0ff', shadow: '#00f0ff', btnBg: '#00f0ff', btnText: '#04050a',
+    { id: 'space', name: 'Space', collection: 'celestial', bg: '#04050a', card: '#101423', text: '#e2e8f0', sub: '#8b99af', border: '#00f0ff', shadow: '#00f0ff', btnBg: '#00f0ff', btnText: '#04050a',
         pattern: 'Starfield', img: 'radial-gradient(white, rgba(255, 255, 255, 0.2) 2px, transparent 4px), radial-gradient(white, rgba(255, 255, 255, 0.15) 1px, transparent 3px), radial-gradient(white, rgba(255, 255, 255, 0.1) 2px, transparent 4px), radial-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1) 2px, transparent 3px)', size: '50px 50px, 40px 40px, 30px 30px, 60px 60px', pos: '0 0, 20px 20px, 15px 5px, 35px 25px' },
-    { id: 'moon', name: 'Moon', group: 'Aesthetics', bg: '#8a8d91', card: '#ffffff', text: '#000000', sub: '#333333', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
+    { id: 'moon', name: 'Moon', collection: 'celestial', bg: '#8a8d91', card: '#ffffff', text: '#000000', sub: '#333333', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
         pattern: 'Craters', img: 'radial-gradient(rgba(0, 0, 0, 0.15) 2px, transparent 2px)', size: '20px 20px' },
-    { id: 'cabin', name: 'Cozy Cabin', group: 'Aesthetics', bg: '#382215', card: '#e6cda3', text: '#211204', sub: '#4a2c16', border: '#1a0f09', shadow: '#1a0f09', btnBg: '#8a2522', btnText: '#ffffff',
+    { id: 'cabin', name: 'Cozy Cabin', collection: 'cozy', bg: '#382215', card: '#e6cda3', text: '#211204', sub: '#4a2c16', border: '#1a0f09', shadow: '#1a0f09', btnBg: '#8a2522', btnText: '#ffffff',
         pattern: 'Log walls', img: 'repeating-linear-gradient(180deg, #382215, #382215 38px, #1a0f09 38px, #1a0f09 42px)' },
-    { id: 'matcha', name: 'Matcha', group: 'Aesthetics', bg: '#d1deb9', card: '#fcf9f2', text: '#2c3d25', sub: '#4c6b41', border: '#2c3d25', shadow: '#2c3d25', btnBg: '#2c3d25', btnText: '#ffffff',
+    { id: 'matcha', name: 'Matcha', collection: 'cafe', bg: '#d1deb9', card: '#fcf9f2', text: '#2c3d25', sub: '#4c6b41', border: '#2c3d25', shadow: '#2c3d25', btnBg: '#2c3d25', btnText: '#ffffff',
         pattern: 'Diagonal stripes', img: 'repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5) 2px, transparent 2px, transparent 12px)' },
-    { id: 'tatooine', name: 'Tatooine', group: 'Star Wars Collection', bg: '#e6c280', card: '#f4dca6', text: '#3d2314', sub: '#6e3d22', border: '#3d2314', shadow: '#8c4a22', btnBg: '#8c4a22', btnText: '#f4dca6',
+    { id: 'tatooine', name: 'Tatooine', collection: 'starwars', bg: '#e6c280', card: '#f4dca6', text: '#3d2314', sub: '#6e3d22', border: '#3d2314', shadow: '#8c4a22', btnBg: '#8c4a22', btnText: '#f4dca6',
         pattern: 'Twin suns', img: 'radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.4) 10px, transparent 40px), radial-gradient(circle at 65% 15%, rgba(255, 69, 0, 0.5) 15px, transparent 50px)' },
-    { id: 'kylo', name: 'Kylo', group: 'Star Wars Collection', bg: '#000000', card: '#120202', text: '#909090', sub: '#ea1c1c', border: '#3f1b1b', shadow: '#120202', btnBg: '#3f1b1b', btnText: '#909090',
+    { id: 'kylo', name: 'Kylo', collection: 'starwars', bg: '#000000', card: '#120202', text: '#909090', sub: '#ea1c1c', border: '#3f1b1b', shadow: '#120202', btnBg: '#3f1b1b', btnText: '#909090',
         pattern: 'Kintsugi + chrome', img: `${KYLO_CRACKS}, ${KYLO_VISOR}`, tileImg: KYLO_CRACKS },
-    { id: 'strawberry', name: 'Strawberry', group: 'Aesthetics', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
+    { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
 ].map((t) => ({ size: 'auto', pos: '0 0', tileImg: t.img, ...t }));
 
@@ -120,21 +132,63 @@ export const initTheme = () => {
             window.dispatchEvent(new Event('retention:favoriteschange'));
         }
     });
+    reconcileFavoritesMirror().catch(console.error);
 };
 
 // ─── Favorites (ordered; the quick menu lists them in this order) ───
-export const getFavorites = () => {
-    let ids = null;
-    try { ids = JSON.parse(localStorage.getItem(FAVORITES_KEY)); } catch { /* ignore */ }
-    if (!Array.isArray(ids)) {
-        // First run: start with the classics plus whatever theme is in use
-        ids = [...new Set(['light', 'dark', getActiveThemeId()])];
+// Favorites live in localStorage for fast synchronous reads, mirrored into the
+// env.js storage layer (chrome.storage in the extension) so the background
+// worker can include them in the Google Drive backup.
+
+const cleanFavorites = (ids) => (Array.isArray(ids) ? ids : [])
+    .filter((id, i, all) => THEMES.some((t) => t.id === id) && all.indexOf(id) === i);
+
+const readLocalFavorites = () => {
+    try {
+        const ids = JSON.parse(localStorage.getItem(FAVORITES_KEY));
+        return Array.isArray(ids) ? ids : null;
+    } catch {
+        return null;
     }
-    return ids.filter((id, i) => THEMES.some((t) => t.id === id) && ids.indexOf(id) === i);
+};
+
+/** Favorites as included in the Drive backup (undefined if never customized). */
+export const getSyncedFavorites = async () => {
+    const ids = (await storage.get([FAVORITES_KEY]))[FAVORITES_KEY];
+    return Array.isArray(ids) ? cleanFavorites(ids) : undefined;
+};
+
+/** Applies favorites from a Drive backup without marking local data as changed. */
+export const restoreFavorites = async (ids) => {
+    const clean = cleanFavorites(ids);
+    await storage.set({ [FAVORITES_KEY]: clean });
+    if (typeof localStorage !== 'undefined') localStorage.setItem(FAVORITES_KEY, JSON.stringify(clean));
+    globalThis.dispatchEvent?.(new Event('retention:favoriteschange'));
+};
+
+// Favorites saved before Drive sync existed live only in localStorage: copy them
+// into shared storage once (or the reverse after a restore in another context)
+const reconcileFavoritesMirror = async () => {
+    const local = readLocalFavorites();
+    const synced = (await storage.get([FAVORITES_KEY]))[FAVORITES_KEY];
+    if (local && !Array.isArray(synced)) {
+        await storage.set({ [FAVORITES_KEY]: cleanFavorites(local) });
+    } else if (!local && Array.isArray(synced)) {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(cleanFavorites(synced)));
+        window.dispatchEvent(new Event('retention:favoriteschange'));
+    }
+};
+
+export const getFavorites = () => {
+    // First run: start with Light and Dark plus whatever theme is in use
+    return cleanFavorites(readLocalFavorites() || ['light', 'dark', getActiveThemeId()]);
 };
 
 export const setFavorites = (ids) => {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
+    const clean = cleanFavorites(ids);
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(clean));
+    storage.set({ [FAVORITES_KEY]: clean });
+    markDbDirty(); // favorites sync through the Google Drive backup
     window.dispatchEvent(new Event('retention:favoriteschange'));
 };
 

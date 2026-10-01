@@ -8,6 +8,9 @@
  *   - Both changed since last sync  → ask the user which copy to keep
  *                                     (never silently overwrite either side)
  *
+ * The backup also carries preferences that should follow the user across
+ * devices (currently their ordered theme favorites).
+ *
  * Sync bookkeeping lives in the env.js storage layer (chrome.storage in the
  * extension, so the background service worker shares it; localStorage on the
  * web/PWA).
@@ -15,6 +18,7 @@
 
 import { getDecks, getFolders, getStats, db, SYNC_DIRTY_KEY } from './db.js';
 import { isExtension, storage } from './env.js';
+import { getSyncedFavorites, restoreFavorites } from './themes.js';
 
 const BACKUP_NAME = 'retention_backup.json';
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
@@ -181,13 +185,19 @@ const readAll = (storeName) => new Promise((resolve, reject) => {
     request.onerror = () => reject(request.error);
 });
 
-const buildBackup = async () => JSON.stringify({
-    folders: await getFolders(),
-    decks: await getDecks(),
-    cards: await readAll('cards'),
-    stats: await getStats(),
-    exportedAt: new Date().toISOString()
-});
+const buildBackup = async () => {
+    const backup = {
+        folders: await getFolders(),
+        decks: await getDecks(),
+        cards: await readAll('cards'),
+        stats: await getStats(),
+        exportedAt: new Date().toISOString()
+    };
+    // Only once customized, so a default list never overwrites another device's
+    const themeFavorites = await getSyncedFavorites();
+    if (themeFavorites) backup.preferences = { themeFavorites };
+    return JSON.stringify(backup);
+};
 
 const isPermissionError = async (res) => {
     if (res.status === 404) return true;
@@ -232,6 +242,10 @@ const restoreBackup = async (token, file) => {
     const res = await driveFetch(token, `${DRIVE_FILES_URL}/${file.id}?alt=media`);
     if (!res.ok) throw new Error(`Download from Drive failed (HTTP ${res.status}).`);
     const data = await res.json();
+
+    if (Array.isArray(data.preferences?.themeFavorites)) {
+        await restoreFavorites(data.preferences.themeFavorites);
+    }
 
     const storeNames = ['folders', 'decks', 'cards', 'stats'].filter(name => Array.isArray(data[name]));
     if (storeNames.length === 0) return;

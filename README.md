@@ -23,16 +23,21 @@ Retention features a background auto-sync engine built on Google Drive. Every de
 *   **Visible status:** Settings shows when you last synced. On the web/mobile app, Google sign-in expires after about an hour; when that happens a "Sync paused" banner offers a one-tap **Reconnect** so your phone never quietly falls out of date.
 
 ###  Massive Theming Engine
-Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 17 custom styles:
-*   **Classics:** Light, Dark.
-*   **Aesthetics:** Terminal, Vaporwave, Autumn, Blueprint, Neo-Pop, Composition, Dracula, Earthy, Space, Moon, Cozy Cabin, Matcha, Strawberry.
-*   **Star Wars Collection:** Tatooine (desert hues) and **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures).
+Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 17 custom styles, organized into collections:
+*   **Monochrome:** Light, Dark.
+*   **Retro Tech:** Terminal, Dracula, Vaporwave.
+*   **Paper & Print:** Composition (notebook paper), Blueprint (drafting grid), Neo-Pop (comic halftone).
+*   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin.
+*   **Café Treats:** Matcha, Strawberry.
+*   **Celestial:** Space (starfield), Moon (lunar craters).
+*   **Star Wars:** Tatooine (desert hues and twin suns) and **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures).
 
 **Themes Library & Favorites**
 *   **Themes Library:** A dedicated page in the dashboard (sidebar **Themes**, or **Browse all themes** in the palette menu) shows every theme as a large live preview with its real colors and background artwork. Search, filter by Favorites / Light / Dark, and apply any theme with one click.
 *   **Favorites:** Star the themes you love. The palette button becomes a quick menu of just your favorites for one-click switching, in the extension popup, the web dashboard, and the mobile app.
 *   **Reorder:** Drag favorites into the order you want (or tap **Reorder** and use the arrows on touch screens and keyboards). The quick menu follows that order.
 *   **Extension hand-off:** In the popup, **Manage themes** opens the full library in the dashboard.
+*   **Synced everywhere:** Your favorites and their order travel with your Google Drive backup, so the extension, web dashboard, and phone share the same list. (The active theme stays per device.)
 
 ###  AI-Powered Flashcard Generation (OpenRouter)
 Don't waste hours typing out flashcards manually. Supply an OpenRouter API key and let the AI do the heavy lifting:
