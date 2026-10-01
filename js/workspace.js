@@ -7,7 +7,7 @@
  */
 
 import { getFolders, getDecks, updateFolder, updateDeck, deleteFolder, addDeck, addCard } from './db.js';
-import { parseCSV } from './csv.js';
+import { parseDeckCSV } from './csv.js';
 
 const FOLDER_SVG = (color) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="${color || 'none'}" stroke="${color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
 const HOME_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`;
@@ -42,27 +42,29 @@ export const moveItem = (type, item, targetFolderId) => type === 'folder'
 
 /**
  * Imports one or more CSV files into folderId (null = workspace root),
- * each file becoming its own deck named after the file. A file that
- * fails or contains no cards is skipped without stopping the rest.
+ * each file becoming its own deck named after the file. A CSV with a
+ * Question column becomes a practice quiz deck; otherwise a flashcard deck.
+ * A file that fails or contains nothing usable is skipped without stopping
+ * the rest.
  *
- * @returns {Promise<{ decks: { name: string, cards: number }[], skipped: string[] }>}
+ * @returns {Promise<{ decks: { name: string, cards: number, kind: string, skippedRows: number }[], skipped: string[] }>}
  */
 export const importCsvFiles = async (files, folderId) => {
     const decks = [];
     const skipped = [];
     for (const file of files) {
         try {
-            const cards = parseCSV(await file.text());
+            const { kind, cards, skipped: skippedRows } = parseDeckCSV(await file.text());
             if (cards.length === 0) {
                 skipped.push(file.name);
                 continue;
             }
-            const name = file.name.replace(/\.csv$/i, '') || 'Imported Deck';
-            const deckId = await addDeck(name, folderId);
+            const name = file.name.replace(/\.csv$/i, '') || (kind === 'quiz' ? 'Imported Quiz' : 'Imported Deck');
+            const deckId = await addDeck(name, folderId, kind);
             for (const card of cards) {
                 await addCard({ ...card, deckId });
             }
-            decks.push({ name, cards: cards.length });
+            decks.push({ name, cards: cards.length, kind, skippedRows });
         } catch (err) {
             console.error(`CSV import failed for ${file.name}:`, err);
             skipped.push(file.name);
@@ -74,13 +76,16 @@ export const importCsvFiles = async (files, folderId) => {
 /** Toast text summarising an importCsvFiles() result. */
 export const describeCsvImport = ({ decks, skipped }, locationName) => {
     if (decks.length === 0) {
-        return skipped.length > 1 ? 'No cards found in the selected CSV files.' : 'No cards found or invalid CSV format.';
+        return skipped.length > 1 ? 'Nothing to import in the selected CSV files.' : 'No cards or questions found. Check the CSV format.';
     }
+    const unit = (d) => (d.kind === 'quiz' ? 'questions' : 'cards');
     let message = decks.length === 1
-        ? `Imported ${decks[0].cards} cards into "${decks[0].name}" in "${locationName}"`
-        : `Imported ${decks.length} decks (${decks.reduce((sum, d) => sum + d.cards, 0)} cards) into "${locationName}"`;
+        ? `Imported ${decks[0].cards} ${unit(decks[0])} into ${decks[0].kind === 'quiz' ? 'quiz ' : ''}"${decks[0].name}" in "${locationName}"`
+        : `Imported ${decks.length} decks into "${locationName}"`;
+    const badRows = decks.reduce((sum, d) => sum + (d.skippedRows || 0), 0);
+    if (badRows > 0) message += ` · Skipped ${badRows} incomplete question${badRows > 1 ? 's' : ''}`;
     if (skipped.length > 0) {
-        message += ` · Skipped ${skipped.length} file${skipped.length > 1 ? 's' : ''} with no cards: ${skipped.join(', ')}`;
+        message += ` · Skipped ${skipped.length} file${skipped.length > 1 ? 's' : ''}: ${skipped.join(', ')}`;
     }
     return message;
 };

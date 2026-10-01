@@ -2,13 +2,14 @@ import { isExtension, storage, runtime } from './env.js';
 import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
-import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getQuizResults, getAllCards } from './db.js';
+import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getAllCards, isQuizDeck, getQuizResults } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
-import { startQuiz } from './quiz-ui.js';
-import { summarizeQuizResults } from './quiz.js';
 import { renderThemesLibrary } from './themes-library.js';
+import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
+import { renderQuizEditor } from './quiz-editor.js';
+import { renderImportHelp } from './import-help.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
 // ===== SVG ICONS =====
@@ -16,6 +17,7 @@ const ICON = {
     folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
     chevron: `<svg class="db-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
     deck: `<svg width="16" height="19" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>`,
+    quiz: quizDeckIcon(),
     dots: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>`,
     trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
     eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
@@ -43,9 +45,6 @@ const dom = {
     mainTitle: $('main-title'),
     btnBack: $('btn-back'),
     btnStudy: $('btn-study'),
-    btnQuiz: $('btn-quiz'),
-    viewQuiz: $('view-quiz'),
-    viewQuizStats: $('view-quiz-stats'),
     btnRestart: $('btn-restart'),
     btnEditWorkspace: $('btn-edit-workspace'),
     viewStatsBar: $('view-stats-bar'),
@@ -57,6 +56,8 @@ const dom = {
     viewStudy: $('view-study'),
     viewComplete: $('view-complete'),
     viewDeck: $('view-deck'),
+    viewTest: $('view-test'),
+    quizEditor: $('quiz-editor'),
     flashcard: $('flashcard'),
     fcTerm: $('fc-term'),
     fcDef: $('fc-def'),
@@ -136,13 +137,6 @@ function showContextMenu(e, items) {
 }
 
 // ===== INIT =====
-// Resolves a #quiz-deck-<id> / #quiz-folder-<id> link to a quiz source
-async function findQuizSource(type, id) {
-    const items = type === 'deck' ? await getDecks() : await getFolders();
-    const item = items.find((x) => x.id === id);
-    return item ? { type, id, name: item.name } : null;
-}
-
 async function init() {
     initTheme();
 
@@ -185,21 +179,31 @@ async function init() {
     await refreshSidebar();
     // Always open on the main dashboard, scrolled to the top
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    // Links from the extension popup: #themes, #quiz-deck-<id>, #quiz-folder-<id>.
+    // Links from the extension popup: #themes, #test-deck-<id>, #edit-deck-<id>.
     // Drop the hash so a reload lands on the main dashboard.
     const hash = location.hash;
     if (hash) history.replaceState(null, '', location.pathname + location.search);
-    const quizLink = hash.match(/^#quiz-(deck|folder)-(\d+)$/);
-    const quizSource = quizLink ? await findQuizSource(quizLink[1], Number(quizLink[2])) : null;
+    const deckLink = hash.match(/^#(test|edit)-deck-(\d+)$/);
+    const linkedDeck = deckLink ? (await getDecks()).find((d) => d.id === Number(deckLink[2])) : null;
     if (hash === '#themes') {
         showThemes();
-    } else if (quizSource) {
-        await showHome(); // so Back from the quiz returns home
-        showQuiz(quizSource);
+    } else if (linkedDeck) {
+        await showHome(); // so Back returns home
+        if (deckLink[1] === 'test') showPracticeTest(linkedDeck);
+        else await openDeckEdit(linkedDeck.id, linkedDeck.name);
     } else {
         await showHome();
     }
     window.scrollTo(0, 0);
+}
+
+// ===== DECK KINDS =====
+const deckIcon = (d) => (isQuizDeck(d) ? ICON.quiz : ICON.deck);
+
+// Opening a deck: flashcards start studying, quiz decks start a practice test
+function openDeckPrimary(d) {
+    if (isQuizDeck(d)) showPracticeTest(d);
+    else startStudyDeck(d.id, d.name);
 }
 
 // ===== SIDEBAR =====
@@ -316,7 +320,7 @@ async function refreshSidebar() {
                 dEl.className = 'db-nav-item db-nav-item--sub';
                 dEl.dataset.id = `d-${d.id}`;
                 dEl.style.paddingLeft = `${8 + ((level + 1) * 16)}px`;
-                dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
+                dEl.innerHTML = `${deckIcon(d)}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
                 
                 // Drag start for deck
                 dEl.draggable = true;
@@ -327,7 +331,7 @@ async function refreshSidebar() {
                 
                 dEl.onclick = (e) => {
                     if (e.target.closest('.db-nav-menu')) return;
-                    startStudyDeck(d.id, d.name);
+                    openDeckPrimary(d);
                 };
                 dEl.querySelector('.db-nav-menu').onclick = (e) => showDeckMenu(e, d);
                 childContainer.appendChild(dEl);
@@ -367,7 +371,7 @@ async function refreshSidebar() {
             const dEl = document.createElement('div');
             dEl.className = 'db-nav-item';
             dEl.dataset.id = `d-${d.id}`;
-            dEl.innerHTML = `${ICON.deck}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
+            dEl.innerHTML = `${deckIcon(d)}<span class="db-nav-label">${escapeHtml(d.name)}</span><button class="db-nav-menu">${ICON.dots}</button>`;
             
             // Drag start for deck
             dEl.draggable = true;
@@ -378,7 +382,7 @@ async function refreshSidebar() {
             
             dEl.onclick = (e) => {
                 if (e.target.closest('.db-nav-menu')) return;
-                startStudyDeck(d.id, d.name);
+                openDeckPrimary(d);
             };
             dEl.querySelector('.db-nav-menu').onclick = (e) => showDeckMenu(e, d);
             dom.sidebarNav.appendChild(dEl);
@@ -389,7 +393,6 @@ async function refreshSidebar() {
 function folderMenuItems(folder) {
     return [
         { label: 'Study All', action: () => startStudyFolder(folder.id, folder.name) },
-        { label: 'Quiz', action: () => showQuiz({ type: 'folder', id: folder.id, name: folder.name }) },
         { label: 'Edit Folder', action: () => promptRename('folder', folder) },
         { label: 'Move to…', action: () => promptMove('folder', folder) },
         { label: 'Delete Folder', danger: true, action: () => confirmDeleteFolder(folder) },
@@ -419,10 +422,24 @@ function promptMove(type, item) {
 async function showDeckMenu(e, deck) {
     const cards = await getCardsByDeck(deck.id);
     const cardCount = cards.length;
+
+    if (isQuizDeck(deck)) {
+        showContextMenu(e, [
+            { label: 'Take Test', action: () => showPracticeTest(deck) },
+            { label: 'Edit Questions', action: () => openDeckEdit(deck.id, deck.name) },
+            { label: 'Rename', action: () => promptRename('deck', deck) },
+            { label: 'Move to…', action: () => promptMove('deck', deck) },
+            { label: 'Export CSV', action: () => {
+                if (!cards.length) showToast('No questions to export.');
+                else exportDeckToCSV(deck.name, cards, 'quiz');
+            }},
+            { label: 'Delete', danger: true, action: () => confirmDeleteDeck(deck) }
+        ]);
+        return;
+    }
     
     const menuItems = [
         { label: 'Study', action: () => startStudyDeck(deck.id, deck.name) },
-        { label: 'Quiz', action: () => showQuiz({ type: 'deck', id: deck.id, name: deck.name }) },
         { label: 'Edit Cards', action: () => openDeckEdit(deck.id, deck.name) }
     ];
     
@@ -505,7 +522,7 @@ async function confirmDeleteDeck(d) {
     if (await showConfirm(`Delete deck "${d.name}"?`)) {
         await deleteDeck(d.id);
         await refreshSidebar();
-        if (editingDeckId === d.id) showHome();
+        if (editingDeckId === d.id || (currentView === 'test' && testDeckId === d.id)) showHome();
         else if (currentView === 'home') showHome();
         else if (currentView === 'folder') showFolder(currentFolderId, currentFolderName);
     }
@@ -568,9 +585,8 @@ async function loadStats() {
 }
 
 function hideAll() {
-    dom.viewQuiz.classList.remove('active');
-    dom.viewQuizStats.style.display = 'none';
-    dom.btnQuiz.style.display = 'none';
+    dom.viewTest.classList.remove('active');
+    dom.btnStudy.textContent = 'Study';
     $('view-themes').classList.remove('active');
     $('btn-sidebar-themes').classList.remove('active');
     dom.viewGrid.style.display = 'none';
@@ -597,41 +613,12 @@ function showThemes() {
     window.scrollTo(0, 0);
 }
 
-// Where the Back button returns to from a quiz
-let quizBack = () => showHome();
-
-/** Opens the quiz screen for a deck or folder. */
-function showQuiz(source) {
-    const from = currentView;
-    if (from === 'deck') { const id = editingDeckId, name = editingDeckName; quizBack = () => openDeckEdit(id, name); }
-    else if (from === 'folder') { const id = currentFolderId, name = currentFolderName; quizBack = () => showFolder(id, name); }
-    else quizBack = () => showHome();
-    currentView = 'quiz';
-    hideAll();
-    dom.mainTitle.textContent = `Quiz: ${source.name}`;
-    dom.btnBack.style.display = 'block';
-    dom.btnStudy.style.display = 'none';
-    dom.viewQuiz.classList.add('active');
-    startQuiz(dom.viewQuiz, { source, onExit: () => quizBack() });
-    window.scrollTo(0, 0);
-}
-
-async function loadQuizStats() {
-    const summary = summarizeQuizResults(await getQuizResults());
-    if (!summary.attempts) return;
-    $('db-quiz-count').textContent = summary.attempts;
-    $('db-quiz-average').textContent = `${summary.average}%`;
-    $('db-quiz-best').textContent = `${summary.best}%`;
-    if (currentView === 'home') dom.viewQuizStats.style.display = 'flex';
-}
-
 async function showHome() {
     currentView = 'home';
     currentFolderId = null;
     hideAll();
     await loadStats();
     dom.viewStatsBar.style.display = 'flex';
-    loadQuizStats().catch(console.error);
     dom.mainTitle.textContent = getWorkspaceName();
     dom.btnEditWorkspace.style.display = 'block';
     dom.btnBack.style.display = 'none';
@@ -641,6 +628,7 @@ async function showHome() {
 
     const folders = await getFolders();
     const decks = await getDecks();
+    const quizResults = await getQuizResults();
     dom.viewGrid.innerHTML = '';
 
     if (folders.length === 0 && decks.length === 0) {
@@ -672,12 +660,13 @@ async function showHome() {
     const rootDecks = decks.filter(d => !d.folderId);
     for (const d of rootDecks) {
         const cards = await getCardsByDeck(d.id);
-        const quickStudyAction = cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
+        const quiz = isQuizDeck(d);
+        const quickStudyAction = !quiz && cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
         const dragData = { type: 'deck', id: d.id };
         
         dom.viewGrid.appendChild(makeGridCard(
-            ICON.deck, d.name, `${cards.length} cards`,
-            () => startStudyDeck(d.id, d.name),
+            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards`,
+            () => openDeckPrimary(d),
             (e) => showDeckMenu(e, d),
             null,
             quickStudyAction,
@@ -696,13 +685,12 @@ async function showFolder(folderId, folderName) {
     dom.btnBack.style.display = 'block';
     dom.btnStudy.style.display = 'inline-block';
     dom.btnStudy.onclick = () => startStudyFolder(folderId, folderName);
-    dom.btnQuiz.style.display = 'inline-block';
-    dom.btnQuiz.onclick = () => showQuiz({ type: 'folder', id: folderId, name: folderName });
     dom.viewGrid.style.display = 'grid';
     highlightNav(`f-${folderId}`);
 
     const decks = await getDecks();
     const folders = await getFolders();
+    const quizResults = await getQuizResults();
     
     const folderDecks = decks.filter(d => d.folderId === folderId);
     const childFolders = folders.filter(f => f.parentId === folderId);
@@ -735,12 +723,13 @@ async function showFolder(folderId, folderName) {
 
     for (const d of folderDecks) {
         const cards = await getCardsByDeck(d.id);
-        const quickStudyAction = cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
+        const quiz = isQuizDeck(d);
+        const quickStudyAction = !quiz && cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
         const dragData = { type: 'deck', id: d.id };
         
         dom.viewGrid.appendChild(makeGridCard(
-            ICON.deck, d.name, `${cards.length} cards`,
-            () => startStudyDeck(d.id, d.name),
+            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards`,
+            () => openDeckPrimary(d),
             (e) => showDeckMenu(e, d),
             null,
             quickStudyAction,
@@ -833,13 +822,52 @@ async function openDeckEdit(deckId, deckName) {
     hideAll();
     dom.mainTitle.textContent = deckName;
     dom.btnBack.style.display = 'block';
+    const deck = (await getDecks()).find((d) => d.id === deckId) || { id: deckId, name: deckName };
+    const quiz = isQuizDeck(deck);
     dom.btnStudy.style.display = 'inline-block';
-    dom.btnStudy.onclick = () => startStudyDeck(deckId, deckName);
-    dom.btnQuiz.style.display = 'inline-block';
-    dom.btnQuiz.onclick = () => showQuiz({ type: 'deck', id: deckId, name: deckName });
+    dom.btnStudy.textContent = quiz ? 'Take Test' : 'Study';
+    dom.btnStudy.onclick = quiz ? () => showPracticeTest(deck) : () => startStudyDeck(deckId, deckName);
+    $('deck-cards-list').style.display = quiz ? 'none' : '';
+    $('flashcard-add-form').style.display = quiz ? 'none' : '';
+    dom.quizEditor.hidden = !quiz;
     dom.viewDeck.classList.add('active');
     highlightNav(`d-${deckId}`);
-    await loadDeckCards();
+    if (quiz) await loadQuizEditor(deck);
+    else await loadDeckCards();
+}
+
+async function loadQuizEditor(deck) {
+    const summary = summarizeAttempts(await getQuizResults(), deck.id);
+    await renderQuizEditor(dom.quizEditor, {
+        deck,
+        confirm: (message) => showConfirm(message),
+        toast: showToast,
+        onChange: (count) => {
+            $('deck-mastery').textContent = `${quizDeckMeta(count, summary)}${summary.attempts ? ` · ${summary.attempts} attempt${summary.attempts === 1 ? '' : 's'}` : ''}`;
+        }
+    });
+}
+
+// Where Back returns to from a practice test, and which deck it's testing
+let testBack = () => showHome();
+let testDeckId = null;
+
+/** Opens a quiz deck's practice test. */
+function showPracticeTest(deck) {
+    if (currentView === 'deck') { const id = editingDeckId, name = editingDeckName; testBack = () => openDeckEdit(id, name); }
+    else if (currentView === 'folder') { const id = currentFolderId, name = currentFolderName; testBack = () => showFolder(id, name); }
+    else testBack = () => showHome();
+    currentView = 'test';
+    testDeckId = deck.id;
+    hideAll();
+    dom.mainTitle.textContent = deck.name;
+    dom.btnBack.style.display = 'block';
+    dom.btnStudy.style.display = 'none';
+    highlightNav(`d-${deck.id}`);
+    dom.viewTest.classList.add('active');
+    dom.mainBody.scrollTop = 0;
+    window.scrollTo(0, 0);
+    renderPracticeTest(dom.viewTest, { deck, onExit: () => testBack() });
 }
 
 async function loadDeckCards() {
@@ -1357,8 +1385,8 @@ function setupEvents() {
     };
 
     dom.btnBack.onclick = () => {
-        if (currentView === 'quiz') {
-            quizBack();
+        if (currentView === 'test') {
+            testBack();
         } else if (currentView === 'study' || currentView === 'complete') {
             if (editingDeckId) openDeckEdit(editingDeckId, editingDeckName);
             else if (currentFolderId) showFolder(currentFolderId, currentFolderName);
@@ -1411,6 +1439,16 @@ function setupEvents() {
         dom.modalName.focus();
         rebindModalSave();
     };
+    $('btn-new-quiz').onclick = () => {
+        addMode = 'quiz';
+        dom.modalTitle.textContent = 'New Quiz Deck';
+        showCreateLocation();
+        dom.modalColorRow.style.display = 'none';
+        dom.modalName.value = '';
+        dom.modalOverlay.classList.add('active');
+        dom.modalName.focus();
+        rebindModalSave();
+    };
     $('modal-cancel').onclick = () => dom.modalOverlay.classList.remove('active');
     dom.modalName.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') { e.preventDefault(); $('modal-save').click(); }
@@ -1418,6 +1456,14 @@ function setupEvents() {
     modalSaveDefault = async () => {
         const name = dom.modalName.value.trim();
         if (!name) return;
+        if (addMode === 'quiz') {
+            // A new quiz deck opens straight into Edit Questions
+            const deckId = await addDeck(name, currentFolderId, 'quiz');
+            dom.modalOverlay.classList.remove('active');
+            await refreshSidebar();
+            await openDeckEdit(deckId, name);
+            return;
+        }
         if (addMode === 'folder') await addFolder(name, dom.modalColor.value, currentFolderId);
         else await addDeck(name, currentFolderId);
         dom.modalOverlay.classList.remove('active');
@@ -1807,9 +1853,22 @@ const handlePDFUpload = async (file) => {
 
 // CSV IMPORT (into the folder currently open)
 if (document.getElementById('btn-menu-import-csv')) {
+    // Show the CSV format instructions first (unless turned off)
     document.getElementById('btn-menu-import-csv').addEventListener('click', () => {
-        document.getElementById('file-import-csv').click();
+        if (localStorage.getItem('hideImportInstructions') === 'true') {
+            document.getElementById('file-import-csv').click();
+            return;
+        }
+        renderImportHelp($('import-help'));
+        $('import-help-hide').checked = false;
+        $('modal-import-help').classList.add('active');
     });
+    $('import-help-cancel').onclick = () => $('modal-import-help').classList.remove('active');
+    $('import-help-continue').onclick = () => {
+        if ($('import-help-hide').checked) localStorage.setItem('hideImportInstructions', 'true');
+        $('modal-import-help').classList.remove('active');
+        document.getElementById('file-import-csv').click();
+    };
     document.getElementById('file-import-csv').addEventListener('change', async (e) => {
         const files = [...e.target.files];
         e.target.value = '';

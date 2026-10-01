@@ -7,13 +7,13 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v38';
+const CACHE_NAME = 'retention-v40';
 
 const APP_SHELL = [
     './dashboard.html',
-    './css/style.css?v=20',
-    './css/dashboard.css?v=20',
-    './js/dashboard.js?v=20',
+    './css/style.css?v=22',
+    './css/dashboard.css?v=22',
+    './js/dashboard.js?v=22',
     './js/db.js',
     './js/csv.js',
     './js/env.js',
@@ -22,8 +22,9 @@ const APP_SHELL = [
     './js/themes.js',
     './js/themes-library.js',
     './js/utils.js',
-    './js/quiz.js',
-    './js/quiz-ui.js',
+    './js/practice-test.js',
+    './js/quiz-editor.js',
+    './js/import-help.js',
     './js/ai-processor.js',
     './js/drive.js',
     './js/marked.min.js',
@@ -69,7 +70,9 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        fetch(event.request)
+        // Always revalidate with the server (a cheap 304 when unchanged) so a new
+        // page never runs against an older, HTTP-cached copy of one of its modules
+        fetch(event.request, { cache: 'no-cache' })
             .then(networkResponse => {
                 // If we get a valid response from the network, update the cache
                 if (networkResponse && networkResponse.ok) {

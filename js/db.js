@@ -56,7 +56,7 @@ export const initDB = () => {
                 folderStore.createIndex('parentId', 'parentId', { unique: false });
             }
 
-            // v4: quiz attempts, kept separate from study stats and card mastery
+            // v4: practice quiz attempts, kept separate from study stats and card mastery
             if (!db.objectStoreNames.contains('quizResults')) {
                 db.createObjectStore('quizResults', { keyPath: 'id', autoIncrement: true });
             }
@@ -156,11 +156,16 @@ export const reparentOrphans = () => {
     });
 };
 
-export const addDeck = (name, folderId = null) => {
+/** Practice quiz decks hold questions (mcq / tf / fitb) instead of flashcards. */
+export const isQuizDeck = (deck) => deck?.kind === 'quiz';
+
+export const addDeck = (name, folderId = null, kind = 'flashcards') => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['decks'], 'readwrite');
         const store = transaction.objectStore('decks');
-        const request = store.add({ name, folderId, createdAt: new Date().toISOString() });
+        const deck = { name, folderId, createdAt: new Date().toISOString() };
+        if (kind === 'quiz') deck.kind = 'quiz';
+        const request = store.add(deck);
         request.onsuccess = () => { markDbDirty(); resolve(request.result); };
         request.onerror = (e) => { e.preventDefault(); reject(request.error); };
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
@@ -255,7 +260,8 @@ export const getCardsByDeck = (deckId) => {
 
 export const getCardsByFolder = async (folderId) => {
     const allDecks = await getDecks();
-    const folderDecks = allDecks.filter(d => d.folderId === folderId);
+    // Flashcard study only: quiz decks hold practice questions, not flashcards
+    const folderDecks = allDecks.filter(d => d.folderId === folderId && !isQuizDeck(d));
     let allCards = [];
     for (const deck of folderDecks) {
         const cards = await getCardsByDeck(deck.id);
@@ -310,7 +316,7 @@ export const getAllCards = () => {
     });
 };
 
-// ─── Quiz results (separate from study stats; never change card mastery) ───
+// ─── Practice quiz attempts (separate from study stats; never change mastery) ───
 export const addQuizResult = (result) => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['quizResults'], 'readwrite');

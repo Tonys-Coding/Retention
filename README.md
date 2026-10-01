@@ -46,13 +46,14 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 *   **Focus Modifiers:** Choose in Settings what the AI should prioritize when generating from PDFs (e.g., *Dates & Events*, *Formulas & Math*, *Vocabulary / Jargon*, *People & Quotes*, *Code & Syntax*, *Language Translation*).
 *   **Context Menu Magic:** Highlight text on any website, right-click, and select "Add to Retention (AI)" to instantly beam a generated flashcard into your Inbox.
 
-###  Quizzes
-Test yourself on any deck or folder with graded quizzes built automatically from your cards:
-*   **Four question types:** Multiple choice (wrong answers are drawn from your other cards), True / False, Type the answer (for short answers, forgiving of case, punctuation and small typos), and Fill in the blank.
-*   **Your settings:** Choose 10, 20 or all questions, which question types to include, and whether answers are shown **after each question** or **at the end**.
-*   **Results & review:** Score, time, your best score, and a question-by-question review. Mark a typed answer "I was right" when the checker is too strict, and **Retry missed** for a practice round.
-*   **Separate quiz performance:** Quiz scores are tracked on their own (attempts, average, best, recent scores per deck/folder and overall) and never change your card mastery or study stats. Quiz history syncs through Google Drive.
-*   **Quick Quiz in the extension:** A 10-question quiz right in the popup, with a link to the full quiz options in the dashboard.
+###  Practice Quiz Decks
+Alongside flashcard decks, Retention has **practice quiz decks** (with their own test-sheet icon) for exam-style review:
+*   **Three question types:** Multiple choice (2–6 choices), True / False, and Fill in the blank (forgiving of case, punctuation and small typos, with an "I was right" override).
+*   **Practice test page:** Every question on one page with a numbered **Question list** to jump around, like a real test. Choose to see answers **right away** (each question is marked as you answer) or **at the end** (change answers freely, then Submit).
+*   **Results:** Score, time, and your best score; **Retake test** or **Retake missed** questions. Quiz scores are tracked separately and never change flashcard mastery.
+*   **Create them your way:** Import a quiz CSV, or use **Add New → New Quiz Deck** and **Edit Questions** in the dashboard. Quiz decks can be renamed, moved, exported, and synced like any other deck.
+*   **Quiz CSV format:** `Question, Type, Answer, Choice A, Choice B, Choice C, Choice D, Explanation` with Type `mcq`, `tf`, or `fitb` (mcq Answer = the correct letter; tf Answer = True/False; fitb uses `___` for the blank and `|` between accepted answers). The downloadable **AI Prompt** (in the import instructions) teaches any AI chatbot to write both flashcard and quiz CSVs.
+*   **Coming next:** AI-generated practice quizzes straight from your PDFs and notes.
 
 ###  Infinite Organization & Study Flows
 *   **Nested Folders & Drag-and-Drop:** Organize decks into folders, and nest folders within folders infinitely. Easily drag decks across your workspace.

@@ -1,9 +1,10 @@
-import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans } from './db.js';
+import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans, isQuizDeck, getQuizResults } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml } from './utils.js';
+import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
+import { renderImportHelp } from './import-help.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
-import { startQuiz } from './quiz-ui.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 
@@ -117,36 +118,22 @@ const views = {
     study: document.getElementById('view-study'),
     studyComplete: document.getElementById('view-study-complete'),
     stats: document.getElementById('view-stats'),
-    quiz: document.getElementById('view-quiz')
+    test: document.getElementById('view-test')
 };
 
-// ─── Quick Quiz (10 questions; full quiz options live in the dashboard) ───
-let quizReturnView = 'decks';
-
-const leaveQuickQuiz = () => {
-    if (quizReturnView === 'deckDetails') {
-        loadCards();
-        showView('deckDetails');
-    } else {
-        loadDecks(document.getElementById('input-search').value.trim());
-        showView('decks');
-    }
+// ─── Practice tests (quiz decks) ─────────────────────────────────────
+const leavePracticeTest = () => {
+    loadDecks(document.getElementById('input-search').value.trim());
+    showView('decks');
 };
 
-const startQuickQuiz = (deckId, deckName, returnView) => {
-    quizReturnView = returnView;
-    document.getElementById('quiz-view-title').textContent = `Quick Quiz: ${deckName}`;
-    showView('quiz');
-    startQuiz(document.getElementById('quiz-root'), {
-        source: { type: 'deck', id: deckId, name: deckName },
-        quick: true,
-        onExit: leaveQuickQuiz,
-        onOpenDashboard: () => chrome.tabs.create({ url: `dashboard.html#quiz-deck-${deckId}` })
-    });
+const startPracticeTest = (deck) => {
+    document.getElementById('test-view-title').textContent = deck.name;
+    showView('test');
+    renderPracticeTest(document.getElementById('test-root'), { deck: { id: deck.id, name: deck.name }, onExit: leavePracticeTest });
 };
 
-document.getElementById('btn-back-quiz').addEventListener('click', () => leaveQuickQuiz());
-document.getElementById('btn-deck-quiz').addEventListener('click', () => startQuickQuiz(currentDeckId, currentDeckName, 'deckDetails'));
+document.getElementById('btn-back-test').addEventListener('click', leavePracticeTest);
 
 const showView = (viewName) => {
     Object.values(views).forEach(v => v.classList.remove('active'));
@@ -323,6 +310,7 @@ const promptMove = (type, item) => {
 
 const loadDecks = async (searchQuery = '') => {
     let allDecks = await getDecks();
+    const quizResults = await getQuizResults();
     let allFolders = await getFolders();
     
     // Filter to current folder
@@ -540,15 +528,16 @@ const loadDecks = async (searchQuery = '') => {
     for (const deck of decks) {
         const cards = await getCardsByDeck(deck.id);
         const mastered = cards.filter(c => c.status === 'mastered').length;
+        const quiz = isQuizDeck(deck);
         
         const el = document.createElement('div');
         el.className = 'deck-item';
         el.innerHTML = `
-            <div class="deck-item-info" title="Click to Study" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                <svg width="20" height="24" viewBox="0 0 28 36" style="flex-shrink: 0; overflow: visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>
+            <div class="deck-item-info" title="${quiz ? 'Click to take the practice test' : 'Click to Study'}" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                ${quiz ? quizDeckIcon(20, 24) : '<svg width="20" height="24" viewBox="0 0 28 36" style="flex-shrink: 0; overflow: visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>'}
                 <div style="min-width: 0;">
                     <div class="deck-title-text">${escapeHtml(deck.name)}</div>
-                    <div class="deck-stats">${cards.length} cards | ${mastered} mastered</div>
+                    <div class="deck-stats">${quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, deck.id)) : `${cards.length} cards | ${mastered} mastered`}</div>
                 </div>
             </div>
             <div class="dropdown">
@@ -556,9 +545,9 @@ const loadDecks = async (searchQuery = '') => {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
                 </button>
                 <div class="dropdown-content" id="dropdown-${deck.id}">
-                    <button class="btn-deck-edit" data-id="${deck.id}">Edit</button>
+                    ${quiz ? `<button class="btn-deck-test" data-id="${deck.id}">Take Test</button>` : ''}
+                    <button class="btn-deck-edit" data-id="${deck.id}">${quiz ? 'Edit Questions ↗' : 'Edit'}</button>
                     <button class="btn-deck-rename" data-id="${deck.id}">Rename</button>
-                    <button class="btn-deck-quiz" data-id="${deck.id}">Quick Quiz</button>
                     <button class="btn-deck-move" data-id="${deck.id}">Move to…</button>
                     <button class="btn-deck-export" data-id="${deck.id}">Export</button>
                     <button class="btn-deck-delete" data-id="${deck.id}">Delete</button>
@@ -576,6 +565,10 @@ const loadDecks = async (searchQuery = '') => {
         });
         
         el.addEventListener('click', async () => {
+            if (quiz) {
+                startPracticeTest(deck);
+                return;
+            }
             currentDeckId = deck.id;
             currentDeckName = deck.name;
             currentCards = await getCardsByDeck(deck.id);
@@ -600,10 +593,18 @@ const loadDecks = async (searchQuery = '') => {
             positionDropdown(dropdown);
         });
 
+        el.querySelector('.btn-deck-test')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+            startPracticeTest(deck);
+        });
+
         el.querySelector('.btn-deck-edit').addEventListener('click', async (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');
-            openDeck(deck.id, deck.name);
+            // Quiz questions are edited in the dashboard
+            if (quiz) chrome.tabs.create({ url: `dashboard.html#edit-deck-${deck.id}` });
+            else openDeck(deck.id, deck.name);
         });
 
         el.querySelector('.btn-deck-delete').addEventListener('click', async (e) => {
@@ -625,12 +626,6 @@ const loadDecks = async (searchQuery = '') => {
             renameInput.focus();
         });
 
-        el.querySelector('.btn-deck-quiz').addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.classList.remove('show');
-            startQuickQuiz(deck.id, deck.name, 'decks');
-        });
-
         el.querySelector('.btn-deck-move').addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');
@@ -643,7 +638,7 @@ const loadDecks = async (searchQuery = '') => {
             if (cards.length === 0) {
                 showToast("No cards to export.");
             } else {
-                exportDeckToCSV(deck.name, cards);
+                exportDeckToCSV(deck.name, cards, quiz ? 'quiz' : 'flashcards');
             }
         });
         
@@ -672,6 +667,7 @@ document.getElementById('btn-import-csv').addEventListener('click', () => {
     if (hideInstructions === 'true') {
         document.getElementById('file-import').click();
     } else {
+        renderImportHelp(document.getElementById('import-help'));
         document.getElementById('modal-import-instructions').style.display = 'flex';
     }
 });
@@ -1184,64 +1180,6 @@ document.getElementById('btn-restart-study').addEventListener('click', () => {
     document.getElementById('btn-start-study').click();
 });
 
-// Modal Close handlers
-document.getElementById('btn-cancel-import').addEventListener('click', () => {
-    document.getElementById('modal-import-instructions').style.display = 'none';
-    if (document.getElementById('checkbox-dont-show-import').checked) {
-        chrome.storage.local.set({ hideImportInstructions: true });
-    }
-});
-
-document.getElementById('btn-continue-import').addEventListener('click', () => {
-    document.getElementById('modal-import-instructions').style.display = 'none';
-    if (document.getElementById('checkbox-dont-show-import').checked) {
-        chrome.storage.local.set({ hideImportInstructions: true });
-    }
-    document.getElementById('file-import-deck').click();
-});
-
-document.getElementById('link-download-ai-skill')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const skillContent = `# Retention Extension - CSV Generation Skill
-
-You are an AI assistant generating flashcards for the "Retention" Chrome Extension. 
-
-## Core Directives
-Extract the most important concepts, facts, and terms from the text provided by the user. 
-- Focus heavily on actual terms, core concepts, and mechanics. Ignore history and background fluff.
-- Scale intelligently: Extract thoroughly for dense texts, but don't over-generate for sparse texts.
-- Keep definitions EXTREMELY short. NEVER write a paragraph.
-
-## Output Format
-Create a **downloadable .csv file** for the user containing the flashcards.
-The CSV MUST have exactly these columns in the header:
-Term, Definition, Type, Example, Status
-
-## Card Types & Strict Rules
-The 'Type' column must be exactly 'standard' or 'fitb'.
-
-1. 'standard' (Flashcard)
-   - The 'Term' MUST be phrased as a clear question (e.g., "What is the function of X?", "Define X"). NEVER just output the standalone word/concept with no context.
-   - The 'Definition' MUST be a single ultra-short fragment or sentence (MAXIMUM 15 WORDS). Use extreme brevity.
-
-2. 'fitb' (Fill-in-the-blank)
-   - The 'Term' (the full sentence) MUST be a single short sentence (MAXIMUM 15 WORDS). DO NOT replace the answer with "___".
-   - The 'Definition' MUST be exactly 1 to 2 words MAX (this is the hidden answer).
-
-## Example CSV Data
-Term, Definition, Type, Example, Status
-"What is the powerhouse of the cell?","Mitochondria","standard","It generates ATP.","new"
-"The mitochondria generates most of the cell's ATP.","mitochondria","fitb","","new"
-`;
-    const blob = new Blob([skillContent], { type: 'text/markdown;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'Retention_AI_Skill.md');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
 
 // Rename Modal Logic
 document.getElementById('btn-cancel-rename').addEventListener('click', () => {
