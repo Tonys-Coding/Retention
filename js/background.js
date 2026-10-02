@@ -1,5 +1,5 @@
 import { initDB, addDeck, getDecks, addCard } from './db.js';
-import { processPdfChunks } from './ai-processor.js';
+import { processPdfChunks, GENERATION_PROTOCOL } from './ai-processor.js';
 import { requestCompletion, parseAIJson, buildSelectionPrompt, SELECTION_SYSTEM_PROMPT } from './ai.js';
 import { startBackgroundSync } from './drive.js';
 
@@ -102,6 +102,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // Process PDF Chunks in the background
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    // Lets pages detect a worker left running from an older version (background-jobs.js)
+    if (request.action === 'GET_GENERATION_PROTOCOL') {
+        sendResponse({ protocol: GENERATION_PROTOCOL });
+        return;
+    }
     if (request.action === 'PROCESS_PDF_CHUNKS') {
         processPdfChunks(request.textChunks, request.deckName, request.folderId, {
             notify,

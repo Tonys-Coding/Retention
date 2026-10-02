@@ -21,6 +21,10 @@ import {
     buildQuizPrompt, QUIZ_SYSTEM_PROMPT, QUIZ_QUESTION_TYPES, quizCardFromAI
 } from './ai.js';
 
+// Bumped when the job message format changes. The pages compare it with the
+// background worker's copy (background-jobs.js) to catch an outdated worker.
+export const GENERATION_PROTOCOL = 2;
+
 const normalizeQuestion = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 // Give up on a request when nothing at all arrives for this long, or when one

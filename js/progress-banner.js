@@ -13,12 +13,15 @@ import { escapeHtml } from './utils.js';
 const STALE_AFTER_MS = 150000;
 
 let current = null;
+let receivedAt = 0;
 let staleCheck = null;
 
 const $ = (id) => document.getElementById(id);
 
+// Jobs from an older background worker carry no timestamp: measure from the
+// last update this page received instead
 const isStale = (progress) => (progress.status === 'running' || progress.status === 'saving')
-    && Date.now() - (progress.updatedAt || 0) > STALE_AFTER_MS;
+    && Date.now() - (progress.updatedAt || receivedAt) > STALE_AFTER_MS;
 
 const showError = (message) => {
     $('bg-task-title').innerHTML = `<span style="color: #ff4444;">Error: ${escapeHtml(message)}</span>`;
@@ -69,6 +72,7 @@ const render = () => {
 /** Shows (or hides, for a falsy value) the progress banner for a pdfProgress value. */
 export const updateProgressBanner = (progress) => {
     current = progress || null;
+    receivedAt = Date.now();
     render();
     // Re-check while a job is in flight so a dead job is noticed without new updates
     clearInterval(staleCheck);

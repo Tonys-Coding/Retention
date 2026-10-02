@@ -5,6 +5,7 @@ import { escapeHtml } from './utils.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderImportHelp } from './import-help.js';
 import { renderAiQuizForm } from './ai-quiz.js';
+import { startBackgroundGeneration, offerExtensionReload, OutdatedBackgroundError } from './background-jobs.js';
 import { updateProgressBanner } from './progress-banner.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, getAuthToken, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
@@ -51,9 +52,10 @@ chrome.storage.local.get(['pdfProgress'], (res) => {
     if (res.pdfProgress) updateProgressBanner(res.pdfProgress);
 });
 
-const showConfirm = (message, okText = "Delete", isDanger = true, cancelText = "Cancel") => {
+const showConfirm = (message, okText = "Delete", isDanger = true, cancelText = "Cancel", title = "Are you sure?") => {
     return new Promise((resolve) => {
         const modal = document.getElementById('modal-confirm');
+        document.getElementById('confirm-title').textContent = title;
         document.getElementById('confirm-message').textContent = message;
         document.getElementById('btn-cancel-confirm').textContent = cancelText;
         modal.style.display = 'flex';
@@ -1376,18 +1378,17 @@ const handlePDFUpload = async (file) => {
         
         const deckName = file.name.replace('.pdf', '') || 'AI Generated Deck';
         
-        chrome.runtime.sendMessage({
-            action: 'PROCESS_PDF_CHUNKS',
-            textChunks: textChunks,
-            deckName: deckName,
-            folderId: currentFolderId
-        });
+        await startBackgroundGeneration({ textChunks, deckName, folderId: currentFolderId });
         
         dropzone.style.display = 'none';
         showToast("Processing PDF in background! You will receive a notification when finished.");
         
     } catch (err) {
         dropzone.style.display = 'none';
+        if (err instanceof OutdatedBackgroundError) {
+            offerExtensionReload(showConfirm);
+            return;
+        }
         showToast("PDF Error: " + err.message);
         console.error(err);
     }
@@ -1881,7 +1882,14 @@ document.getElementById('btn-menu-ai-quiz').addEventListener('click', () => {
             const { openrouter_api_key: apiKey } = await chrome.storage.local.get(['openrouter_api_key']);
             if (!apiKey) throw new Error('Add your OpenRouter API key in Settings first.');
             // The background worker keeps going after the popup closes
-            chrome.runtime.sendMessage({ action: 'PROCESS_PDF_CHUNKS', textChunks, deckName, folderId: currentFolderId, kind: 'quiz', quiz });
+            try {
+                await startBackgroundGeneration({ textChunks, deckName, folderId: currentFolderId, kind: 'quiz', quiz });
+            } catch (e) {
+                if (!(e instanceof OutdatedBackgroundError)) throw e;
+                modal.style.display = 'none';
+                offerExtensionReload(showConfirm);
+                return;
+            }
             modal.style.display = 'none';
             showToast(`Generating "${deckName}". You'll get a notification when it's ready.`);
         }

@@ -11,6 +11,7 @@ import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } fro
 import { renderQuizEditor } from './quiz-editor.js';
 import { renderImportHelp } from './import-help.js';
 import { renderAiQuizForm } from './ai-quiz.js';
+import { startBackgroundGeneration, offerExtensionReload, OutdatedBackgroundError } from './background-jobs.js';
 import { updateProgressBanner } from './progress-banner.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
@@ -96,9 +97,10 @@ function showToast(msg) {
 const getWorkspaceName = () => localStorage.getItem('workspace_name') || 'My Workspace';
 
 // ===== CONFIRM =====
-function showConfirm(message, okText = 'Delete', isDanger = true, cancelText = 'Cancel') {
+function showConfirm(message, okText = 'Delete', isDanger = true, cancelText = 'Cancel', title = 'Confirm') {
     return new Promise(resolve => {
         const overlay = $('modal-confirm');
+        $('confirm-title').textContent = title;
         $('confirm-msg').textContent = message;
         $('confirm-cancel').textContent = cancelText;
         const okBtn = $('confirm-ok');
@@ -1784,12 +1786,7 @@ const handlePDFUpload = async (file) => {
         
         if (isExtension) {
             // Extension: delegate to background service worker
-            chrome.runtime.sendMessage({
-                action: 'PROCESS_PDF_CHUNKS',
-                textChunks: textChunks,
-                deckName: deckName,
-                folderId: targetFolder
-            });
+            await startBackgroundGeneration({ textChunks, deckName, folderId: targetFolder });
         } else {
             // Web / PWA: process directly in-page
             processPdfChunks(textChunks, deckName, targetFolder);
@@ -1816,6 +1813,10 @@ const handlePDFUpload = async (file) => {
                     dropzoneOverlay.style.display = 'none';
                 });
             }
+        }
+        if (err instanceof OutdatedBackgroundError) {
+            offerExtensionReload(showConfirm);
+            return;
         }
         showToast("PDF Error: " + err.message);
         console.error(err);
@@ -1845,7 +1846,14 @@ function openAiQuizModal() {
             const folderId = currentFolderId ?? null;
             if (isExtension) {
                 // The background worker keeps going even if this tab is closed
-                chrome.runtime.sendMessage({ action: 'PROCESS_PDF_CHUNKS', textChunks, deckName, folderId, kind: 'quiz', quiz });
+                try {
+                    await startBackgroundGeneration({ textChunks, deckName, folderId, kind: 'quiz', quiz });
+                } catch (e) {
+                    if (!(e instanceof OutdatedBackgroundError)) throw e;
+                    modal.classList.remove('active');
+                    offerExtensionReload(showConfirm);
+                    return;
+                }
             } else {
                 processPdfChunks(textChunks, deckName, folderId, { kind: 'quiz', quiz });
             }

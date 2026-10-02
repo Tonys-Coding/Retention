@@ -89,6 +89,7 @@ To install the extension companion for right-click web capturing:
 2. Open Google Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** in the top right corner.
 4. Click on **Load unpacked** and select the `Retention` directory.
+5. After updating the files (e.g. `git pull`), click the extension's **Reload** button on `chrome://extensions`. Chrome keeps running the old background worker until you do; if you forget, Retention notices when you start an AI generation and offers to reload for you.
 
 ---
 
