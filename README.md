@@ -23,13 +23,14 @@ Retention features a background auto-sync engine built on Google Drive. Every de
 *   **Visible status:** Settings shows when you last synced. On the web/mobile app, Google sign-in expires after about an hour; when that happens a "Sync paused" banner offers a one-tap **Reconnect** so your phone never quietly falls out of date.
 
 ###  Massive Theming Engine
-Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 19 custom styles, organized into collections:
+Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 21 custom styles, organized into collections:
 *   **Monochrome:** Light, Dark.
 *   **Retro Tech:** Terminal, Dracula, Vaporwave.
 *   **Paper & Print:** Composition (notebook paper), Blueprint (drafting grid), Neo-Pop (comic halftone).
-*   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin.
+*   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin, Night Library (lamp-lit shelves of muted book spines on warm navy).
 *   **Café Treats:** Matcha, Strawberry.
 *   **Celestial:** Space (starfield), Moon (lunar craters).
+*   **Landscapes:** Fjord (soft slate blues with misty layered mountains, a snowcap and still water).
 *   **Star Wars:** Tatooine (desert hues and twin suns), **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures), **R2-D2** (a silver astromech dome with the radar eye, holo-projector and blue panel bands over a white body), and **Boba Fett** (a weathered green Mandalorian helmet with the black T-visor, brown trim, rangefinder and kill stripes).
 
 **Themes Library & Favorites**
@@ -44,6 +45,7 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 *   **Drag & Drop PDFs:** Drag any local PDF directly onto the Web Dashboard dropzone.
 *   **Google Drive PDF Picker:** Browse and select PDFs directly from your cloud storage.
 *   **Focus Modifiers:** Choose in Settings what the AI should prioritize when generating from PDFs (e.g., *Dates & Events*, *Formulas & Math*, *Vocabulary / Jargon*, *People & Quotes*, *Code & Syntax*, *Language Translation*).
+*   **Live progress:** Responses stream in, so the progress banner shows the AI writing in real time, and long generations keep running in the extension's background even when the model is slow.
 *   **Context Menu Magic:** Highlight text on any website, right-click, and select "Add to Retention (AI)" to instantly beam a generated flashcard into your Inbox.
 *   **Practice quizzes too:** The same AI can write multiple choice, true/false and fill-in-the-blank practice quizzes (see Practice Quiz Decks below).
 

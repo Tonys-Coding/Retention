@@ -372,24 +372,24 @@ body.theme-r2d2 {
     --bg-primary: #c0c0c0;
     --bg-secondary: #ffffff;
     --bg-overlay: rgba(192, 192, 192, 0.95);
-    --text-primary: #0f00ff;
+    --text-primary: #23408e;
     --text-secondary: #4b4f63;
-    --border-color: #0f00ff;
-    --shadow-color: #08006e;
-    --hover-bg: #dcdcff;
+    --border-color: #23408e;
+    --shadow-color: #0e1d4d;
+    --hover-bg: #dfe5f4;
     --input-bg: #ffffff;
 
     background-color: var(--bg-primary);
     background-image:
         radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.75) 0 7%, transparent 8%),
         radial-gradient(circle, #08080f 0 44%, #34343f 45% 49%, transparent 50%),
-        linear-gradient(#0f00ff, #0f00ff),
-        linear-gradient(#0f00ff 0 22px, transparent 22px 30px, #0f00ff 30px 52px),
+        linear-gradient(#23408e, #23408e),
+        linear-gradient(#23408e 0 22px, transparent 22px 30px, #23408e 30px 52px),
         radial-gradient(circle, #1b1b24 0 22%, #f2f2f2 23% 45%, #8e8e96 46% 58%, #e6e6ea 59% 72%, transparent 73%),
-        repeating-linear-gradient(90deg, #0f00ff 0 74px, transparent 74px 86px),
-        repeating-linear-gradient(90deg, #0f00ff 0 132px, transparent 132px 142px, #0f00ff 142px 176px, transparent 176px 186px, #0f00ff 186px 262px, transparent 262px 272px),
+        repeating-linear-gradient(90deg, #23408e 0 74px, transparent 74px 86px),
+        repeating-linear-gradient(90deg, #23408e 0 132px, transparent 132px 142px, #23408e 142px 176px, transparent 176px 186px, #23408e 186px 262px, transparent 262px 272px),
         linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
-        repeating-linear-gradient(90deg, transparent 0 46px, #0f00ff 46px 60px, transparent 60px 118px, #0f00ff 118px 168px, transparent 168px 200px),
+        repeating-linear-gradient(90deg, transparent 0 46px, #23408e 46px 60px, transparent 60px 118px, #23408e 118px 168px, transparent 168px 200px),
         linear-gradient(#ffffff, #ffffff),
         radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%);
     background-size: 96px 96px, 96px 96px, 118px 118px, 26px 52px, 58px 58px, 100% 16px, 100% 62px, 100% 4px, 100% 40px, 100% 38%, 100% 100%;
@@ -397,8 +397,8 @@ body.theme-r2d2 {
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-x, repeat-x, repeat-x, no-repeat, no-repeat;
     background-attachment: fixed;
 }
-body.theme-r2d2 button.primary { background: #0f00ff; color: #ffffff; border-color: #0f00ff; }
-body.theme-r2d2 button.secondary { background: #ffffff; color: #0f00ff; border-color: #0f00ff; }
+body.theme-r2d2 button.primary { background: #23408e; color: #ffffff; border-color: #23408e; }
+body.theme-r2d2 button.secondary { background: #ffffff; color: #23408e; border-color: #23408e; }
 body.theme-r2d2 .maze-bg { display: none !important; }
 
 /* BOBA FETT: weathered green Mandalorian helmet (black T-visor, brown trim, rangefinder, kill stripes) */
@@ -440,6 +440,71 @@ body.theme-boba button.primary { background: #5e3424; color: #e8dccb; border-col
 body.theme-boba button.secondary { background: #e8dccb; color: #5e3424; border-color: #5e3424; }
 body.theme-boba .maze-bg { display: none !important; }
 
+/* FJORD: misty layered mountain ridges, a snowcap, pale sun and still water */
+body.theme-fjord {
+    --bg-primary: #dfe6ea;
+    --bg-secondary: #f8fafb;
+    --bg-overlay: rgba(223, 230, 234, 0.95);
+    --text-primary: #2b3a44;
+    --text-secondary: #5b6d79;
+    --border-color: #2b3a44;
+    --shadow-color: #7d93a1;
+    --hover-bg: #e8eef1;
+    --input-bg: #ffffff;
+
+    background-color: var(--bg-primary);
+    background-image:
+        repeating-linear-gradient(0deg, transparent 0 7px, rgba(255, 255, 255, 0.28) 7px 8px),
+        linear-gradient(180deg, #8ea3b0, #a7b9c4),
+        conic-gradient(from 129.6deg at 50% 0, #7d93a1 0 100.9deg, transparent 0),
+        linear-gradient(180deg, rgba(232, 238, 241, 0), rgba(232, 238, 241, 0.6) 65%, rgba(232, 238, 241, 0)),
+        conic-gradient(from 149.0deg at 50% 0, #9db0bc 0 61.9deg, transparent 0),
+        linear-gradient(180deg, rgba(232, 238, 241, 0), rgba(232, 238, 241, 0.65) 65%, rgba(232, 238, 241, 0)),
+        conic-gradient(from 142.6deg at 50% 0, #f3f6f8 0 74.8deg, transparent 0),
+        conic-gradient(from 142.6deg at 50% 0, #bac8d1 0 74.8deg, transparent 0),
+        radial-gradient(circle, rgba(255, 249, 232, 0.95) 0 34px, rgba(255, 249, 232, 0.35) 46px, transparent 110px),
+        linear-gradient(180deg, #e9eff2 0%, #dfe6ea 55%, #d2dce2 100%);
+    background-size: 100% 44px, 100% 44px, 460px 190px, 100% 140px, 300px 250px, 100% 160px, 520px 70px, 520px 340px, 240px 240px, 100% 100%;
+    background-position: 0 100%, 0 100%, 40px calc(100% - 40px), 0 calc(100% - 40px - 120px), 170px calc(100% - 40px - 60px), 0 calc(100% - 40px - 200px), -120px calc(100% - 40px - 220px - 270px), -120px calc(100% - 40px - 220px), 80% 12%, 0 0;
+    background-repeat: no-repeat, no-repeat, repeat-x, no-repeat, repeat-x, no-repeat, repeat-x, repeat-x, no-repeat, no-repeat;
+    background-attachment: fixed;
+}
+body.theme-fjord button.primary { background: #2b3a44; color: #f8fafb; border-color: #2b3a44; }
+body.theme-fjord button.secondary { background: #f8fafb; color: #2b3a44; border-color: #2b3a44; }
+body.theme-fjord .maze-bg { display: none !important; }
+
+/* NIGHT LIBRARY: lamp-lit shelves of muted book spines with gold bands */
+body.theme-library {
+    --bg-primary: #1d2230;
+    --bg-secondary: #272d3f;
+    --bg-overlay: rgba(29, 34, 48, 0.95);
+    --text-primary: #ece4d4;
+    --text-secondary: #b3a68d;
+    --border-color: #4b5470;
+    --shadow-color: #0f121b;
+    --hover-bg: #323a52;
+    --input-bg: #1d2230;
+
+    background-color: var(--bg-primary);
+    background-image:
+        radial-gradient(ellipse 60% 45% at 88% 0%, rgba(255, 190, 110, 0.22), transparent 70%),
+        radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.35)),
+        linear-gradient(180deg, #1d2230 0 14px, transparent 14px 118px, #4a3426 118px 130px, #2c2019 130px 136px, #1d2230 136px 150px),
+        linear-gradient(180deg, transparent 0 34px, rgba(224, 164, 88, 0.3) 34px 36px, transparent 36px 92px, rgba(224, 164, 88, 0.24) 92px 95px, transparent 95px),
+        repeating-linear-gradient(90deg, #5a3b3b 0px 18px, #151922 18px 20px, #2f4a47 20px 33px, #151922 33px 35px, #6b5a3d 35px 59px, #151922 59px 61px, #3a3f5e 61px 76px, #151922 76px 78px, #4d2f40 78px 98px, #151922 98px 100px, #6a4a33 100px 111px, #151922 111px 113px, #34505c 113px 139px, #151922 139px 141px, #57513a 141px 155px, #151922 155px 157px, #3f2f2a 157px 176px, #151922 176px 178px, #4a5a3c 178px 200px, #151922 200px 202px, #5e4560 202px 214px, #151922 214px 216px, #2e3b52 216px 233px, #151922 233px 235px, transparent 235px 247px),
+        repeating-linear-gradient(90deg, #5a3b3b 0px 18px, #151922 18px 20px, #2f4a47 20px 33px, #151922 33px 35px, #6b5a3d 35px 59px, #151922 59px 61px, #3a3f5e 61px 76px, #151922 76px 78px, #4d2f40 78px 98px, #151922 98px 100px, #6a4a33 100px 111px, #151922 111px 113px, #34505c 113px 139px, #151922 139px 141px, #57513a 141px 155px, #151922 155px 157px, #3f2f2a 157px 176px, #151922 176px 178px, #4a5a3c 178px 200px, #151922 200px 202px, #5e4560 202px 214px, #151922 214px 216px, #2e3b52 216px 233px, #151922 233px 235px, transparent 235px 247px),
+        repeating-linear-gradient(90deg, #5a3b3b 0px 18px, #151922 18px 20px, #2f4a47 20px 33px, #151922 33px 35px, #6b5a3d 35px 59px, #151922 59px 61px, #3a3f5e 61px 76px, #151922 76px 78px, #4d2f40 78px 98px, #151922 98px 100px, #6a4a33 100px 111px, #151922 111px 113px, #34505c 113px 139px, #151922 139px 141px, #57513a 141px 155px, #151922 155px 157px, #3f2f2a 157px 176px, #151922 176px 178px, #4a5a3c 178px 200px, #151922 200px 202px, #5e4560 202px 214px, #151922 214px 216px, #2e3b52 216px 233px, #151922 233px 235px, transparent 235px 247px),
+        repeating-linear-gradient(90deg, #5a3b3b 0px 18px, #151922 18px 20px, #2f4a47 20px 33px, #151922 33px 35px, #6b5a3d 35px 59px, #151922 59px 61px, #3a3f5e 61px 76px, #151922 76px 78px, #4d2f40 78px 98px, #151922 98px 100px, #6a4a33 100px 111px, #151922 111px 113px, #34505c 113px 139px, #151922 139px 141px, #57513a 141px 155px, #151922 155px 157px, #3f2f2a 157px 176px, #151922 176px 178px, #4a5a3c 178px 200px, #151922 200px 202px, #5e4560 202px 214px, #151922 214px 216px, #2e3b52 216px 233px, #151922 233px 235px, transparent 235px 247px);
+    background-size: 100% 100%, 100% 100%, 100% 150px, 100% 150px, 100% 150px, 100% 150px, 100% 150px, 100% 150px;
+    background-position: 0 0, 0 0, 0 0, 0 0, -97px 150px, -181px 450px, -53px 750px, 0 0;
+    background-repeat: no-repeat, no-repeat, repeat, repeat, repeat-x, repeat-x, repeat-x, repeat;
+    background-attachment: fixed;
+}
+body.theme-library button.primary { background: #e0a458; color: #1d2230; border-color: #e0a458; }
+body.theme-library button.secondary { background: #272d3f; color: #ece4d4; border-color: #4b5470; }
+body.theme-library .maze-bg { display: none !important; }
+body.theme-library input, body.theme-library textarea { color: #ece4d4; }
+
 /* TRANSPARENCY BLOCK */
 
 /* Strawberry Theme */
@@ -479,6 +544,8 @@ body.theme-tatooine .view,
 body.theme-kylo .view,
 body.theme-r2d2 .view,
 body.theme-boba .view,
+body.theme-fjord .view,
+body.theme-library .view,
 body.theme-strawberry .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
@@ -494,6 +561,8 @@ body.theme-tatooine .list-container,
 body.theme-kylo .list-container,
 body.theme-r2d2 .list-container,
 body.theme-boba .list-container,
+body.theme-fjord .list-container,
+body.theme-library .list-container,
 body.theme-strawberry .list-container {
     background: transparent !important;
 }

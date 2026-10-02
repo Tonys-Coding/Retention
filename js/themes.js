@@ -21,6 +21,7 @@ export const THEME_COLLECTIONS = [
     { id: 'cozy', name: 'Cozy & Earthy' },
     { id: 'cafe', name: 'Café Treats' },
     { id: 'celestial', name: 'Celestial' },
+    { id: 'landscapes', name: 'Landscapes' },
     { id: 'starwars', name: 'Star Wars' }
 ];
 
@@ -38,18 +39,18 @@ const art = (layers) => ({
 const R2D2_ART = art([
     ['radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.75) 0 7%, transparent 8%)', '48px 48px', '50% 25%', 'no-repeat'],
     ['radial-gradient(circle, #08080f 0 44%, #34343f 45% 49%, transparent 50%)', '48px 48px', '50% 25%', 'no-repeat'],
-    ['linear-gradient(#0f00ff, #0f00ff)', '59px 59px', '50% 24%', 'no-repeat'],
-    ['linear-gradient(#0f00ff 0 11px, transparent 11px 15px, #0f00ff 15px 26px)', '13px 26px', 'calc(50% - 49px) 26%', 'no-repeat'],
+    ['linear-gradient(#23408e, #23408e)', '59px 59px', '50% 24%', 'no-repeat'],
+    ['linear-gradient(#23408e 0 11px, transparent 11px 15px, #23408e 15px 26px)', '13px 26px', 'calc(50% - 49px) 26%', 'no-repeat'],
     ['radial-gradient(circle, #1b1b24 0 22%, #f2f2f2 23% 45%, #8e8e96 46% 58%, #e6e6ea 59% 72%, transparent 73%)', '29px 29px', 'calc(50% + 52px) 27%', 'no-repeat'],
-    ['repeating-linear-gradient(90deg, #0f00ff 0 37px, transparent 37px 43px)', '100% 8px', '0 9%', 'repeat-x'],
-    ['repeating-linear-gradient(90deg, #0f00ff 0 66px, transparent 66px 71px, #0f00ff 71px 88px, transparent 88px 93px, #0f00ff 93px 131px, transparent 131px 136px)', '100% 31px', '0 47%', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #23408e 0 37px, transparent 37px 43px)', '100% 8px', '0 9%', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #23408e 0 66px, transparent 66px 71px, #23408e 71px 88px, transparent 88px 93px, #23408e 93px 131px, transparent 131px 136px)', '100% 31px', '0 47%', 'repeat-x'],
     ['linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7))', '100% 2px', '0 56%', 'repeat-x'],
-    ['repeating-linear-gradient(90deg, transparent 0 23px, #0f00ff 23px 30px, transparent 30px 59px, #0f00ff 59px 84px, transparent 84px 100px)', '100% 20px', '0 84%', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, transparent 0 23px, #23408e 23px 30px, transparent 30px 59px, #23408e 59px 84px, transparent 84px 100px)', '100% 20px', '0 84%', 'repeat-x'],
     ['linear-gradient(#ffffff, #ffffff)', '100% 38%', '0 100%', 'no-repeat'],
     ['radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%)', '100% 100%', '0 0', 'no-repeat']
 ]);
 const R2D2_TILE = art([
-    ['linear-gradient(#0f00ff, #0f00ff)', '100% 28%', '0 50%', 'no-repeat'],
+    ['linear-gradient(#23408e, #23408e)', '100% 28%', '0 50%', 'no-repeat'],
     ['linear-gradient(#ffffff, #ffffff)', '100% 26%', '0 100%', 'no-repeat'],
     ['radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%)', '100% 100%', '0 0', 'no-repeat']
 ]);
@@ -75,6 +76,38 @@ const BOBA_TILE = art([
     ['linear-gradient(#141412, #141412)', '72% 16%', '50% 30%', 'no-repeat'],
     ['linear-gradient(#141412, #141412)', '18% 62%', '50% 100%', 'no-repeat'],
     ['radial-gradient(ellipse 110% 90% at 38% 6%, #7b8c74 0%, #5d6e5a 45%, #45523f 100%)', '100% 100%', '0 0', 'no-repeat']
+]);
+const FJORD_ART = art([
+    ['repeating-linear-gradient(0deg, transparent 0 4px, rgba(255, 255, 255, 0.28) 4px 4px)', '100% 22px', '0 100%', 'no-repeat'],
+    ['linear-gradient(180deg, #8ea3b0, #a7b9c4)', '100% 22px', '0 100%', 'no-repeat'],
+    ['conic-gradient(from 129.6deg at 50% 0, #7d93a1 0 100.9deg, transparent 0)', '230px 95px', '20px calc(100% - 20px)', 'repeat-x'],
+    ['linear-gradient(180deg, rgba(232, 238, 241, 0), rgba(232, 238, 241, 0.6) 65%, rgba(232, 238, 241, 0))', '100% 70px', '0 calc(100% - 20px - 60px)', 'no-repeat'],
+    ['conic-gradient(from 149.0deg at 50% 0, #9db0bc 0 61.9deg, transparent 0)', '150px 125px', '85px calc(100% - 20px - 30px)', 'repeat-x'],
+    ['linear-gradient(180deg, rgba(232, 238, 241, 0), rgba(232, 238, 241, 0.65) 65%, rgba(232, 238, 241, 0))', '100% 80px', '0 calc(100% - 20px - 100px)', 'no-repeat'],
+    ['conic-gradient(from 142.6deg at 50% 0, #f3f6f8 0 74.8deg, transparent 0)', '260px 35px', '-60px calc(100% - 20px - 110px - 135px)', 'repeat-x'],
+    ['conic-gradient(from 142.6deg at 50% 0, #bac8d1 0 74.8deg, transparent 0)', '260px 170px', '-60px calc(100% - 20px - 110px)', 'repeat-x'],
+    ['radial-gradient(circle, rgba(255, 249, 232, 0.95) 0 17px, rgba(255, 249, 232, 0.35) 23px, transparent 55px)', '120px 120px', '80% 12%', 'no-repeat'],
+    ['linear-gradient(180deg, #e9eff2 0%, #dfe6ea 55%, #d2dce2 100%)', '100% 100%', '0 0', 'no-repeat']
+]);
+const FJORD_TILE = art([
+    ['linear-gradient(#8ea3b0, #8ea3b0)', '100% 18%', '0 100%', 'no-repeat'],
+    ['conic-gradient(from 133.0deg at 50% 0, #7d93a1 0 93.9deg, transparent 0)', '30px 14px', '0 82%', 'no-repeat'],
+    ['conic-gradient(from 143.1deg at 50% 0, #bac8d1 0 73.7deg, transparent 0)', '30px 20px', '9px 70%', 'repeat-x'],
+    ['linear-gradient(180deg, #e9eff2, #d2dce2)', '100% 100%', '0 0', 'no-repeat']
+]);
+const LIBRARY_ART = art([
+    ['radial-gradient(ellipse 60% 45% at 88% 0%, rgba(255, 190, 110, 0.22), transparent 70%)', '100% 100%', '0 0', 'no-repeat'],
+    ['radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.35))', '100% 100%', '0 0', 'no-repeat'],
+    ['linear-gradient(180deg, #1d2230 0 7px, transparent 7px 59px, #4a3426 59px 65px, #2c2019 65px 68px, #1d2230 68px 75px)', '100% 75px', '0 0', 'repeat'],
+    ['linear-gradient(180deg, transparent 0 17px, rgba(224, 164, 88, 0.3) 17px 18px, transparent 18px 46px, rgba(224, 164, 88, 0.24) 46px 48px, transparent 48px)', '100% 75px', '0 0', 'repeat'],
+    ['repeating-linear-gradient(90deg, #5a3b3b 1px 9px, #151922 9px 10px, #2f4a47 10px 16px, #151922 16px 18px, #6b5a3d 18px 30px, #151922 30px 30px, #3a3f5e 30px 38px, #151922 38px 39px, #4d2f40 39px 49px, #151922 49px 50px, #6a4a33 50px 56px, #151922 56px 56px, #34505c 56px 70px, #151922 70px 70px, #57513a 70px 78px, #151922 78px 78px, #3f2f2a 78px 88px, #151922 88px 89px, #4a5a3c 89px 100px, #151922 100px 101px, #5e4560 101px 107px, #151922 107px 108px, #2e3b52 108px 116px, #151922 116px 118px, transparent 118px 124px)', '100% 75px', '-48px 75px', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #5a3b3b 1px 9px, #151922 9px 10px, #2f4a47 10px 16px, #151922 16px 18px, #6b5a3d 18px 30px, #151922 30px 30px, #3a3f5e 30px 38px, #151922 38px 39px, #4d2f40 39px 49px, #151922 49px 50px, #6a4a33 50px 56px, #151922 56px 56px, #34505c 56px 70px, #151922 70px 70px, #57513a 70px 78px, #151922 78px 78px, #3f2f2a 78px 88px, #151922 88px 89px, #4a5a3c 89px 100px, #151922 100px 101px, #5e4560 101px 107px, #151922 107px 108px, #2e3b52 108px 116px, #151922 116px 118px, transparent 118px 124px)', '100% 75px', '-90px 225px', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #5a3b3b 1px 9px, #151922 9px 10px, #2f4a47 10px 16px, #151922 16px 18px, #6b5a3d 18px 30px, #151922 30px 30px, #3a3f5e 30px 38px, #151922 38px 39px, #4d2f40 39px 49px, #151922 49px 50px, #6a4a33 50px 56px, #151922 56px 56px, #34505c 56px 70px, #151922 70px 70px, #57513a 70px 78px, #151922 78px 78px, #3f2f2a 78px 88px, #151922 88px 89px, #4a5a3c 89px 100px, #151922 100px 101px, #5e4560 101px 107px, #151922 107px 108px, #2e3b52 108px 116px, #151922 116px 118px, transparent 118px 124px)', '100% 75px', '-26px 375px', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #5a3b3b 1px 9px, #151922 9px 10px, #2f4a47 10px 16px, #151922 16px 18px, #6b5a3d 18px 30px, #151922 30px 30px, #3a3f5e 30px 38px, #151922 38px 39px, #4d2f40 39px 49px, #151922 49px 50px, #6a4a33 50px 56px, #151922 56px 56px, #34505c 56px 70px, #151922 70px 70px, #57513a 70px 78px, #151922 78px 78px, #3f2f2a 78px 88px, #151922 88px 89px, #4a5a3c 89px 100px, #151922 100px 101px, #5e4560 101px 107px, #151922 107px 108px, #2e3b52 108px 116px, #151922 116px 118px, transparent 118px 124px)', '100% 75px', '0 0', 'repeat']
+]);
+const LIBRARY_TILE = art([
+    ['linear-gradient(180deg, #1d2230 0 3px, transparent 3px 12px, #4a3426 12px 15px)', '100% 15px', '0 0', 'repeat'],
+    ['repeating-linear-gradient(90deg, #5a3b3b 0 4px, #2f4a47 4px 7px, #6b5a3d 7px 12px, #3a3f5e 12px 15px, #151922 15px 16px)', '100% 15px', '0 0', 'repeat']
 ]);
 const KYLO_VISOR = 'radial-gradient(620px 330px at 50% -90px, transparent calc(45% - 1px), rgba(144, 144, 144, 0.2) 45%, rgba(200, 200, 200, 0.4) calc(45% + 6px), transparent calc(45% + 7px), transparent calc(48% - 1px), rgba(144, 144, 144, 0.2) 48%, rgba(200, 200, 200, 0.4) calc(48% + 6px), transparent calc(48% + 7px), transparent calc(51% - 1px), rgba(144, 144, 144, 0.2) 51%, rgba(200, 200, 200, 0.4) calc(51% + 6px), transparent calc(51% + 7px), transparent calc(54% - 1px), rgba(144, 144, 144, 0.2) 54%, rgba(200, 200, 200, 0.4) calc(54% + 6px), transparent calc(54% + 7px))';
 
@@ -118,10 +151,14 @@ export const THEMES = [
         pattern: 'Twin suns', img: 'radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.4) 10px, transparent 40px), radial-gradient(circle at 65% 15%, rgba(255, 69, 0, 0.5) 15px, transparent 50px)' },
     { id: 'kylo', name: 'Kylo', collection: 'starwars', bg: '#000000', card: '#120202', text: '#909090', sub: '#ea1c1c', border: '#3f1b1b', shadow: '#120202', btnBg: '#3f1b1b', btnText: '#909090',
         pattern: 'Kintsugi + chrome', img: `${KYLO_CRACKS}, ${KYLO_VISOR}`, tileImg: KYLO_CRACKS },
-    { id: 'r2d2', name: 'R2-D2', collection: 'starwars', bg: '#c0c0c0', card: '#ffffff', text: '#0f00ff', sub: '#4b4f63', border: '#0f00ff', shadow: '#08006e', btnBg: '#0f00ff', btnText: '#ffffff',
+    { id: 'r2d2', name: 'R2-D2', collection: 'starwars', bg: '#c0c0c0', card: '#ffffff', text: '#23408e', sub: '#4b4f63', border: '#23408e', shadow: '#0e1d4d', btnBg: '#23408e', btnText: '#ffffff',
         pattern: 'Astromech dome', ...R2D2_ART, tile: R2D2_TILE },
     { id: 'boba', name: 'Boba Fett', collection: 'starwars', bg: '#5d6e5a', card: '#e8dccb', text: '#5e3424', sub: '#6e6255', border: '#5e3424', shadow: '#2f1a12', btnBg: '#5e3424', btnText: '#e8dccb',
         pattern: 'Mandalorian helmet', ...BOBA_ART, tile: BOBA_TILE },
+    { id: 'fjord', name: 'Fjord', collection: 'landscapes', bg: '#dfe6ea', card: '#f8fafb', text: '#2b3a44', sub: '#5b6d79', border: '#2b3a44', shadow: '#7d93a1', btnBg: '#2b3a44', btnText: '#f8fafb',
+        pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
+    { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
+        pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
     { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
 ].map((t) => ({ size: 'auto', pos: '0 0', repeat: 'repeat', tileImg: t.img, ...t }));
