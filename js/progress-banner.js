@@ -8,13 +8,17 @@
  */
 
 import { escapeHtml } from './utils.js';
+import { storage } from './env.js';
 
 // Running jobs refresh `updatedAt` every few seconds while the AI writes
 const STALE_AFTER_MS = 150000;
+// How long a finished job's success message stays up
+const DONE_VISIBLE_MS = 5000;
 
 let current = null;
 let receivedAt = 0;
 let staleCheck = null;
+let doneTimer = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -43,6 +47,16 @@ const render = () => {
 
     if (progress.status === 'error') {
         showError(progress.errorMsg || 'Failed');
+        return;
+    }
+    if (progress.status === 'done') {
+        const what = progress.kind === 'quiz' ? 'questions' : 'flashcards';
+        $('bg-task-spinner').style.display = 'none';
+        const count = progress.count ? `${progress.count} ` : '';
+        $('bg-task-title').textContent = `✓ Created ${count}${what} in "${progress.deckName}"`;
+        $('bg-task-percent').textContent = '100%';
+        $('bg-task-fill').style.width = '100%';
+        $('bg-task-fill').style.backgroundColor = '#00cc00';
         return;
     }
     if (isStale(progress)) {
@@ -77,7 +91,17 @@ export const updateProgressBanner = (progress) => {
     // Re-check while a job is in flight so a dead job is noticed without new updates
     clearInterval(staleCheck);
     staleCheck = null;
+    clearTimeout(doneTimer);
     if (current && (current.status === 'running' || current.status === 'saving')) {
         staleCheck = setInterval(render, 15000);
+    }
+    // Clear a finished job after a moment (unless a newer job has replaced it)
+    if (current?.status === 'done') {
+        const finished = current;
+        doneTimer = setTimeout(async () => {
+            const { pdfProgress } = await storage.get(['pdfProgress']);
+            if (pdfProgress?.status === 'done' && pdfProgress.updatedAt === finished.updatedAt) await storage.remove('pdfProgress');
+            if (current === finished) updateProgressBanner(null);
+        }, DONE_VISIBLE_MS);
     }
 };

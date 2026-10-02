@@ -1574,14 +1574,8 @@ if (document.getElementById('btn-close-bg-task')) {
 
 // Listen for progress updates
 storage.onChange((changes) => {
-    if (changes.pdfProgress) {
-        if (changes.pdfProgress.newValue) {
-            updateProgressBanner(changes.pdfProgress.newValue);
-        } else {
-            const banner = document.getElementById('bg-task-banner');
-            if (banner) banner.style.display = 'none';
-        }
-    }
+    // A removed value (job finished or dismissed) hides the banner
+    if (changes.pdfProgress) updateProgressBanner(changes.pdfProgress.newValue);
 });
 
 // Check on boot

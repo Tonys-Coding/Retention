@@ -23,7 +23,7 @@ import {
 
 // Bumped when the job message format changes. The pages compare it with the
 // background worker's copy (background-jobs.js) to catch an outdated worker.
-export const GENERATION_PROTOCOL = 2;
+export const GENERATION_PROTOCOL = 3;
 
 const normalizeQuestion = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -264,11 +264,12 @@ async function runGenerationJob(textChunks, deckName, folderId, { notify = () =>
         } catch (e) {
             console.error('Refreshing open pages failed:', e);
         }
-        // Clear progress after a brief pause, unless another job has started since
-        setTimeout(async () => {
-            const { pdfProgress } = await storage.get(['pdfProgress']);
-            if (pdfProgress?.status === 'saving' && pdfProgress.deckName === deckName) await storage.remove('pdfProgress');
-        }, 2000);
+        // Finished: the banner shows this briefly, then clears it (progress-banner.js).
+        // Ending on a final status, rather than clearing it on a timer here, means the
+        // banner can't be left on "Saving" if this worker is shut down right after.
+        await storage.set({
+            pdfProgress: { status: 'done', current: textChunks.length, total: textChunks.length, count: validCards.length, deckName: finalDeckName, kind, updatedAt: Date.now() }
+        });
     } else {
         notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Could not generate any ${unit} for "${deckName}".`);
         await storage.set({
