@@ -11,6 +11,7 @@ import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } fro
 import { renderQuizEditor } from './quiz-editor.js';
 import { renderImportHelp } from './import-help.js';
 import { renderAiQuizForm } from './ai-quiz.js';
+import { updateProgressBanner } from './progress-banner.js';
 import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFiles, describeCsvImport } from './workspace.js';
 
 // ===== SVG ICONS =====
@@ -1562,41 +1563,10 @@ async function handleDrop(e, targetFolderId) {
 
 const brutalistLoaderHtml = `<div class="brutalist-loader"><div class="block"></div><div class="block"></div><div class="block"></div></div>`;
 
-const updateProgressBanner = (progress) => {
-    const banner = document.getElementById('bg-task-banner');
-    if (!progress) {
-        if (banner) banner.style.display = 'none';
-        return;
-    }
-    if (banner) banner.style.display = 'block';
-    
-    if (progress.status === 'error') {
-        document.getElementById('bg-task-title').innerHTML = `<span style="color: red;">Error: ${escapeHtml(progress.errorMsg || 'Failed')}</span>`;
-        document.getElementById('bg-task-percent').textContent = '';
-        document.getElementById('bg-task-fill').style.width = '100%';
-        document.getElementById('bg-task-fill').style.backgroundColor = 'red';
-        document.getElementById('bg-task-spinner').style.display = 'none';
-        return;
-    }
-
-    document.getElementById('bg-task-spinner').style.display = 'block';
-    const percent = Math.round((progress.current / progress.total) * 100) || 0;
-    
-    if (progress.status === 'saving') {
-        document.getElementById('bg-task-title').textContent = progress.kind === 'quiz' ? 'Saving Questions...' : 'Saving Cards...';
-    } else {
-        document.getElementById('bg-task-title').textContent = `Analyzing "${progress.deckName}"`;
-    }
-    
-    document.getElementById('bg-task-percent').textContent = `${percent}%`;
-    document.getElementById('bg-task-fill').style.width = `${percent}%`;
-    document.getElementById('bg-task-fill').style.backgroundColor = 'var(--text-primary)';
-};
-
 if (document.getElementById('btn-close-bg-task')) {
     document.getElementById('btn-close-bg-task').addEventListener('click', () => {
         storage.remove('pdfProgress');
-        document.getElementById('bg-task-banner').style.display = 'none';
+        updateProgressBanner(null);
     });
 }
 

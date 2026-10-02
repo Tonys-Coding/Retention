@@ -187,14 +187,60 @@ const postCompletion = (apiKey, body, signal) => fetch(OPENROUTER_URL, {
  * POSTs a chat completion, trying AI_MODELS first. A 400/404 (e.g. a
  * retired model ID) is retried once against the `openrouter/free` router.
  * Returns the raw Response so callers can handle status codes themselves.
+ * `options` is merged into the request body (e.g. { stream: true }).
  */
-export const requestCompletion = async (apiKey, messages, signal) => {
-    const res = await postCompletion(apiKey, { models: AI_MODELS, messages }, signal);
+export const requestCompletion = async (apiKey, messages, signal, options = {}) => {
+    const res = await postCompletion(apiKey, { models: AI_MODELS, messages, ...options }, signal);
     if (res.status === 400 || res.status === 404) {
         console.warn(`OpenRouter returned ${res.status} for the model list; retrying with ${FALLBACK_MODEL}`);
-        return postCompletion(apiKey, { model: FALLBACK_MODEL, messages }, signal);
+        return postCompletion(apiKey, { model: FALLBACK_MODEL, messages, ...options }, signal);
     }
     return res;
+};
+
+/**
+ * Reads the reply text from a completion requested with { stream: true }.
+ * Streaming keeps data flowing while a slow model writes (OpenRouter also
+ * sends keep-alive comments while it waits), which keeps the extension's
+ * background worker alive and lets the UI show progress.
+ *   onActivity  called whenever any data arrives (including keep-alives)
+ *   onText      called with the reply length so far
+ * Falls back to a regular JSON body if the server didn't stream.
+ */
+export const readCompletionText = async (response, { onActivity = () => {}, onText = () => {} } = {}) => {
+    const type = response.headers.get('content-type') || '';
+    if (!type.includes('text/event-stream') || !response.body) {
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message || 'The AI provider returned an error.');
+        return data.choices?.[0]?.message?.content ?? '';
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let content = '';
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        onActivity();
+        buffer += decoder.decode(value, { stream: true });
+        let newline;
+        while ((newline = buffer.indexOf('\n')) !== -1) {
+            const line = buffer.slice(0, newline).trim();
+            buffer = buffer.slice(newline + 1);
+            if (!line.startsWith('data:')) continue; // blank lines and ": keep-alive" comments
+            const payload = line.slice(5).trim();
+            if (payload === '[DONE]') return content;
+            let event;
+            try { event = JSON.parse(payload); } catch { continue; }
+            if (event.error) throw new Error(event.error.message || 'The AI provider returned an error.');
+            const delta = event.choices?.[0]?.delta?.content;
+            if (delta) {
+                content += delta;
+                onText(content.length);
+            }
+        }
+    }
+    return content;
 };
 
 /**

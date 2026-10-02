@@ -15,13 +15,38 @@
  */
 
 import { initDB, addDeckWithCards } from './db.js';
-import { storage, runtime } from './env.js';
+import { storage, runtime, isExtension } from './env.js';
 import {
-    requestCompletion, parseAIJson, buildPdfPrompt, PDF_SYSTEM_PROMPT,
+    requestCompletion, readCompletionText, parseAIJson, buildPdfPrompt, PDF_SYSTEM_PROMPT,
     buildQuizPrompt, QUIZ_SYSTEM_PROMPT, QUIZ_QUESTION_TYPES, quizCardFromAI
 } from './ai.js';
 
 const normalizeQuestion = (text) => String(text).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+// Give up on a request when nothing at all arrives for this long, or when one
+// request runs longer than the overall cap (a model that is still writing is fine)
+const IDLE_TIMEOUT_MS = 60000;
+const REQUEST_CAP_MS = 4 * 60000;
+
+/**
+ * Chrome stops an idle extension service worker after ~30s, even mid-job.
+ * Calling an extension API resets that timer, so ping one while a job runs.
+ * Returns a function that stops the pings. No-op on the web.
+ */
+const keepServiceWorkerAlive = () => {
+    if (!isExtension || typeof window !== 'undefined') return () => {};
+    const timer = setInterval(() => chrome.runtime.getPlatformInfo?.(() => {}), 20000);
+    return () => clearInterval(timer);
+};
+
+export async function processPdfChunks(...args) {
+    const stopKeepAlive = keepServiceWorkerAlive();
+    try {
+        return await runGenerationJob(...args);
+    } finally {
+        stopKeepAlive();
+    }
+}
 
 /**
  * @param {string[]} textChunks
@@ -33,7 +58,7 @@ const normalizeQuestion = (text) => String(text).toLowerCase().replace(/[^a-z0-9
  *   kind   — 'quiz' builds a practice quiz deck instead of flashcards
  *   quiz   — question count ('auto' scales with the material) and question types
  */
-export async function processPdfChunks(textChunks, deckName, folderId, { notify = () => {}, kind = 'flashcards', quiz = {} } = {}) {
+async function runGenerationJob(textChunks, deckName, folderId, { notify = () => {}, kind = 'flashcards', quiz = {} } = {}) {
     const isQuiz = kind === 'quiz';
     const requestedTypes = (quiz.types || []).filter((t) => QUIZ_QUESTION_TYPES.includes(t));
     const quizTypes = requestedTypes.length ? requestedTypes : QUIZ_QUESTION_TYPES;
@@ -48,7 +73,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
     if (!apiKey) {
         notify('Retention API Error', 'Cannot process PDF. Please set your OpenRouter API key.');
         await storage.set({
-            pdfProgress: { status: 'error', errorMsg: 'No API key set.', deckName, kind }
+            pdfProgress: { status: 'error', errorMsg: 'No API key set.', deckName, kind, updatedAt: Date.now() }
         });
         return;
     }
@@ -58,12 +83,12 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
     let allFlashcards = [];
 
     await storage.set({
-        pdfProgress: { status: 'running', current: 0, total: textChunks.length, deckName, kind }
+        pdfProgress: { status: 'running', current: 0, total: textChunks.length, deckName, kind, updatedAt: Date.now() }
     });
 
     for (let i = 0; i < textChunks.length; i++) {
         await storage.set({
-            pdfProgress: { status: 'running', current: i, total: textChunks.length, deckName, kind }
+            pdfProgress: { status: 'running', current: i, total: textChunks.length, deckName, kind, updatedAt: Date.now() }
         });
 
         const messages = isQuiz
@@ -80,22 +105,35 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
         let success = false;
 
         while (retries > 0 && !success) {
+            const controller = new AbortController();
+            let idleTimer;
+            const resetIdle = () => {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => controller.abort(), IDLE_TIMEOUT_MS);
+            };
+            const capTimer = setTimeout(() => controller.abort(), REQUEST_CAP_MS);
+            // Live progress while the model writes (throttled storage writes)
+            let lastReport = 0;
+            const reportText = (received) => {
+                if (Date.now() - lastReport < 1500) return;
+                lastReport = Date.now();
+                storage.set({
+                    pdfProgress: { status: 'running', current: i, total: textChunks.length, received, deckName, kind, updatedAt: Date.now() }
+                });
+            };
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-                const response = await requestCompletion(apiKey, messages, controller.signal);
+                resetIdle();
+                const response = await requestCompletion(apiKey, messages, controller.signal, { stream: true });
 
                 if (response.status === 429) {
-                    clearTimeout(timeoutId);
                     retries--;
                     console.warn(`Rate limited (429) on chunk ${i}. Retrying in 5s...`);
+                    clearTimeout(idleTimer);
                     await new Promise(r => setTimeout(r, 5000));
                     continue;
                 }
 
                 if (!response.ok) {
-                    clearTimeout(timeoutId);
                     let errMsg = response.statusText;
                     try {
                         const errData = await response.json();
@@ -105,7 +143,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
                     // Hard auth/quota error: abort the entire PDF job
                     if (response.status === 401 || response.status === 402 || response.status === 403) {
                         await storage.set({
-                            pdfProgress: { status: 'error', errorMsg: `API Error: ${errMsg}`, deckName, kind }
+                            pdfProgress: { status: 'error', errorMsg: `API Error: ${errMsg}`, deckName, kind, updatedAt: Date.now() }
                         });
                         return;
                     }
@@ -113,11 +151,10 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
                     break;
                 }
 
-                const data = await response.json();
-                clearTimeout(timeoutId); // Only clear once the BODY is fully received
+                const content = await readCompletionText(response, { onActivity: resetIdle, onText: reportText });
 
                 try {
-                    const chunkCards = parseAIJson(data.choices?.[0]?.message?.content);
+                    const chunkCards = parseAIJson(content);
                     if (Array.isArray(chunkCards) && chunkCards.length > 0) {
                         allFlashcards = allFlashcards.concat(chunkCards);
                     }
@@ -135,12 +172,15 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
                 // Out of retries on a timeout: fail the whole job so it doesn't hang invisibly
                 if (retries === 0 && isTimeout) {
                     await storage.set({
-                        pdfProgress: { status: 'error', errorMsg: 'AI model timed out after 60s. The free tier may be heavily congested.', deckName, kind }
+                        pdfProgress: { status: 'error', errorMsg: 'The AI model stopped responding. The free models may be congested; try again in a few minutes.', deckName, kind, updatedAt: Date.now() }
                     });
                     return;
                 }
 
                 await new Promise(r => setTimeout(r, 5000));
+            } finally {
+                clearTimeout(idleTimer);
+                clearTimeout(capTimer);
             }
         }
 
@@ -152,7 +192,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
 
     // ─── Save to IndexedDB ───────────────────────────────────────────
     await storage.set({
-        pdfProgress: { status: 'saving', current: textChunks.length, total: textChunks.length, deckName, kind }
+        pdfProgress: { status: 'saving', current: textChunks.length, total: textChunks.length, deckName, kind, updatedAt: Date.now() }
     });
 
     let validCards;
@@ -202,7 +242,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
             const reason = e?.message || e?.name || String(e);
             notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Couldn't save "${finalDeckName}": ${reason}`);
             await storage.set({
-                pdfProgress: { status: 'error', errorMsg: `Failed to save to database (${reason}).`, deckName, kind }
+                pdfProgress: { status: 'error', errorMsg: `Failed to save to database (${reason}).`, deckName, kind, updatedAt: Date.now() }
             });
             return;
         }
@@ -228,7 +268,7 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
     } else {
         notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Could not generate any ${unit} for "${deckName}".`);
         await storage.set({
-            pdfProgress: { status: 'error', errorMsg: `AI returned no usable ${unit}. Try different material or try again later.`, deckName, kind }
+            pdfProgress: { status: 'error', errorMsg: `AI returned no usable ${unit}. Try different material or try again later.`, deckName, kind, updatedAt: Date.now() }
         });
     }
 }
