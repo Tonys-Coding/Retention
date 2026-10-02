@@ -23,14 +23,14 @@ Retention features a background auto-sync engine built on Google Drive. Every de
 *   **Visible status:** Settings shows when you last synced. On the web/mobile app, Google sign-in expires after about an hour; when that happens a "Sync paused" banner offers a one-tap **Reconnect** so your phone never quietly falls out of date.
 
 ###  Massive Theming Engine
-Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 17 custom styles, organized into collections:
+Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 19 custom styles, organized into collections:
 *   **Monochrome:** Light, Dark.
 *   **Retro Tech:** Terminal, Dracula, Vaporwave.
 *   **Paper & Print:** Composition (notebook paper), Blueprint (drafting grid), Neo-Pop (comic halftone).
 *   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin.
 *   **Café Treats:** Matcha, Strawberry.
 *   **Celestial:** Space (starfield), Moon (lunar craters).
-*   **Star Wars:** Tatooine (desert hues and twin suns) and **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures).
+*   **Star Wars:** Tatooine (desert hues and twin suns), **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures), **R2-D2** (a silver astromech dome with the radar eye, holo-projector and blue panel bands over a white body), and **Boba Fett** (a weathered green Mandalorian helmet with the black T-visor, brown trim, rangefinder and kill stripes).
 
 **Themes Library & Favorites**
 *   **Themes Library:** A dedicated page in the dashboard (sidebar **Themes**, or **Browse all themes** in the palette menu) shows every theme as a large live preview with its real colors and background artwork. Search, filter by Favorites / Light / Dark, and apply any theme with one click.

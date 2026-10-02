@@ -26,13 +26,64 @@ export const THEME_COLLECTIONS = [
 
 const CHECKER = (c) => `linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%), linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%)`;
 const KYLO_CRACKS = 'linear-gradient(65deg, transparent calc(25% - 1px), rgba(234, 28, 28, 0.9) 25%, transparent calc(25% + 1px)), linear-gradient(25deg, transparent calc(38% - 1px), rgba(234, 28, 28, 0.9) 38%, transparent calc(38% + 1px)), linear-gradient(-55deg, transparent calc(65% - 1px), rgba(234, 28, 28, 0.9) 65%, transparent calc(65% + 1px)), linear-gradient(-35deg, transparent calc(72% - 1px), rgba(234, 28, 28, 0.9) 72%, transparent calc(72% + 1px)), linear-gradient(80deg, transparent calc(80% - 1px), rgba(234, 28, 28, 0.9) 80%, transparent calc(80% + 1px))';
+// Layered artwork: [image, size, position, repeat] per layer. The R2-D2 and Boba Fett
+// helmets are drawn from positioned shapes; previews use a half-size copy of the
+// artwork in style.css, and the tiny swatches a simplified version.
+const art = (layers) => ({
+    img: layers.map((l) => l[0]).join(', '),
+    size: layers.map((l) => l[1]).join(', '),
+    pos: layers.map((l) => l[2]).join(', '),
+    repeat: layers.map((l) => l[3]).join(', ')
+});
+const R2D2_ART = art([
+    ['radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.75) 0 7%, transparent 8%)', '48px 48px', '50% 25%', 'no-repeat'],
+    ['radial-gradient(circle, #08080f 0 44%, #34343f 45% 49%, transparent 50%)', '48px 48px', '50% 25%', 'no-repeat'],
+    ['linear-gradient(#0f00ff, #0f00ff)', '59px 59px', '50% 24%', 'no-repeat'],
+    ['linear-gradient(#0f00ff 0 11px, transparent 11px 15px, #0f00ff 15px 26px)', '13px 26px', 'calc(50% - 49px) 26%', 'no-repeat'],
+    ['radial-gradient(circle, #1b1b24 0 22%, #f2f2f2 23% 45%, #8e8e96 46% 58%, #e6e6ea 59% 72%, transparent 73%)', '29px 29px', 'calc(50% + 52px) 27%', 'no-repeat'],
+    ['repeating-linear-gradient(90deg, #0f00ff 0 37px, transparent 37px 43px)', '100% 8px', '0 9%', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, #0f00ff 0 66px, transparent 66px 71px, #0f00ff 71px 88px, transparent 88px 93px, #0f00ff 93px 131px, transparent 131px 136px)', '100% 31px', '0 47%', 'repeat-x'],
+    ['linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7))', '100% 2px', '0 56%', 'repeat-x'],
+    ['repeating-linear-gradient(90deg, transparent 0 23px, #0f00ff 23px 30px, transparent 30px 59px, #0f00ff 59px 84px, transparent 84px 100px)', '100% 20px', '0 84%', 'repeat-x'],
+    ['linear-gradient(#ffffff, #ffffff)', '100% 38%', '0 100%', 'no-repeat'],
+    ['radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%)', '100% 100%', '0 0', 'no-repeat']
+]);
+const R2D2_TILE = art([
+    ['linear-gradient(#0f00ff, #0f00ff)', '100% 28%', '0 50%', 'no-repeat'],
+    ['linear-gradient(#ffffff, #ffffff)', '100% 26%', '0 100%', 'no-repeat'],
+    ['radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%)', '100% 100%', '0 0', 'no-repeat']
+]);
+const BOBA_ART = art([
+    ['linear-gradient(100deg, transparent 0 30%, rgba(232, 220, 203, 0.18) 30% 34%, transparent 34%)', '64% 10%', '50% 33%', 'no-repeat'],
+    ['linear-gradient(#141412, #141412)', '64% 10%', '50% 33%', 'no-repeat'],
+    ['linear-gradient(#141412, #141412)', '9% 62%', '50% 100%', 'no-repeat'],
+    ['linear-gradient(#5e3424, #5e3424)', '70% 18%', '50% 31%', 'no-repeat'],
+    ['linear-gradient(#5e3424, #5e3424)', '15% 60%', '50% 100%', 'no-repeat'],
+    ['repeating-linear-gradient(90deg, #b3895c 0 3px, transparent 3px 6px)', '21px 13px', '72% 17%', 'no-repeat'],
+    ['linear-gradient(#e8dccb, #e8dccb)', '15px 35px', '9% 36%', 'no-repeat'],
+    ['linear-gradient(#85786a, #85786a)', '4px 34%', 'calc(9% + 6px) 0', 'no-repeat'],
+    ['linear-gradient(#b3895c, #b3895c)', '8px 23px', 'calc(9% + 4px) 4%', 'no-repeat'],
+    ['radial-gradient(circle, rgba(20, 20, 18, 0.55) 0 2px, rgba(232, 220, 203, 0.35) 3px 4px, transparent 4px)', '9px 9px', '24% 14%', 'no-repeat'],
+    ['radial-gradient(circle, rgba(20, 20, 18, 0.5) 0 1px, transparent 2px)', '5px 5px', '83% 58%', 'no-repeat'],
+    ['radial-gradient(circle, rgba(20, 20, 18, 0.5) 0 1px, transparent 2px)', '5px 5px', '17% 74%', 'no-repeat'],
+    ['linear-gradient(160deg, transparent 47%, rgba(232, 220, 203, 0.45) 48% 52%, transparent 53%)', '70px 18px', '20% 52%', 'no-repeat'],
+    ['linear-gradient(20deg, transparent 47%, rgba(232, 220, 203, 0.4) 48% 52%, transparent 53%)', '55px 15px', '84% 80%', 'no-repeat'],
+    ['linear-gradient(140deg, transparent 46%, rgba(94, 52, 36, 0.6) 47% 53%, transparent 54%)', '45px 20px', '62% 8%', 'no-repeat'],
+    ['radial-gradient(ellipse 110% 90% at 38% 6%, #7b8c74 0%, #5d6e5a 45%, #45523f 100%)', '100% 100%', '0 0', 'no-repeat']
+]);
+const BOBA_TILE = art([
+    ['linear-gradient(#141412, #141412)', '72% 16%', '50% 30%', 'no-repeat'],
+    ['linear-gradient(#141412, #141412)', '18% 62%', '50% 100%', 'no-repeat'],
+    ['radial-gradient(ellipse 110% 90% at 38% 6%, #7b8c74 0%, #5d6e5a 45%, #45523f 100%)', '100% 100%', '0 0', 'no-repeat']
+]);
 const KYLO_VISOR = 'radial-gradient(620px 330px at 50% -90px, transparent calc(45% - 1px), rgba(144, 144, 144, 0.2) 45%, rgba(200, 200, 200, 0.4) calc(45% + 6px), transparent calc(45% + 7px), transparent calc(48% - 1px), rgba(144, 144, 144, 0.2) 48%, rgba(200, 200, 200, 0.4) calc(48% + 6px), transparent calc(48% + 7px), transparent calc(51% - 1px), rgba(144, 144, 144, 0.2) 51%, rgba(200, 200, 200, 0.4) calc(51% + 6px), transparent calc(51% + 7px), transparent calc(54% - 1px), rgba(144, 144, 144, 0.2) 54%, rgba(200, 200, 200, 0.4) calc(54% + 6px), transparent calc(54% + 7px))';
 
 /**
  * Every theme (grouped by `collection`): `bg`/`card`/`text`/`sub`/`border`/`shadow` mirror the theme's
  * --bg-primary/--bg-secondary/--text-primary/--text-secondary/--border-color/
  * --shadow-color; `btnBg`/`btnText` its primary button; `img`/`size`/`pos` its
- * body background artwork (`tileImg` is a simplified version for tiny swatches).
+ * body background artwork (`tileImg` is a simplified version for tiny swatches,
+ * or `tile` a full { img, size, pos, repeat } set for artwork made of shapes).
  */
 export const THEMES = [
     { id: 'light', name: 'Light', collection: 'monochrome', bg: '#ffffff', card: '#ffffff', text: '#000000', sub: '#666666', border: '#000000', shadow: '#000000', btnBg: '#000000', btnText: '#ffffff',
@@ -67,9 +118,13 @@ export const THEMES = [
         pattern: 'Twin suns', img: 'radial-gradient(circle at 80% 20%, rgba(255, 165, 0, 0.4) 10px, transparent 40px), radial-gradient(circle at 65% 15%, rgba(255, 69, 0, 0.5) 15px, transparent 50px)' },
     { id: 'kylo', name: 'Kylo', collection: 'starwars', bg: '#000000', card: '#120202', text: '#909090', sub: '#ea1c1c', border: '#3f1b1b', shadow: '#120202', btnBg: '#3f1b1b', btnText: '#909090',
         pattern: 'Kintsugi + chrome', img: `${KYLO_CRACKS}, ${KYLO_VISOR}`, tileImg: KYLO_CRACKS },
+    { id: 'r2d2', name: 'R2-D2', collection: 'starwars', bg: '#c0c0c0', card: '#ffffff', text: '#0f00ff', sub: '#4b4f63', border: '#0f00ff', shadow: '#08006e', btnBg: '#0f00ff', btnText: '#ffffff',
+        pattern: 'Astromech dome', ...R2D2_ART, tile: R2D2_TILE },
+    { id: 'boba', name: 'Boba Fett', collection: 'starwars', bg: '#5d6e5a', card: '#e8dccb', text: '#5e3424', sub: '#6e6255', border: '#5e3424', shadow: '#2f1a12', btnBg: '#5e3424', btnText: '#e8dccb',
+        pattern: 'Mandalorian helmet', ...BOBA_ART, tile: BOBA_TILE },
     { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
-].map((t) => ({ size: 'auto', pos: '0 0', tileImg: t.img, ...t }));
+].map((t) => ({ size: 'auto', pos: '0 0', repeat: 'repeat', tileImg: t.img, ...t }));
 
 const luminance = (hex) => {
     const n = parseInt(hex.slice(1), 16);
@@ -85,10 +140,12 @@ export const isDarkTheme = (theme) => luminance(theme.card) < 0.2;
 
 /** Paints an element with a theme's background color and artwork. */
 export const paintThemeBackground = (el, theme, { tile = false } = {}) => {
+    const artwork = tile && theme.tile ? theme.tile : { ...theme, img: tile ? theme.tileImg : theme.img };
     el.style.backgroundColor = theme.bg;
-    el.style.backgroundImage = tile ? theme.tileImg : theme.img;
-    el.style.backgroundSize = theme.size;
-    el.style.backgroundPosition = theme.pos;
+    el.style.backgroundImage = artwork.img;
+    el.style.backgroundSize = artwork.size;
+    el.style.backgroundPosition = artwork.pos;
+    el.style.backgroundRepeat = artwork.repeat;
 };
 
 /** A small swatch: the theme's background artwork with a card-colored chip. */

@@ -367,6 +367,79 @@ body.theme-kylo button.primary { background: #3f1b1b; color: #909090; border-col
 body.theme-kylo button.secondary { background: #120202; color: #909090; border-color: #3f1b1b; }
 body.theme-kylo .maze-bg { display: none !important; }
 
+/* R2-D2: silver astromech dome (radar eye, holo-projector, blue panel bands) over a white body */
+body.theme-r2d2 {
+    --bg-primary: #c0c0c0;
+    --bg-secondary: #ffffff;
+    --bg-overlay: rgba(192, 192, 192, 0.95);
+    --text-primary: #0f00ff;
+    --text-secondary: #4b4f63;
+    --border-color: #0f00ff;
+    --shadow-color: #08006e;
+    --hover-bg: #dcdcff;
+    --input-bg: #ffffff;
+
+    background-color: var(--bg-primary);
+    background-image:
+        radial-gradient(circle at 36% 34%, rgba(255, 255, 255, 0.75) 0 7%, transparent 8%),
+        radial-gradient(circle, #08080f 0 44%, #34343f 45% 49%, transparent 50%),
+        linear-gradient(#0f00ff, #0f00ff),
+        linear-gradient(#0f00ff 0 22px, transparent 22px 30px, #0f00ff 30px 52px),
+        radial-gradient(circle, #1b1b24 0 22%, #f2f2f2 23% 45%, #8e8e96 46% 58%, #e6e6ea 59% 72%, transparent 73%),
+        repeating-linear-gradient(90deg, #0f00ff 0 74px, transparent 74px 86px),
+        repeating-linear-gradient(90deg, #0f00ff 0 132px, transparent 132px 142px, #0f00ff 142px 176px, transparent 176px 186px, #0f00ff 186px 262px, transparent 262px 272px),
+        linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
+        repeating-linear-gradient(90deg, transparent 0 46px, #0f00ff 46px 60px, transparent 60px 118px, #0f00ff 118px 168px, transparent 168px 200px),
+        linear-gradient(#ffffff, #ffffff),
+        radial-gradient(ellipse 120% 95% at 50% 0%, #f1f1f4 0%, #c9c9cd 45%, #a9a9b0 62%);
+    background-size: 96px 96px, 96px 96px, 118px 118px, 26px 52px, 58px 58px, 100% 16px, 100% 62px, 100% 4px, 100% 40px, 100% 38%, 100% 100%;
+    background-position: 50% 25%, 50% 25%, 50% 24%, calc(50% - 98px) 26%, calc(50% + 104px) 27%, 0 9%, 0 47%, 0 56%, 0 84%, 0 100%, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat-x, repeat-x, repeat-x, repeat-x, no-repeat, no-repeat;
+    background-attachment: fixed;
+}
+body.theme-r2d2 button.primary { background: #0f00ff; color: #ffffff; border-color: #0f00ff; }
+body.theme-r2d2 button.secondary { background: #ffffff; color: #0f00ff; border-color: #0f00ff; }
+body.theme-r2d2 .maze-bg { display: none !important; }
+
+/* BOBA FETT: weathered green Mandalorian helmet (black T-visor, brown trim, rangefinder, kill stripes) */
+body.theme-boba {
+    --bg-primary: #5d6e5a;
+    --bg-secondary: #e8dccb;
+    --bg-overlay: rgba(93, 110, 90, 0.95);
+    --text-primary: #5e3424;
+    --text-secondary: #6e6255;
+    --border-color: #5e3424;
+    --shadow-color: #2f1a12;
+    --hover-bg: #d9c6a8;
+    --input-bg: #f6efe4;
+
+    background-color: var(--bg-primary);
+    background-image:
+        linear-gradient(100deg, transparent 0 30%, rgba(232, 220, 203, 0.18) 30% 34%, transparent 34%),
+        linear-gradient(#141412, #141412),
+        linear-gradient(#141412, #141412),
+        linear-gradient(#5e3424, #5e3424),
+        linear-gradient(#5e3424, #5e3424),
+        repeating-linear-gradient(90deg, #b3895c 0 6px, transparent 6px 12px),
+        linear-gradient(#e8dccb, #e8dccb),
+        linear-gradient(#85786a, #85786a),
+        linear-gradient(#b3895c, #b3895c),
+        radial-gradient(circle, rgba(20, 20, 18, 0.55) 0 5px, rgba(232, 220, 203, 0.35) 6px 7px, transparent 8px),
+        radial-gradient(circle, rgba(20, 20, 18, 0.5) 0 2px, transparent 4px),
+        radial-gradient(circle, rgba(20, 20, 18, 0.5) 0 2px, transparent 4px),
+        linear-gradient(160deg, transparent 47%, rgba(232, 220, 203, 0.45) 48% 52%, transparent 53%),
+        linear-gradient(20deg, transparent 47%, rgba(232, 220, 203, 0.4) 48% 52%, transparent 53%),
+        linear-gradient(140deg, transparent 46%, rgba(94, 52, 36, 0.6) 47% 53%, transparent 54%),
+        radial-gradient(ellipse 110% 90% at 38% 6%, #7b8c74 0%, #5d6e5a 45%, #45523f 100%);
+    background-size: 64% 10%, 64% 10%, 9% 62%, 70% 18%, 15% 60%, 42px 26px, 30px 70px, 7px 34%, 16px 46px, 18px 18px, 10px 10px, 10px 10px, 140px 36px, 110px 30px, 90px 40px, 100% 100%;
+    background-position: 50% 33%, 50% 33%, 50% 100%, 50% 31%, 50% 100%, 72% 17%, 9% 36%, calc(9% + 12px) 0, calc(9% + 7px) 4%, 24% 14%, 83% 58%, 17% 74%, 20% 52%, 84% 80%, 62% 8%, 0 0;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-attachment: fixed;
+}
+body.theme-boba button.primary { background: #5e3424; color: #e8dccb; border-color: #2f1a12; }
+body.theme-boba button.secondary { background: #e8dccb; color: #5e3424; border-color: #5e3424; }
+body.theme-boba .maze-bg { display: none !important; }
+
 /* TRANSPARENCY BLOCK */
 
 /* Strawberry Theme */
@@ -404,6 +477,8 @@ body.theme-cabin .view,
 body.theme-matcha .view,
 body.theme-tatooine .view,
 body.theme-kylo .view,
+body.theme-r2d2 .view,
+body.theme-boba .view,
 body.theme-strawberry .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
@@ -417,6 +492,8 @@ body.theme-cabin .list-container,
 body.theme-matcha .list-container,
 body.theme-tatooine .list-container,
 body.theme-kylo .list-container,
+body.theme-r2d2 .list-container,
+body.theme-boba .list-container,
 body.theme-strawberry .list-container {
     background: transparent !important;
 }
