@@ -172,6 +172,33 @@ export const addDeck = (name, folderId = null, kind = 'flashcards') => {
     });
 };
 
+/**
+ * Creates a deck and all of its cards in a single transaction, so a failure
+ * never leaves a half-saved deck behind. Resolves with the new deck's id.
+ */
+export const addDeckWithCards = (name, folderId = null, kind = 'flashcards', cards = []) => {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['decks', 'cards'], 'readwrite');
+        const deck = { name, folderId, createdAt: new Date().toISOString() };
+        if (kind === 'quiz') deck.kind = 'quiz';
+        let deckId;
+        const request = transaction.objectStore('decks').add(deck);
+        request.onsuccess = () => {
+            deckId = request.result;
+            const cardStore = transaction.objectStore('cards');
+            const now = Date.now();
+            cards.forEach((card) => cardStore.add({
+                status: 'new', interval: 0, repetition: 0, efactor: 2.5, nextReviewDate: now,
+                ...card,
+                deckId
+            }));
+        };
+        transaction.oncomplete = () => { markDbDirty(); resolve(deckId); };
+        transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error || e.target.error); };
+        transaction.onabort = () => reject(transaction.error || new Error('The save was interrupted.'));
+    });
+};
+
 export const getDecks = () => {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['decks'], 'readonly');

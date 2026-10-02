@@ -14,7 +14,7 @@
  *   processPdfChunks(textChunks, deckName, folderId, { notify });
  */
 
-import { initDB, addDeck, addCard } from './db.js';
+import { initDB, addDeckWithCards } from './db.js';
 import { storage, runtime } from './env.js';
 import {
     requestCompletion, parseAIJson, buildPdfPrompt, PDF_SYSTEM_PROMPT,
@@ -174,40 +174,57 @@ export async function processPdfChunks(textChunks, deckName, folderId, { notify 
     }
 
     if (validCards.length > 0) {
-        try {
+        const finalDeckName = deckName || (isQuiz ? 'AI Practice Quiz' : 'AI Generated Deck');
+        const cards = isQuiz
+            ? validCards.map((card) => ({ ...card, example: '', status: 'new' }))
+            : validCards.map((card) => ({
+                term: card.term,
+                definition: card.definition,
+                status: 'new',
+                type: card.type === 'cloze' ? 'cloze' : 'standard'
+            }));
+        // Deck and cards are written in one transaction (nothing half-saved). A
+        // failed save is retried once on a fresh database connection.
+        const save = async () => {
             await initDB();
-            const finalDeckName = deckName || (isQuiz ? 'AI Practice Quiz' : 'AI Generated Deck');
-            const deckId = await addDeck(finalDeckName, folderId, isQuiz ? 'quiz' : 'flashcards');
-            for (const card of validCards) {
-                if (isQuiz) {
-                    await addCard({ ...card, deckId, example: '', status: 'new' });
-                } else {
-                    await addCard({
-                        deckId: deckId,
-                        term: card.term,
-                        definition: card.definition,
-                        status: 'new',
-                        type: card.type === 'cloze' ? 'cloze' : 'standard'
-                    });
-                }
+            return addDeckWithCards(finalDeckName, folderId ?? null, isQuiz ? 'quiz' : 'flashcards', cards);
+        };
+        try {
+            try {
+                await save();
+            } catch (e) {
+                console.warn('Saving the deck failed, retrying:', e);
+                await new Promise(r => setTimeout(r, 500));
+                await save();
             }
-
-            notify(isQuiz ? 'Practice Quiz Ready!' : 'PDF Processing Complete!', `Successfully created ${validCards.length} ${unit} in "${finalDeckName}".`);
-
-            // Tell any open UI to refresh
-            runtime.sendMessage({ action: 'REFRESH_DECKS' });
-
-            // Clear progress after a brief pause
-            setTimeout(async () => {
-                await storage.remove('pdfProgress');
-            }, 2000);
-
         } catch (e) {
             console.error("DB Save Error:", e);
+            const reason = e?.message || e?.name || String(e);
+            notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Couldn't save "${finalDeckName}": ${reason}`);
             await storage.set({
-                pdfProgress: { status: 'error', errorMsg: 'Failed to save to database.', deckName, kind }
+                pdfProgress: { status: 'error', errorMsg: `Failed to save to database (${reason}).`, deckName, kind }
             });
+            return;
         }
+
+        // Saved: problems from here on (notifications, refreshing open pages) are
+        // not save failures, so they must not be reported as one
+        try {
+            notify(isQuiz ? 'Practice Quiz Ready!' : 'PDF Processing Complete!', `Successfully created ${validCards.length} ${unit} in "${finalDeckName}".`);
+        } catch (e) {
+            console.error('Notification failed:', e);
+        }
+        try {
+            // Tell any open UI to refresh
+            runtime.sendMessage({ action: 'REFRESH_DECKS' });
+        } catch (e) {
+            console.error('Refreshing open pages failed:', e);
+        }
+        // Clear progress after a brief pause, unless another job has started since
+        setTimeout(async () => {
+            const { pdfProgress } = await storage.get(['pdfProgress']);
+            if (pdfProgress?.status === 'saving' && pdfProgress.deckName === deckName) await storage.remove('pdfProgress');
+        }, 2000);
     } else {
         notify(isQuiz ? 'Practice Quiz Failed' : 'PDF Processing Failed', `Could not generate any ${unit} for "${deckName}".`);
         await storage.set({
