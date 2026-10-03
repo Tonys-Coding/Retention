@@ -1398,6 +1398,13 @@ function setupEvents() {
         } else if (currentView === 'deck') {
             if (currentFolderId) showFolder(currentFolderId, currentFolderName);
             else showHome();
+        } else if (currentView === 'folder' && currentFolderId) {
+            // Go up one level: the parent folder, or the workspace for a top-level folder
+            getFolders().then((folders) => {
+                const parent = folders.find((f) => f.id === folders.find((x) => x.id === currentFolderId)?.parentId);
+                if (parent) showFolder(parent.id, parent.name);
+                else showHome();
+            });
         } else { showHome(); }
     };
     dom.flashcard.onclick = (e) => { if (!e.target.closest('.db-cloze-area')) flipCard(); };
