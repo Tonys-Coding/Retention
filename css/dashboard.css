@@ -1053,6 +1053,7 @@ body.theme-r2d2 .db-main,
 body.theme-boba .db-main,
 body.theme-fjord .db-main,
 body.theme-library .db-main,
+body.theme-campfire .db-main,
 body.theme-strawberry .db-main,
 body.theme-tatooine .db-main {
     background: transparent !important;
@@ -1707,3 +1708,45 @@ body.theme-tatooine .db-main {
     outline: 3px dashed var(--text-primary);
     outline-offset: 3px;
 }
+
+
+/* Animated / premium theme badge on theme cards */
+.tl-preview { position: relative; }
+.tl-badge-animated {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 8px;
+    background: #ffd25a;
+    color: #2a1405;
+    border: 3px solid #2a1405;
+    box-shadow: 3px 3px 0 #2a1405;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.tl-badge-animated svg { flex-shrink: 0; }
+
+/* Folder color picker (new/edit folder modal) */
+.fc-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.fc-preview {
+    width: 56px; height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid var(--border-color);
+    background: var(--bg-primary);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    flex-shrink: 0;
+}
+.fc-custom { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); }
+.fc-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.fc-swatch {
+    width: 28px; height: 28px; padding: 0;
+    border: 3px solid var(--border-color);
+    cursor: pointer;
+}
+.fc-swatch:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--shadow-color); }
+.fc-swatch.is-selected { outline: 3px solid var(--text-primary); outline-offset: 2px; }

@@ -505,6 +505,30 @@ body.theme-library button.secondary { background: #272d3f; color: #ece4d4; borde
 body.theme-library .maze-bg { display: none !important; }
 body.theme-library input, body.theme-library textarea { color: #ece4d4; }
 
+/* Campfire Theme (animated: the scene is an animated SVG, see images/campfire-scene.svg) */
+body.theme-campfire {
+    --bg-primary: #080a10;
+    --bg-secondary: #1c1512;
+    --bg-overlay: rgba(8, 10, 16, 0.94);
+    --text-primary: #f3e3cf;
+    --text-secondary: #c79a76;
+    --border-color: #5a3a24;
+    --shadow-color: #050302;
+    --hover-bg: #2b1f18;
+    --input-bg: #120d0b;
+
+    background-color: var(--bg-primary);
+    background-image: url("../images/campfire-scene.svg");
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+body.theme-campfire button.primary { background: #ff8a2b; color: #1a0d05; border-color: #ff8a2b; }
+body.theme-campfire button.secondary { background: #1c1512; color: #f3e3cf; border-color: #5a3a24; }
+body.theme-campfire .maze-bg { display: none !important; }
+body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
+
 /* TRANSPARENCY BLOCK */
 
 /* Strawberry Theme */
@@ -546,6 +570,7 @@ body.theme-r2d2 .view,
 body.theme-boba .view,
 body.theme-fjord .view,
 body.theme-library .view,
+body.theme-campfire .view,
 body.theme-strawberry .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
@@ -563,6 +588,7 @@ body.theme-r2d2 .list-container,
 body.theme-boba .list-container,
 body.theme-fjord .list-container,
 body.theme-library .list-container,
+body.theme-campfire .list-container,
 body.theme-strawberry .list-container {
     background: transparent !important;
 }

@@ -130,6 +130,12 @@ function renderThemeCard(theme, favs, activeId) {
     Object.assign(know.style, { background: theme.btnBg, color: theme.btnText, borderColor: theme.border, boxShadow: `2px 2px 0 ${theme.shadow}` });
     buttons.append(forgot, know);
     preview.append(mini, buttons);
+    if (theme.animated) {
+        const badge = el('span', 'tl-badge-animated');
+        badge.title = 'Animated theme';
+        badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path></svg>Animated';
+        preview.appendChild(badge);
+    }
 
     const footer = el('div', 'tl-card-footer');
     const info = el('div', 'tl-card-info');

@@ -220,7 +220,13 @@
             <input type="text" id="modal-name" placeholder="Name">
             <div id="modal-color-row" style="display:none;">
                 <label style="font-weight:bold;font-size:13px;display:block;margin-bottom:6px;">Folder Color</label>
-                <input type="color" id="modal-color" value="#4488ff" style="width:60px;height:40px;cursor:pointer;border:3px solid var(--border-color);padding:0;">
+                <div class="fc-row">
+                    <div class="fc-preview" id="folder-color-preview" aria-hidden="true"></div>
+                    <label class="fc-custom">Custom
+                        <input type="color" id="modal-color" value="#4488ff" style="width:60px;height:40px;cursor:pointer;border:3px solid var(--border-color);padding:0;">
+                    </label>
+                </div>
+                <div class="fc-swatches" id="folder-color-swatches" role="group" aria-label="Quick colors"></div>
             </div>
             <div class="db-modal-actions">
                 <button id="modal-cancel">Cancel</button>

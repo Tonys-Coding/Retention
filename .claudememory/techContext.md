@@ -19,9 +19,12 @@
 ## Deployment Strategy
 - **Web/PWA:** GitHub Pages serves the **`gh-pages`** branch (a plain mirror of `main`) at `https://Tonys-Coding.github.io/Retention/dashboard.html`.
 - **Extension:** loaded unpacked from the repo root (or Chrome Web Store); click **Reload** on `chrome://extensions` after changes.
-- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v47`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
+- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v48`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
 - **No production DB:** all data is local to each device; Drive backup is the only cloud copy.
 
 ## Tooling
 - Node 24 / npm 11 / ffmpeg are installed locally; only the `promo-video/` subproject uses npm.
 - No automated test suite. `test_app.js` / `test_syntax.js` are untracked scratch files. Verify UI changes by serving the repo (`python3 -m http.server 8765`) and driving `dashboard.html` (Playwright with system Chrome works; see `promo-video/record/`).
+
+## Animated themes
+- An animated theme = a theme entry with `animated: true` whose artwork is an animated SVG in `images/` (CSS keyframes inside the SVG run when used as `background-image`). Reference it from `themes.js` (`img: 'url("images/x.svg")'`) AND from the `body.theme-<id>` rule in `css/style.css` (`url("../images/x.svg")`), add it to the transparency lists (`.view`, `.list-container`, `.db-main`), and to the `APP_SHELL` list in `sw.js`. Include a `prefers-reduced-motion` rule in the SVG.

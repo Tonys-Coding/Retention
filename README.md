@@ -23,7 +23,7 @@ Retention features a background auto-sync engine built on Google Drive. Every de
 *   **Visible status:** Settings shows when you last synced. On the web/mobile app, Google sign-in expires after about an hour; when that happens a "Sync paused" banner offers a one-tap **Reconnect** so your phone never quietly falls out of date.
 
 ###  Massive Theming Engine
-Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 21 custom styles, organized into collections:
+Retention features a beautiful, brutalist, high-contrast aesthetic—featuring thick borders, aggressive drop shadows, and incredibly rich themes. Choose between 22 custom styles, organized into collections:
 *   **Monochrome:** Light, Dark.
 *   **Retro Tech:** Terminal, Dracula, Vaporwave.
 *   **Paper & Print:** Composition (notebook paper), Blueprint (drafting grid), Neo-Pop (comic halftone).
@@ -31,6 +31,7 @@ Retention features a beautiful, brutalist, high-contrast aesthetic—featuring t
 *   **Café Treats:** Matcha, Strawberry.
 *   **Celestial:** Space (starfield), Moon (lunar craters).
 *   **Landscapes:** Fjord (soft slate blues with misty layered mountains, a snowcap and still water).
+*   **Animated:** **Campfire**, the first animated theme: a dark night scene with a flickering fire, drifting embers and twinkling stars (an animated SVG, so it costs no JavaScript). Animated themes carry an **Animated** badge in the Themes library and respect your system's reduced-motion setting.
 *   **Star Wars:** Tatooine (desert hues and twin suns), **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures), **R2-D2** (a silver astromech dome with the radar eye, holo-projector and blue panel bands over a white body), and **Boba Fett** (a weathered green Mandalorian helmet with the black T-visor, brown trim, rangefinder and kill stripes).
 
 **Themes Library & Favorites**
@@ -62,6 +63,7 @@ Alongside flashcard decks, Retention has **practice quiz decks** (with their own
 ###  Infinite Organization & Study Flows
 *   **Nested Folders & Drag-and-Drop:** Organize decks into folders, and nest folders within folders infinitely. Easily drag decks across your workspace.
 *   **Move To…:** Every deck and folder's ⋮ menu has a "Move to…" option that opens a tree of your entire workspace, so you can relocate anything in one tap (works on desktop and mobile, where drag-and-drop isn't practical).
+*   **Folder colors:** The New/Edit Folder window shows a live folder preview, a custom color picker and one-tap quick colors.
 *   **Create Where You Are:** New folders, new decks, and imports (CSV, PDF, and Google Drive PDFs) are created inside the folder you currently have open instead of the workspace root.
 *   **Bulk CSV Import:** Select as many CSV files as you like at once; each becomes its own deck. Files with no cards are skipped and listed so nothing fails silently. Decks can also be exported back to CSV.
 *   **Quick 10:** A random 10-card round that favors cards you did not see in the previous Quick 10, cycling through the whole deck before repeating.

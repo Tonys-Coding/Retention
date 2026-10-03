@@ -22,7 +22,8 @@ export const THEME_COLLECTIONS = [
     { id: 'cafe', name: 'Café Treats' },
     { id: 'celestial', name: 'Celestial' },
     { id: 'landscapes', name: 'Landscapes' },
-    { id: 'starwars', name: 'Star Wars' }
+    { id: 'starwars', name: 'Star Wars' },
+    { id: 'animated', name: 'Animated' }
 ];
 
 const CHECKER = (c) => `linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%), linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%)`;
@@ -159,6 +160,8 @@ export const THEMES = [
         pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
     { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
         pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
+    { id: 'campfire', name: 'Campfire', collection: 'animated', animated: true, bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
+        pattern: 'Animated campfire', img: 'url("images/campfire-scene.svg")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
 ].map((t) => ({ size: 'auto', pos: '0 0', repeat: 'repeat', tileImg: t.img, ...t }));

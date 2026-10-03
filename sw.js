@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v47';
+const CACHE_NAME = 'retention-v48';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -22,6 +22,7 @@ const APP_SHELL = [
     './js/themes.js',
     './js/themes-library.js',
     './js/utils.js',
+    './images/campfire-scene.svg',
     './js/practice-test.js',
     './js/quiz-editor.js',
     './js/import-help.js',

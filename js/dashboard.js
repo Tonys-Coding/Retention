@@ -484,13 +484,39 @@ function promptRenameWorkspace() {
     };
 }
 
+const FOLDER_COLORS = ['#e11d48', '#ea580c', '#f59e0b', '#16a34a', '#0d9488', '#2563eb', '#7c3aed', '#db2777', '#64748b', '#1f2937'];
+
+// Keeps the folder preview, the custom color input and the quick swatches in sync
+function setFolderColor(color) {
+    dom.modalColor.value = color;
+    $('folder-color-preview').innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+    $('folder-color-swatches').querySelectorAll('.fc-swatch').forEach((b) => b.classList.toggle('is-selected', b.dataset.color.toLowerCase() === color.toLowerCase()));
+}
+
+function initFolderColorPicker() {
+    const box = $('folder-color-swatches');
+    FOLDER_COLORS.forEach((c) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'fc-swatch';
+        b.dataset.color = c;
+        b.style.background = c;
+        b.title = c;
+        b.setAttribute('aria-label', `Folder color ${c}`);
+        b.onclick = () => setFolderColor(c);
+        box.appendChild(b);
+    });
+    dom.modalColor.addEventListener('input', () => setFolderColor(dom.modalColor.value));
+    setFolderColor(dom.modalColor.value);
+}
+
 async function promptRename(type, item) {
     const overlay = $('modal-add');
     dom.modalTitle.textContent = type === 'folder' ? 'Edit Folder' : 'Rename Deck';
     $('modal-location').style.display = 'none';
     dom.modalName.value = item.name;
     dom.modalColorRow.style.display = type === 'folder' ? 'block' : 'none';
-    if (type === 'folder') dom.modalColor.value = item.color || '#4488ff';
+    if (type === 'folder') setFolderColor(item.color || '#4488ff');
     overlay.classList.add('active');
     dom.modalName.focus();
     // Temporarily override save
@@ -755,9 +781,12 @@ function setBreakableText(el, text) {
 }
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-// "8 decks · 2 folders": direct children of the folder
-const folderMeta = (folder, decks, folders) =>
-    `${plural(decks.filter((d) => d.folderId === folder.id).length, 'deck')} · ${plural(folders.filter((x) => x.parentId === folder.id).length, 'folder')}`;
+// "8 decks · 2 folders" (folder count only when there are sub-folders): direct children
+const folderMeta = (folder, decks, folders) => {
+    const subfolders = folders.filter((x) => x.parentId === folder.id).length;
+    const deckText = plural(decks.filter((d) => d.folderId === folder.id).length, 'deck');
+    return subfolders ? `${deckText} · ${plural(subfolders, 'folder')}` : deckText;
+};
 
 function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop) {
     const card = document.createElement('div');
@@ -1435,11 +1464,13 @@ function setupEvents() {
         hint.querySelector('strong').textContent = currentFolderId ? currentFolderName : getWorkspaceName();
         hint.style.display = 'block';
     };
+    initFolderColorPicker();
     $('btn-new-folder').onclick = () => {
         addMode = 'folder';
         dom.modalTitle.textContent = 'New Folder';
         showCreateLocation();
         dom.modalColorRow.style.display = 'block';
+        setFolderColor(dom.modalColor.value);
         dom.modalName.value = '';
         dom.modalOverlay.classList.add('active');
         dom.modalName.focus();
