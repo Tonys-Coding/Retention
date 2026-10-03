@@ -107,3 +107,15 @@ Retention was built to be lightning fast, zero-dependency, and incredibly resili
 <div align="center">
   <i>Built for absolute focus and ultimate retention.</i>
 </div>
+
+## Promo video (Remotion)
+
+`promo-video/` is a separate [Remotion](https://www.remotion.dev) project (not part of the extension package) that renders the promo from `Store_Assets/`.
+
+```bash
+cd promo-video
+npm install
+npm run dev              # live preview in Remotion Studio
+npm run build            # out/promo.mp4 (1920x1080)
+npm run build:vertical   # out/promo-vertical.mp4 (1080x1920)
+```
