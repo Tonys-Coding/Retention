@@ -9,7 +9,7 @@
 
 import {
     THEMES, THEME_COLLECTIONS, getTheme, isDarkTheme, paintThemeBackground, createThemeTile,
-    getActiveThemeId, applyTheme, getFavorites, toggleFavorite, moveFavorite
+    getActiveThemeId, applyTheme, getFavorites, toggleFavorite, moveFavorite, createScene
 } from './themes.js';
 
 const ICON = {
@@ -130,10 +130,14 @@ function renderThemeCard(theme, favs, activeId) {
     Object.assign(know.style, { background: theme.btnBg, color: theme.btnText, borderColor: theme.border, boxShadow: `2px 2px 0 ${theme.shadow}` });
     buttons.append(forgot, know);
     preview.append(mini, buttons);
+    if (theme.scene) {
+        const scene = createScene(theme.scene);
+        if (scene) preview.prepend(scene);
+    }
     if (theme.animated) {
         const badge = el('span', 'tl-badge-animated');
         badge.title = 'Animated theme';
-        badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path></svg>Animated';
+        badge.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"></circle><polygon points="10 8 16 12 10 16" fill="currentColor"></polygon></svg>Animated';
         preview.appendChild(badge);
     }
 

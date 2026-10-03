@@ -10,6 +10,7 @@
 - [x] Promo video (Remotion) from real UI recordings
 
 ## Recent Changes (newest first)
+- 2026-10-03: Campfire reworked: small, quiet fire built as a DOM overlay (`createScene` in `themes.js`, `.scene` CSS in `style.css`) animating only transform/opacity so it stays smooth when idle (SVG-image animations stalled); static backdrop in `images/campfire-scene.svg`; moved back into Cozy & Earthy (no Animated collection); badge icon is now a play symbol. `sw.js` cache v49.
 - 2026-10-03: First animated theme, **Campfire** (`images/campfire-scene.svg`, `animated: true` in `themes.js`, "Animated" badge in the library, new `animated` collection). Folder color picker now has a live folder preview + quick swatches (dashboard modal only; the popup still uses its own picker). Folder cards hide "0 folders". `sw.js` cache v48.
 - 2026-10-03: Quick 10 avoids the previous round's cards (`pickQuickTen` in `utils.js`; popup used a biased `sort(random)` shuffle, now Fisher-Yates). Fill-in-the-blank study accepts typos (`isCloseAnswer`, shared with practice tests) and has a Skip button (dashboard + popup). Folder cards show "N decks · M folders" and keep their own height (`.db-card--folder`). `sw.js` cache v47.
 - 2026-10-03: Back arrow in a nested folder now goes to the parent folder instead of the workspace (`js/dashboard.js`, back handler). `sw.js` cache bumped to v46. Created this memory bank.

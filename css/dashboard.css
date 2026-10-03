@@ -1712,6 +1712,9 @@ body.theme-tatooine .db-main {
 
 /* Animated / premium theme badge on theme cards */
 .tl-preview { position: relative; }
+.tl-preview .scene { position: absolute; z-index: 0; --fire-w: 24cqmin; }
+.tl-preview > :not(.scene) { position: relative; z-index: 1; }
+.tl-preview > .tl-badge-animated { position: absolute; z-index: 2; }
 .tl-badge-animated {
     position: absolute;
     top: 12px;

@@ -22,8 +22,7 @@ export const THEME_COLLECTIONS = [
     { id: 'cafe', name: 'Café Treats' },
     { id: 'celestial', name: 'Celestial' },
     { id: 'landscapes', name: 'Landscapes' },
-    { id: 'starwars', name: 'Star Wars' },
-    { id: 'animated', name: 'Animated' }
+    { id: 'starwars', name: 'Star Wars' }
 ];
 
 const CHECKER = (c) => `linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%), linear-gradient(45deg, ${c} 25%, transparent 25%, transparent 75%, ${c} 75%)`;
@@ -160,7 +159,7 @@ export const THEMES = [
         pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
     { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
         pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
-    { id: 'campfire', name: 'Campfire', collection: 'animated', animated: true, bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
+    { id: 'campfire', name: 'Campfire', collection: 'cozy', animated: true, scene: 'campfire', bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
         pattern: 'Animated campfire', img: 'url("images/campfire-scene.svg")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
@@ -207,9 +206,55 @@ export const getActiveThemeId = () => {
     return THEMES.some((t) => t.id === id) ? id : 'light';
 };
 
+
+// ─── Animated scenes ─────────────────────────────────────────────────
+// Animated themes overlay a small DOM scene on top of their static background art.
+// Only transform/opacity are animated (see .scene in style.css), so the browser
+// runs them on the compositor: steady frame rate, no work on the main thread.
+const FLAME_PATHS = {
+    outer: 'M50 98 C20 88 6 58 22 30 C26 50 36 54 40 44 C32 22 46 10 50 0 C54 10 68 22 60 44 C64 54 74 50 78 30 C94 58 80 88 50 98Z',
+    mid: 'M50 96 C28 88 18 64 30 42 C34 56 42 58 45 50 C40 34 48 24 51 12 C56 26 66 38 60 50 C64 58 70 56 72 42 C84 64 72 88 50 96Z',
+    inner: 'M50 94 C36 88 31 72 38 58 C41 66 46 68 48 62 C45 50 50 44 52 34 C55 46 62 54 59 62 C62 68 66 66 68 58 C75 72 64 88 50 94Z'
+};
+const flameSvg = (kind, cls, n) => `<svg class="flame ${cls}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><use href="#flame-${kind}-${n}"/></svg>`;
+
+let sceneCount = 0;
+export const createScene = (kind) => {
+    if (kind !== 'campfire') return null;
+    const n = ++sceneCount; // unique ids: a scene can be on screen twice (page + library preview)
+    const scene = document.createElement('div');
+    scene.className = 'scene scene-campfire';
+    scene.setAttribute('aria-hidden', 'true');
+    const embers = Array.from({ length: 6 }, (_, i) =>
+        `<i class="ember" style="--x:${[-14, 6, -4, 16, -9, 10][i]}cqmin;--dx:${[-5, 4, -2, 6, -6, 3][i]}cqmin;--d:${[6.5, 8, 7, 9, 7.5, 8.5][i]}s;--delay:-${[0, 2.2, 4.1, 5.5, 1.3, 3.4][i]}s"></i>`).join('');
+    scene.innerHTML = `
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+            <linearGradient id="fg-outer-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#8e2a12"/><stop offset="1" stop-color="#cf6a24"/></linearGradient>
+            <linearGradient id="fg-mid-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#cf6a24"/><stop offset="1" stop-color="#e8a44a"/></linearGradient>
+            <linearGradient id="fg-inner-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e8a44a"/><stop offset="1" stop-color="#f4d58f"/></linearGradient>
+            <path id="flame-outer-${n}" d="${FLAME_PATHS.outer}" fill="url(#fg-outer-${n})"/>
+            <path id="flame-mid-${n}" d="${FLAME_PATHS.mid}" fill="url(#fg-mid-${n})"/>
+            <path id="flame-inner-${n}" d="${FLAME_PATHS.inner}" fill="url(#fg-inner-${n})"/>
+        </defs></svg>
+        <div class="fire">
+            <div class="fire-glow"></div>
+            ${flameSvg('outer', 'fl-1', n)}${flameSvg('mid', 'fl-2', n)}${flameSvg('inner', 'fl-3', n)}
+            <div class="log log-a"></div><div class="log log-b"></div>
+            ${embers}
+        </div>`;
+    return scene;
+};
+
+const syncScene = (id) => {
+    document.querySelectorAll('body > .scene').forEach((n) => n.remove());
+    const scene = createScene(THEMES.find((t) => t.id === id)?.scene);
+    if (scene) document.body.prepend(scene);
+};
+
 const setBodyThemeClass = (id) => {
     document.body.classList.remove('dark-mode', ...THEMES.map((t) => `theme-${t.id}`));
     if (id !== 'light') document.body.classList.add(`theme-${id}`);
+    syncScene(id);
 };
 
 export const applyTheme = (id) => {

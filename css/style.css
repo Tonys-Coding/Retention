@@ -529,6 +529,83 @@ body.theme-campfire button.secondary { background: #1c1512; color: #f3e3cf; bord
 body.theme-campfire .maze-bg { display: none !important; }
 body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
 
+/* ===== Animated scenes (see createScene in js/themes.js) =====
+   Only transform and opacity are animated, so everything runs on the compositor
+   and keeps a steady frame rate even when the page is idle. */
+.scene {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    container-type: size;
+}
+.scene-campfire { --fire-w: 8cqmin; }
+.scene-campfire .fire {
+    position: absolute;
+    left: 50%;
+    bottom: 5cqh;
+    width: var(--fire-w);
+    height: calc(var(--fire-w) * 1.25);
+    transform: translateX(-50%);
+}
+.scene-campfire .fire-glow {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: calc(var(--fire-w) * 11);
+    height: calc(var(--fire-w) * 7);
+    transform: translate(-50%, 45%);
+    background: radial-gradient(ellipse at center, rgba(200, 100, 40, 0.26), rgba(150, 62, 22, 0.1) 42%, transparent 70%);
+    animation: fire-glow 4.4s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+.scene-campfire .flame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.78;
+    transform-origin: 50% 100%;
+    will-change: transform, opacity;
+}
+.scene-campfire .fl-1 { animation: flame-a 2.6s ease-in-out infinite; }
+.scene-campfire .fl-2 { animation: flame-b 2.1s ease-in-out infinite -0.6s; inset: 12% 14% 0; width: 72%; height: 88%; }
+.scene-campfire .fl-3 { animation: flame-a 1.7s ease-in-out infinite -1.1s; inset: 26% 28% 0; width: 44%; height: 74%; opacity: 0.6; }
+.scene-campfire .log {
+    position: absolute;
+    left: 50%;
+    bottom: -4%;
+    width: calc(var(--fire-w) * 1.5);
+    height: calc(var(--fire-w) * 0.17);
+    margin-left: calc(var(--fire-w) * -0.75);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #2a1c13, #140d09);
+    box-shadow: inset 0 -1px 0 rgba(214, 110, 40, 0.25);
+}
+.scene-campfire .log-a { transform: rotate(-9deg); }
+.scene-campfire .log-b { transform: rotate(8deg); bottom: -7%; }
+.scene-campfire .ember {
+    position: absolute;
+    left: calc(50% + var(--x));
+    bottom: 55%;
+    width: max(2px, 0.3cqmin);
+    height: max(2px, 0.3cqmin);
+    border-radius: 50%;
+    background: #e6a050;
+    opacity: 0;
+    animation: ember var(--d) linear infinite var(--delay);
+    will-change: transform, opacity;
+}
+@keyframes fire-glow { 0%, 100% { opacity: 0.8; transform: translate(-50%, 45%) scale(1); } 40% { opacity: 1; transform: translate(-50%, 45%) scale(1.05); } 70% { opacity: 0.72; transform: translate(-50%, 45%) scale(0.98); } }
+@keyframes flame-a { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 30% { transform: scale(0.95, 1.07) skewX(-2deg); } 60% { transform: scale(1.04, 0.93) skewX(1.5deg); } }
+@keyframes flame-b { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 35% { transform: scale(1.05, 0.94) skewX(2deg); } 70% { transform: scale(0.95, 1.06) skewX(-1.5deg); } }
+@keyframes ember { 0% { opacity: 0; transform: translate3d(0, 0, 0); } 15% { opacity: 0.6; } 100% { opacity: 0; transform: translate3d(var(--dx), -20cqmin, 0); } }
+@media (prefers-reduced-motion: reduce) {
+    .scene * { animation: none !important; }
+    .scene-campfire .ember { display: none; }
+}
+
 /* TRANSPARENCY BLOCK */
 
 /* Strawberry Theme */

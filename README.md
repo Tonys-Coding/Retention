@@ -27,11 +27,10 @@ Retention features a beautiful, brutalist, high-contrast aesthetic—featuring t
 *   **Monochrome:** Light, Dark.
 *   **Retro Tech:** Terminal, Dracula, Vaporwave.
 *   **Paper & Print:** Composition (notebook paper), Blueprint (drafting grid), Neo-Pop (comic halftone).
-*   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin, Night Library (lamp-lit shelves of muted book spines on warm navy).
+*   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin, Night Library (lamp-lit shelves of muted book spines on warm navy), and **Campfire**, the first animated theme: a quiet night scene with a small flickering fire, soft glow and a few drifting embers. Animated themes carry an **Animated** badge in the Themes library and respect your system's reduced-motion setting.
 *   **Café Treats:** Matcha, Strawberry.
 *   **Celestial:** Space (starfield), Moon (lunar craters).
 *   **Landscapes:** Fjord (soft slate blues with misty layered mountains, a snowcap and still water).
-*   **Animated:** **Campfire**, the first animated theme: a dark night scene with a flickering fire, drifting embers and twinkling stars (an animated SVG, so it costs no JavaScript). Animated themes carry an **Animated** badge in the Themes library and respect your system's reduced-motion setting.
 *   **Star Wars:** Tatooine (desert hues and twin suns), **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures), **R2-D2** (a silver astromech dome with the radar eye, holo-projector and blue panel bands over a white body), and **Boba Fett** (a weathered green Mandalorian helmet with the black T-visor, brown trim, rangefinder and kill stripes).
 
 **Themes Library & Favorites**
