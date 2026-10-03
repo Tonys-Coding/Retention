@@ -64,13 +64,15 @@ Alongside flashcard decks, Retention has **practice quiz decks** (with their own
 *   **Move To…:** Every deck and folder's ⋮ menu has a "Move to…" option that opens a tree of your entire workspace, so you can relocate anything in one tap (works on desktop and mobile, where drag-and-drop isn't practical).
 *   **Create Where You Are:** New folders, new decks, and imports (CSV, PDF, and Google Drive PDFs) are created inside the folder you currently have open instead of the workspace root.
 *   **Bulk CSV Import:** Select as many CSV files as you like at once; each becomes its own deck. Files with no cards are skipped and listed so nothing fails silently. Decks can also be exported back to CSV.
+*   **Quick 10:** A random 10-card round that favors cards you did not see in the previous Quick 10, cycling through the whole deck before repeating.
+*   **Folder counts:** Each folder card shows how many decks and sub-folders it holds.
 *   **Bulk Studying:** Click "Study Decks" on any folder to instantly aggregate and shuffle every flashcard from all of its child decks into one massive study session.
 *   **State Persistence:** If you accidentally close the app mid-session, Retention remembers your exact place and drops you right back to the card you were studying.
 
 ###  Rich Markdown & Flexible Media
 *   **Markdown Support:** Easily format cards with `code blocks`, lists, **bold**, and *italics*.
 *   **Intelligent Image Scaling:** Paste standard markdown images (`![alt](url)`). Retention features advanced dynamic flexbox polyfills that guarantee your images will flawlessly scale up to fill the available space on both massive desktop monitors and tiny iPhone screens without breaking aspect ratios or flowing out of bounds.
-*   **Interactive Fill-in-the-Blank (FITB):** Create active-recall cloze deletions to test contextual knowledge.
+*   **Interactive Fill-in-the-Blank (FITB):** Create active-recall cloze deletions to test contextual knowledge. Answers forgive case, punctuation and small typos, and a **Skip** button moves on without counting the card.
 
 ---
 

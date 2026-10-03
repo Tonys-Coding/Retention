@@ -1,7 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans, isQuizDeck, getQuizResults } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, isCloseAnswer, pickQuickTen, shuffleInPlace } from './utils.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderImportHelp } from './import-help.js';
 import { renderAiQuizForm } from './ai-quiz.js';
@@ -848,8 +848,7 @@ const startStudySession = (source, isQuickStudy = false) => {
         return;
     }
     
-    let tempCards = [...currentCards].sort(() => Math.random() - 0.5);
-    studyCards = isQuickStudy ? tempCards.slice(0, 10) : tempCards;
+    studyCards = isQuickStudy ? pickQuickTen(currentCards, currentDeckId) : shuffleInPlace([...currentCards]);
     document.getElementById('traditional-actions-container').style.display = 'flex';
     
     studyIndex = 0;
@@ -897,6 +896,7 @@ const updateStudyView = () => {
     document.getElementById('input-cloze').className = '';
     document.getElementById('btn-submit-cloze').textContent = 'Check';
     document.getElementById('btn-submit-cloze').className = 'primary';
+    document.getElementById('btn-skip-cloze').style.display = '';
     
     // Clean up any old feedback
     const oldFeedback = document.getElementById('cloze-feedback-msg');
@@ -990,8 +990,6 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
         return;
     }
     
-    const userAnswer = inputEl.value.trim().toLowerCase();
-    const correctAnswer = card.definition.toLowerCase();
     
     // Clean up old feedback just in case it existed
     const oldFeedback = document.getElementById('cloze-feedback-msg');
@@ -999,7 +997,7 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
     
     const highlightEl = document.getElementById('study-cloze-highlight');
     
-    if (userAnswer === correctAnswer) {
+    if (isCloseAnswer(inputEl.value, card.definition)) {
         inputEl.className = 'cloze-input-correct cloze-correct';
         if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-correct';
     } else {
@@ -1013,6 +1011,12 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
     // Change button to Continue
     btn.textContent = 'Continue';
     btn.className = 'secondary';
+    document.getElementById('btn-skip-cloze').style.display = 'none';
+});
+
+document.getElementById('btn-skip-cloze').addEventListener('click', () => {
+    studyIndex++;
+    updateStudyView();
 });
 
 document.getElementById('input-cloze').addEventListener('keypress', (e) => {

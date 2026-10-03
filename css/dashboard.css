@@ -237,6 +237,15 @@ body > .maze-bg {
     min-width: 0;
 }
 
+/* Folders keep their own compact height instead of stretching to the tallest deck in the row */
+.db-card--folder {
+    align-self: start;
+}
+
+.db-card--folder .db-card-header {
+    margin-bottom: 0;
+}
+
 .db-card-header {
     display: flex;
     justify-content: space-between;

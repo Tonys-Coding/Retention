@@ -4,7 +4,7 @@ import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getAllCards, isQuizDeck, getQuizResults } from './db.js';
 import { exportDeckToCSV } from './csv.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, isCloseAnswer, pickQuickTen } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { renderThemesLibrary } from './themes-library.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
@@ -651,7 +651,7 @@ async function showHome() {
         const onDrop = async (e) => await handleDrop(e, f.id);
         
         dom.viewGrid.appendChild(makeGridCard(
-            getFolderIcon(f.color), f.name, `${folderDecks.length} decks`,
+            getFolderIcon(f.color), f.name, folderMeta(f, decks, folders),
             () => showFolder(f.id, f.name),
             (e) => showContextMenu(e, folderMenuItems(f)),
             f.color,
@@ -715,7 +715,7 @@ async function showFolder(folderId, folderName) {
         const onDrop = async (e) => await handleDrop(e, f.id);
         
         dom.viewGrid.appendChild(makeGridCard(
-            getFolderIcon(f.color), f.name, `${nestedDecks.length} decks`,
+            getFolderIcon(f.color), f.name, folderMeta(f, decks, folders),
             () => showFolder(f.id, f.name),
             (e) => showContextMenu(e, folderMenuItems(f)),
             f.color,
@@ -754,9 +754,15 @@ function setBreakableText(el, text) {
     });
 }
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+// "8 decks · 2 folders": direct children of the folder
+const folderMeta = (folder, decks, folders) =>
+    `${plural(decks.filter((d) => d.folderId === folder.id).length, 'deck')} · ${plural(folders.filter((x) => x.parentId === folder.id).length, 'folder')}`;
+
 function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop) {
     const card = document.createElement('div');
     card.className = 'db-card';
+    if (dragData?.type === 'folder') card.classList.add('db-card--folder');
     if (accentColor) card.style.borderTop = `6px solid ${accentColor}`;
     
     let quickHtml = '';
@@ -1131,9 +1137,8 @@ async function startStudyDeck(deckId, deckName, isQuickStudy = false) {
     let cards = await getCardsByDeck(deckId);
     
     if (isQuickStudy) {
-        // Quick study mode: 10 random cards
-        shuffle(cards);
-        cards = cards.slice(0, 10);
+        // Quick study mode: 10 random cards, preferring ones not in the previous round
+        cards = pickQuickTen(cards, deckId);
         beginStudy(cards, `Quick Study: ${deckName}`, null);
     } else {
         // Normal study mode
@@ -1219,6 +1224,7 @@ function renderCard() {
         const checkBtn = document.getElementById('btn-cloze-check');
         checkBtn.textContent = 'Check';
         checkBtn.className = 'primary';
+        $('btn-cloze-skip').style.display = '';
         setTimeout(() => dom.clozeInput.focus(), 100);
     } else {
         dom.fcTerm.innerHTML = renderMarkdown(c.term);
@@ -1254,15 +1260,12 @@ function checkCloze() {
         return;
     }
 
-    const ans = dom.clozeInput.value.trim().toLowerCase();
-    const correct = studyCards[studyIndex].definition.trim().toLowerCase();
-    
     isFlipped = true;
     hasRevealed = true;
     dom.flashcard.classList.add('flipped');
     
     const highlightEl = document.getElementById('db-cloze-highlight');
-    if (ans === correct) {
+    if (isCloseAnswer(dom.clozeInput.value, studyCards[studyIndex].definition)) {
         dom.clozeInput.className = 'cloze-correct';
         if (highlightEl) highlightEl.className = 'cloze-highlight cloze-highlight-correct';
     } else {
@@ -1272,6 +1275,7 @@ function checkCloze() {
     
     btn.textContent = 'Continue';
     btn.className = 'secondary';
+    $('btn-cloze-skip').style.display = 'none';
 }
 
 function handleResult(isCorrect) {
@@ -1409,6 +1413,7 @@ function setupEvents() {
     };
     dom.flashcard.onclick = (e) => { if (!e.target.closest('.db-cloze-area')) flipCard(); };
     $('btn-cloze-check').onclick = checkCloze;
+    $('btn-cloze-skip').onclick = () => { if (!isCloze) return; hasRevealed = true; handleResult(null); };
     dom.clozeInput.onkeydown = (e) => { if (e.key === 'Enter') checkCloze(); };
     dom.clozeInput.addEventListener('focus', () => {
         document.body.classList.add('keyboard-open');

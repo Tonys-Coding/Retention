@@ -14,4 +14,4 @@
 - **Sync:** Google Drive auto-sync across extension, web, and phone.
 
 ## Marketing
-- Promo video built from recordings of the real UI lives in `promo-video/` (see README). Copy guidelines from Tony: don't state a theme count (it grows), don't say "cloze" (say "fill in the blank"), don't claim spaced repetition, don't promise instant feedback/score (it's a user option), mention both Google Drive and local files for PDFs.
+- Promo video built from recordings of the real UI lives in `promo-video/` (see README). Copy guidelines from Tony: don't state a theme count (it grows), don't say "cloze" (say "fill in the blank"), don't claim spaced repetition, and typo forgiveness now exists in study mode too, don't promise instant feedback/score (it's a user option), mention both Google Drive and local files for PDFs.

@@ -11,7 +11,7 @@
  */
 
 import { getCardsByDeck, getQuizResults, addQuizResult, updateQuizResult } from './db.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, isCloseAnswer } from './utils.js';
 
 const MODE_KEY = 'practice_test_mode';
 const TYPE_LABELS = { mcq: 'Multiple choice', tf: 'True / false', fitb: 'Fill in the blank' };
@@ -22,42 +22,11 @@ export const getAnswerMode = () => (localStorage.getItem(MODE_KEY) === 'end' ? '
 export const quizDeckIcon = (width = 16, height = 19) => `<svg width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect><rect x="5" y="6" width="5" height="5" fill="var(--text-primary)"></rect><rect x="5" y="14" width="5" height="5" fill="none" stroke="var(--text-primary)" stroke-width="2"></rect><rect x="5" y="22" width="5" height="5" fill="none" stroke="var(--text-primary)" stroke-width="2"></rect><path d="M13 8.5h6M13 16.5h6M13 24.5h6" stroke="var(--text-primary)" stroke-width="2.2"></path></svg>`;
 
 // ─── Grading ─────────────────────────────────────────────────────────
-const normalize = (text) => String(text ?? '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\b(the|a|an)\b/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-const levenshtein = (a, b) => {
-    const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-    for (let i = 1; i <= a.length; i++) {
-        let diag = prev[0];
-        prev[0] = i;
-        for (let j = 1; j <= b.length; j++) {
-            const temp = prev[j];
-            prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-            diag = temp;
-        }
-    }
-    return prev[b.length];
-};
-
 /** Accepted answers for a fill-in-the-blank question ("TCP|Transmission Control Protocol"). */
 const blankAnswers = (q) => String(q.definition).split('|').map((a) => a.trim()).filter(Boolean);
 
 /** Typed answers ignore case, accents, punctuation and allow a typo on longer words. */
-export const isBlankCorrect = (input, q) => {
-    const typed = normalize(input);
-    if (!typed) return false;
-    return blankAnswers(q).some((answer) => {
-        const target = normalize(answer);
-        if (typed === target) return true;
-        const allowed = target.length <= 4 ? 0 : target.length <= 8 ? 1 : 2;
-        return levenshtein(typed, target) <= allowed;
-    });
-};
+export const isBlankCorrect = (input, q) => blankAnswers(q).some((answer) => isCloseAnswer(input, answer));
 
 const correctAnswerText = (q) => {
     if (q.type === 'tf') return q.definition === 'true' ? 'True' : 'False';
