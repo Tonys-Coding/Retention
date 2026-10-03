@@ -110,12 +110,21 @@ Retention was built to be lightning fast, zero-dependency, and incredibly resili
 
 ## Promo video (Remotion)
 
-`promo-video/` is a separate [Remotion](https://www.remotion.dev) project (not part of the extension package) that renders the promo from `Store_Assets/`.
+`promo-video/` is a separate [Remotion](https://www.remotion.dev) project (not part of the extension package). It composes **screen recordings of the real dashboard** (AI generation, flashcards, fill-in-the-blank, practice quizzes, theme switching) with animated titles.
 
 ```bash
 cd promo-video
 npm install
 npm run dev              # live preview in Remotion Studio
-npm run build            # out/promo.mp4 (1920x1080)
+npm run build            # out/promo.mp4 (1920x1080, ~45s)
 npm run build:vertical   # out/promo-vertical.mp4 (1080x1920)
 ```
+
+To re-record the clips after a UI change (needs Google Chrome installed):
+
+```bash
+python3 -m http.server 8765        # in the repo root, leave running
+cd promo-video && node record/record.mjs   # writes public/clips/*.mp4
+```
+
+`record/seed.mjs` seeds demo decks through the app's own `db.js`. The AI scene drives the real progress banner with a scripted animation (no API key needed).
