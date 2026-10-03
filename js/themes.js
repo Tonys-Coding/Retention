@@ -211,35 +211,66 @@ export const getActiveThemeId = () => {
 // Animated themes overlay a small DOM scene on top of their static background art.
 // Only transform/opacity are animated (see .scene in style.css), so the browser
 // runs them on the compositor: steady frame rate, no work on the main thread.
-const FLAME_PATHS = {
-    outer: 'M50 98 C20 88 6 58 22 30 C26 50 36 54 40 44 C32 22 46 10 50 0 C54 10 68 22 60 44 C64 54 74 50 78 30 C94 58 80 88 50 98Z',
-    mid: 'M50 96 C28 88 18 64 30 42 C34 56 42 58 45 50 C40 34 48 24 51 12 C56 26 66 38 60 50 C64 58 70 56 72 42 C84 64 72 88 50 96Z',
-    inner: 'M50 94 C36 88 31 72 38 58 C41 66 46 68 48 62 C45 50 50 44 52 34 C55 46 62 54 59 62 C62 68 66 66 68 58 C75 72 64 88 50 94Z'
-};
-const flameSvg = (kind, cls, n) => `<svg class="flame ${cls}" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><use href="#flame-${kind}-${n}"/></svg>`;
+const FLAMES = [
+    // [class, path, gradient]  back to front: outer tongues, main flame, inner flame, core
+    ['t-left', 'M30 170 C10 160 4 134 14 112 C20 98 31 92 30 72 C30 60 34 52 38 44 C43 64 53 76 53 98 C53 108 48 116 52 128 C56 146 46 166 30 170Z', 'out'],
+    ['t-right', 'M70 170 C90 160 96 134 86 112 C80 98 69 92 70 72 C70 60 66 52 62 44 C57 64 47 76 47 98 C47 108 52 116 48 128 C44 146 54 166 70 170Z', 'out'],
+    ['t-main', 'M50 170 C22 164 8 132 20 100 C27 80 40 68 38 40 C37 26 44 12 50 2 C54 22 66 34 68 54 C69 66 64 72 70 82 C80 98 90 130 78 152 C72 164 62 170 50 170Z', 'main'],
+    ['t-inner', 'M50 170 C34 164 28 146 36 126 C40 114 48 108 47 90 C46 80 49 72 50 62 C55 78 64 88 66 104 C68 118 66 128 64 140 C62 156 60 166 50 170Z', 'mid'],
+    ['t-core', 'M50 170 C40 166 37 154 42 142 C45 134 49 130 48 118 C48 112 50 108 50 102 C53 112 59 118 60 128 C61 138 60 148 58 156 C56 164 54 168 50 170Z', 'core']
+];
+const ROCK_SEEDS = [ // [x, y, rx, ry, back?] in the pit's 260x110 space
+    [62, 66, 15, 8.5, 1], [88, 60, 13, 7.5, 1], [130, 57, 14, 8, 1], [172, 60, 13, 7.5, 1], [198, 66, 15, 8.5, 1],
+    [46, 80, 14, 9, 0], [72, 91, 16, 10, 0], [104, 98, 14, 8.5, 0], [150, 98, 15, 9, 0], [186, 91, 16, 10, 0], [214, 80, 14, 9, 0]
+];
 
 let sceneCount = 0;
 export const createScene = (kind) => {
     if (kind !== 'campfire') return null;
     const n = ++sceneCount; // unique ids: a scene can be on screen twice (page + library preview)
+    const rock = ([x, y, rx, ry], i) => {
+        const lit = x < 130 ? 0.9 : 0.1; // the side facing the fire catches its light
+        return `<radialGradient id="rk${n}-${i}" cx="${lit}" cy="0.35" r="0.85"><stop offset="0" stop-color="#c4682c"/><stop offset=".28" stop-color="#4a3626"/><stop offset=".7" stop-color="#1e1814"/><stop offset="1" stop-color="#0d0a09"/></radialGradient>
+            <ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#rk${n}-${i})"/>
+            <ellipse cx="${x}" cy="${y + ry * 0.55}" rx="${rx * 0.95}" ry="${ry * 0.4}" fill="#000" opacity=".25"/>`;
+    };
+    const rocks = (back) => ROCK_SEEDS.map((r, i) => (r[4] === back ? rock(r, i) : '')).join('');
+    const logPaint = `<linearGradient id="lg${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3c26"/><stop offset=".45" stop-color="#2d1c12"/><stop offset="1" stop-color="#120a06"/></linearGradient>
+        <linearGradient id="lc${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a2a" stop-opacity="0"/><stop offset="1" stop-color="#ff7a1a" stop-opacity=".75"/></linearGradient>`;
+    const log = (cx, cy, len, thick, rot) => `<g transform="rotate(${rot} ${cx} ${cy})">
+        <rect x="${cx - len / 2}" y="${cy - thick / 2}" width="${len}" height="${thick}" rx="${thick / 2}" fill="url(#lg${n})"/>
+        <rect x="${cx - len / 2 + 4}" y="${cy + thick * 0.12}" width="${len - 8}" height="${thick * 0.36}" rx="${thick * 0.18}" fill="url(#lc${n})"/>
+        <path d="M${cx - len / 2 + 8} ${cy - thick * 0.22} H${cx + len / 2 - 10} M${cx - len / 2 + 16} ${cy + thick * 0.02} H${cx + len / 2 - 6} M${cx - len / 2 + 6} ${cx ? cy - thick * 0.38 : 0} H${cx + len / 2 - 20}" stroke="#0c0604" stroke-width=".9" opacity=".55" fill="none"/>
+        <ellipse cx="${cx + len / 2 - 2}" cy="${cy}" rx="${thick * 0.3}" ry="${thick * 0.48}" fill="#4a2f1c"/>
+        <ellipse cx="${cx + len / 2 - 2}" cy="${cy}" rx="${thick * 0.14}" ry="${thick * 0.26}" fill="none" stroke="#2a180d" stroke-width=".8"/>
+    </g>`;
+    const flames = FLAMES.map(([cls, d, g]) =>
+        `<svg class="flame ${cls}" viewBox="0 0 100 170" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="url(#fg-${g}-${n})" filter="url(#fb-${n})"/></svg>`).join('');
+    const embers = Array.from({ length: 8 }, (_, i) =>
+        `<i class="ember" style="--x:${[-14, 6, -4, 16, -9, 10, 0, -18][i]}cqmin;--dx:${[-5, 4, -2, 6, -6, 3, -3, 5][i]}cqmin;--d:${[6.5, 8, 7, 9, 7.5, 8.5, 6, 9.5][i]}s;--delay:-${[0, 2.2, 4.1, 5.5, 1.3, 3.4, 6.2, 7.7][i]}s"></i>`).join('');
     const scene = document.createElement('div');
     scene.className = 'scene scene-campfire';
     scene.setAttribute('aria-hidden', 'true');
-    const embers = Array.from({ length: 6 }, (_, i) =>
-        `<i class="ember" style="--x:${[-14, 6, -4, 16, -9, 10][i]}cqmin;--dx:${[-5, 4, -2, 6, -6, 3][i]}cqmin;--d:${[6.5, 8, 7, 9, 7.5, 8.5][i]}s;--delay:-${[0, 2.2, 4.1, 5.5, 1.3, 3.4][i]}s"></i>`).join('');
     scene.innerHTML = `
-        <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-            <linearGradient id="fg-outer-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#8e2a12"/><stop offset="1" stop-color="#cf6a24"/></linearGradient>
-            <linearGradient id="fg-mid-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#cf6a24"/><stop offset="1" stop-color="#e8a44a"/></linearGradient>
-            <linearGradient id="fg-inner-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e8a44a"/><stop offset="1" stop-color="#f4d58f"/></linearGradient>
-            <path id="flame-outer-${n}" d="${FLAME_PATHS.outer}" fill="url(#fg-outer-${n})"/>
-            <path id="flame-mid-${n}" d="${FLAME_PATHS.mid}" fill="url(#fg-mid-${n})"/>
-            <path id="flame-inner-${n}" d="${FLAME_PATHS.inner}" fill="url(#fg-inner-${n})"/>
+        <svg width="0" height="0" style="position:absolute"><defs>
+            <filter id="fb-${n}" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.3"/></filter>
+            <linearGradient id="fg-out-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e2561b" stop-opacity=".95"/><stop offset=".6" stop-color="#b8330f" stop-opacity=".7"/><stop offset="1" stop-color="#8a2208" stop-opacity="0"/></linearGradient>
+            <linearGradient id="fg-main-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff8a24" stop-opacity=".95"/><stop offset=".55" stop-color="#ef6a1c" stop-opacity=".85"/><stop offset="1" stop-color="#c8401a" stop-opacity="0"/></linearGradient>
+            <linearGradient id="fg-mid-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd25a"/><stop offset=".5" stop-color="#ffa63a" stop-opacity=".9"/><stop offset="1" stop-color="#ff8a24" stop-opacity="0"/></linearGradient>
+            <linearGradient id="fg-core-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff6d4"/><stop offset=".55" stop-color="#ffe49a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd25a" stop-opacity="0"/></linearGradient>
         </defs></svg>
         <div class="fire">
             <div class="fire-glow"></div>
-            ${flameSvg('outer', 'fl-1', n)}${flameSvg('mid', 'fl-2', n)}${flameSvg('inner', 'fl-3', n)}
-            <div class="log log-a"></div><div class="log log-b"></div>
+            <svg class="pit pit-back" viewBox="0 0 260 110" aria-hidden="true"><defs>${logPaint}</defs>
+                <ellipse cx="130" cy="72" rx="62" ry="10" fill="#3a1408"/><ellipse cx="130" cy="72" rx="46" ry="6" fill="#ff6a1a" opacity=".5" filter="url(#fb-${n})"/>
+                ${rocks(1)}${log(112, 66, 104, 15, -21)}${log(150, 66, 104, 15, 20)}
+            </svg>
+            <div class="flames">${flames}</div>
+            <svg class="pit pit-front" viewBox="0 0 260 110" aria-hidden="true">
+                ${log(128, 78, 118, 17, 6)}${rocks(0)}
+            </svg>
+            <div class="fire-core-glow"></div>
+            <i class="smoke s1"></i><i class="smoke s2"></i><i class="smoke s3"></i>
             ${embers}
         </div>`;
     return scene;
