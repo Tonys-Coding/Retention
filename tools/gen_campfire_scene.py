@@ -1,3 +1,4 @@
+# Regenerates images/campfire-scene.svg. Run from the repo root: python3 tools/gen_campfire_scene.py
 import random, math
 R = random.Random(42)
 W, H = 1600, 900
