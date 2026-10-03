@@ -10,11 +10,11 @@ type Scene = {kind: 'clip'; kicker: string; title: string; sub: string; clip: Cl
 const dur = (c: Clip) => s((c.to - c.from) / c.rate);
 
 const SCENES: Scene[] = [
-  {kind: 'clip', kicker: '01 · AI', title: 'Any PDF into flashcards.', sub: 'Pick a file from Google Drive. AI writes the deck while you wait.', clip: {src: 'ai.mp4', from: 0.8, to: 8.8, rate: 1.25}},
-  {kind: 'clip', kicker: '02 · Flashcards', title: 'Flip. Rate. Repeat.', sub: 'Spaced repetition surfaces the cards you are about to forget.', clip: {src: 'study.mp4', from: 3, to: 10.2, rate: 1.5}},
-  {kind: 'clip', kicker: '03 · Fill in the blank', title: 'Type it. Own it.', sub: 'Cloze cards check your answer and tolerate small typos.', clip: {src: 'study.mp4', from: 10.4, to: 18, rate: 1.5}},
-  {kind: 'clip', kicker: '04 · Practice quizzes', title: 'Multiple choice, true/false, fill-in.', sub: 'Instant feedback with explanations, then a score when you finish.', clip: {src: 'quiz.mp4', from: 1.3, to: 19.5, rate: 1.9}},
-  {kind: 'themes', kicker: '05 · Themes', title: '21 themes. One click.', sub: 'From Night Library to Blueprint, make studying yours.', clip: {src: 'themes.mp4', from: 0.5, to: 33.5, rate: 2.7}},
+  {kind: 'clip', kicker: '01 · AI', title: 'Any PDF into flashcards or quizzes.', sub: 'Import from Google Drive or upload a file from your computer. AI builds the deck for you.', clip: {src: 'ai.mp4', from: 2.5, to: 11.5, rate: 1.2}},
+  {kind: 'clip', kicker: '02 · Flashcards', title: 'Flip. Evaluate. Repeat.', sub: 'Mark each card Know, Skip or Forgot and watch your mastery climb as you go.', clip: {src: 'study.mp4', from: 14, to: 27, rate: 1.8}},
+  {kind: 'clip', kicker: '03 · Fill in the blank', title: 'Type the missing word.', sub: 'Recall the answer from memory, then check it. Fill in the blank cards make it stick.', clip: {src: 'study.mp4', from: 2.5, to: 13, rate: 1.6}},
+  {kind: 'clip', kicker: '04 · Practice quizzes', title: 'Multiple choice, true/false, and fill in the blank.', sub: 'Build practice tests your way, and choose when answers are revealed: right away or at the end.', clip: {src: 'quiz.mp4', from: 1.5, to: 25, rate: 2.2}},
+  {kind: 'themes', kicker: '05 · Themes', title: 'Themes. One click.', sub: 'Switch the whole look of your study space in a flash.', clip: {src: 'themes.mp4', from: 0.5, to: 45, rate: 3.2}},
 ];
 
 const INTRO = s(3);
@@ -24,11 +24,6 @@ export const TOTAL_FRAMES = INTRO + SCENES.reduce((n, sc) => n + dur(sc.clip), 0
 
 const INK = '#0a0a0a';
 const PAPER = '#f4f1ea';
-
-const THEME_CHIPS = [
-  {n: 'Night Library', bg: '#1d2230', fg: '#e0a458'}, {n: 'Fjord', bg: '#dfe6ea', fg: '#2b3a44'}, {n: 'Matcha', bg: '#d1deb9', fg: '#2c3d25'},
-  {n: 'Blueprint', bg: '#0a3d91', fg: '#ffffff'}, {n: 'Space', bg: '#04050a', fg: '#00f0ff'}, {n: 'Dark', bg: '#121212', fg: '#e5e5e5'},
-];
 
 const Background = () => (
   <AbsoluteFill style={{background: PAPER, backgroundImage: 'linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px)', backgroundSize: '48px 48px'}} />
@@ -70,7 +65,6 @@ const SceneView = ({sc, len, vertical}: {sc: Scene; len: number; vertical: boole
   const c = sc.clip;
   const frameW = vertical ? 1000 : 1160;
   const frameH = (frameW * 900) / 1600;
-  const chipsIn = (i: number) => spring({frame: f - 20 - i * 6, fps, config: {damping: 14}});
   return (
     <AbsoluteFill style={{opacity: fade, flexDirection: vertical ? 'column' : 'row', alignItems: 'center', justifyContent: 'center', gap: vertical ? 56 : 70, padding: vertical ? '0 40px' : '0 70px'}}>
       <Caption sc={sc} vertical={vertical} f={f} />
@@ -82,13 +76,6 @@ const SceneView = ({sc, len, vertical}: {sc: Scene; len: number; vertical: boole
           </div>
           <OffthreadVideo src={staticFile(`clips/${c.src}`)} startFrom={s(c.from)} endAt={s(c.to)} playbackRate={c.rate} muted style={{width: frameW - 12, height: frameH - 7, display: 'block', objectFit: 'cover'}} />
         </div>
-        {sc.kind === 'themes' && (
-          <div style={{position: 'absolute', left: 0, right: 0, bottom: -86, display: 'flex', gap: 14, justifyContent: 'center'}}>
-            {THEME_CHIPS.map((t, i) => (
-              <div key={t.n} style={{background: t.bg, color: t.fg, border: `4px solid ${INK}`, boxShadow: `6px 6px 0 ${INK}`, fontFamily: FONT, fontWeight: 900, fontSize: 22, padding: '8px 16px', opacity: chipsIn(i), transform: `translateY(${interpolate(chipsIn(i), [0, 1], [30, 0])}px)`}}>{t.n}</div>
-            ))}
-          </div>
-        )}
       </div>
     </AbsoluteFill>
   );
@@ -103,7 +90,7 @@ const Outro = ({vertical}: {vertical: boolean}) => {
     <AbsoluteFill style={{background: INK, color: PAPER, fontFamily: FONT, alignItems: 'center', justifyContent: 'center', gap: 26, textAlign: 'center'}}>
       <Img src={staticFile('icon128.png')} style={{width: 220, borderRadius: 36, transform: `scale(${pop})`, background: '#fff'}} />
       <div style={{fontSize: vertical ? 130 : 150, fontWeight: 900, letterSpacing: -3, opacity: pop}}>Retention</div>
-      <div style={{fontSize: vertical ? 46 : 50, fontWeight: 700, opacity: b, transform: `translateY(${interpolate(b, [0, 1], [20, 0])}px)`}}>AI flashcards, quizzes &amp; 21 themes</div>
+      <div style={{fontSize: vertical ? 46 : 50, fontWeight: 700, opacity: b, transform: `translateY(${interpolate(b, [0, 1], [20, 0])}px)`}}>AI flashcards, quizzes &amp; themes</div>
       <div style={{fontSize: 34, fontWeight: 900, background: PAPER, color: INK, padding: '14px 30px', opacity: b, boxShadow: '8px 8px 0 #666'}}>Get it on the Chrome Web Store</div>
     </AbsoluteFill>
   );
