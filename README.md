@@ -30,8 +30,10 @@ Retention features a beautiful, brutalist, high-contrast aesthetic—featuring t
 *   **Cozy & Earthy:** Autumn, Earthy, Cozy Cabin, Night Library (lamp-lit shelves of muted book spines on warm navy), and **Campfire**, the first animated theme: a quiet night scene with a small flickering fire, soft glow and a few drifting embers. Animated themes carry an **Animated** badge in the Themes library and respect your system's reduced-motion setting.
 *   **Café Treats:** Matcha, Strawberry.
 *   **Celestial:** Space (starfield), Moon (lunar craters).
-*   **Landscapes:** Fjord (soft slate blues with misty layered mountains, a snowcap and still water), and **Storm** (animated: a calm thunderstorm over an abandoned log barn and golden prairie, with drifting clouds, light rain, soft lightning and swaying grass).
+*   **Landscapes:** Fjord (soft slate blues with misty layered mountains, a snowcap and still water), and **Storm** (animated: a calm thunderstorm over an abandoned log barn and golden prairie with distant tree lines, drifting clouds, light rain, soft lightning and swaying grass).
 *   **Star Wars:** Tatooine (desert hues and twin suns), **Kylo** (pitch black background featuring sweeping radial chrome bands and razor-sharp, glowing red Kintsugi mask fractures), **R2-D2** (a silver astromech dome with the radar eye, holo-projector and blue panel bands over a white body), and **Boba Fett** (a weathered green Mandalorian helmet with the black T-visor, brown trim, rangefinder and kill stripes).
+
+**Scenery mode:** a small eye button in the bottom-right corner of the dashboard hides the sidebar and main area so you can enjoy a theme's artwork and animation. Press it again (or Esc) to bring the dashboard back.
 
 **Themes Library & Favorites**
 *   **Themes Library:** A dedicated page in the dashboard (sidebar **Themes**, or **Browse all themes** in the palette menu) shows every theme as a large live preview with its real colors and background artwork. Search, filter by Favorites / Light / Dark, and apply any theme with one click.

@@ -52,47 +52,62 @@ def wisps():
 
 # ── Landscape: hills, tree line, log barn, golden field ─────────────────
 def barn():
+    """A gabled log barn in oblique view: long wall + roof slope facing us, gable end on the right."""
     r = random.Random(17)
-    A, B, C, D = (384, 420), (816, 358), (936, 590), (180, 608)  # roof quad: far ridge, near apex, near eave, far eave
-    out = []
-    # long log wall (under the roof eave) and gable end
-    out.append('<polygon points="212,606 640,580 640,708 212,716" fill="url(#wallg)"/>')
-    for i in range(1, 9):  # horizontal logs
-        y0 = 606 + i * 13.5; y1 = 580 + i * 16
-        out.append(f'<line x1="212" y1="{y0:.1f}" x2="640" y2="{y1:.1f}" stroke="#1b110b" stroke-width="2" opacity=".75"/>')
-        out.append(f'<line x1="212" y1="{y0+2:.1f}" x2="640" y2="{y1+2:.1f}" stroke="#a9763f" stroke-width="1" opacity=".22"/>')
-    out.append('<polygon points="640,582 812,428 904,606 904,708 640,708" fill="#2a1c14"/>')
-    for i in range(1, 9):
-        y = 582 + i * 14.4
-        out.append(f'<line x1="640" y1="{y:.1f}" x2="904" y2="{y+ (606-582)/9*0 + 2:.1f}" stroke="#0e0805" stroke-width="2" opacity=".8"/>')
-    for x in range(660, 904, 22):  # vertical boards in the gable
-        out.append(f'<line x1="{x}" y1="{582 + max(0, (x-640)*-0.2)+ 6:.1f}" x2="{x}" y2="708" stroke="#0e0805" stroke-width="1.4" opacity=".5"/>')
-    out.append('<polygon points="787,492 826,500 826,566 787,558" fill="#08060a"/><line x1="787" y1="525" x2="826" y2="534" stroke="#3a2a22" stroke-width="2"/><line x1="806" y1="496" x2="806" y2="563" stroke="#3a2a22" stroke-width="2"/>')
-    out.append('<polygon points="800,606 838,606 838,668 800,668" fill="#16100c"/><line x1="819" y1="606" x2="819" y2="668" stroke="#050304" stroke-width="2"/>')
-    out.append('<polygon points="262,632 306,630 306,650 262,652" fill="#0b0705"/>')
-    # roof planks (ridge -> eave), alternating lit boards and patched metal sheets
-    n = 11
+    EL, ER = (188, 606), (664, 602)        # front eave, left/right (with overhang)
+    RL, RR = (277, 456), (749, 452)        # ridge, left/right
+    BK = (832, 574)                        # back-top corner of the gable end
+    out = ['<ellipse cx="570" cy="724" rx="340" ry="13" fill="#0a0704" opacity=".65"/>']
+    # long front wall of stacked logs
+    out.append('<polygon points="210,606 660,603 660,724 210,724" fill="url(#wallg)"/>')
+    for i in range(1, 10):
+        y = 606 + i * 13.2
+        out.append(f'<line x1="210" y1="{y:.1f}" x2="660" y2="{y-0.3*i:.1f}" stroke="#150c07" stroke-width="2.2" opacity=".8"/>')
+        out.append(f'<line x1="210" y1="{y+2.2:.1f}" x2="660" y2="{y+1.9-0.3*i:.1f}" stroke="#b07a40" stroke-width="1" opacity=".2"/>')
+        out.append(f'<rect x="652" y="{y-8:.1f}" width="14" height="9" rx="4.5" fill="#3a2616" stroke="#150c07" stroke-width="1"/>')  # log ends at the corner
+    out.append('<polygon points="420,646 494,646 494,724 420,724" fill="#120c08"/>')  # barn door with brace
+    out.append('<line x1="457" y1="646" x2="457" y2="724" stroke="#050302" stroke-width="2"/><line x1="420" y1="646" x2="494" y2="724" stroke="#3a2818" stroke-width="3"/><line x1="494" y1="646" x2="420" y2="724" stroke="#3a2818" stroke-width="3"/>')
+    out.append('<polygon points="262,640 300,639 300,664 262,665" fill="#0a0705"/><line x1="281" y1="639" x2="281" y2="665" stroke="#3a2818" stroke-width="2"/>')
+    out.append('<polygon points="560,646 590,646 590,668 560,668" fill="#0a0705"/>')
+    # gable end (in shade)
+    out.append(f'<polygon points="660,724 660,603 {RR[0]},{RR[1]} {BK[0]},{BK[1]} 832,696" fill="#27190f"/>')
+    for k in range(1, 9):
+        y = 603 + k * 14.8
+        out.append(f'<line x1="660" y1="{y:.1f}" x2="832" y2="{y-29:.1f}" stroke="#0b0603" stroke-width="2" opacity=".8"/>')
+    for k in range(1, 7):  # vertical boards in the triangle
+        t = k / 7; xx = 660 + 172 * t; ytop = 603 - 29 * t - (151 * (1 - abs(2 * t - 1)))
+        out.append(f'<line x1="{xx:.1f}" y1="{ytop+6:.1f}" x2="{xx:.1f}" y2="{603 - 29 * t:.1f}" stroke="#0b0603" stroke-width="1.6" opacity=".6"/>')
+    out.append('<polygon points="722,520 764,513 764,556 722,562" fill="#08060a"/><line x1="743" y1="517" x2="743" y2="559" stroke="#3a2818" stroke-width="2"/>')
+    # roof slope: planks from eave to ridge with lit patches and a few missing boards
+    n = 14
     cols = ['#6a4b2a', '#7c5a30', '#58401f', '#8b6a3a', '#664826']
+    lerp2 = lambda A, B, t: (A[0] + (B[0]-A[0]) * t, A[1] + (B[1]-A[1]) * t)
     for i in range(n):
         s0, s1 = i / n, (i + 1) / n
-        p0, p1, q1, q0 = lerp(A, B, s0), lerp(A, B, s1), lerp(D, C, s1), lerp(D, C, s0)
-        out.append(f'<polygon points="{pts([p0, p1, q1, q0])}" fill="{r.choice(cols)}"/>')
-        out.append(f'<polygon points="{pts([p0, p1, q1, q0])}" fill="url(#roofg)"/>')
-        if r.random() < .6:  # lit patch (tin / new boards)
-            t0, t1 = r.uniform(.1, .5), r.uniform(.55, .95)
-            a, b = lerp(p0, q0, t0), lerp(p1, q1, t0); c, d = lerp(p1, q1, t1), lerp(p0, q0, t1)
-            out.append(f'<polygon points="{pts([a, b, c, d])}" fill="#b08a48" opacity="{r.uniform(.25,.45):.2f}"/>')
-        out.append(f'<line x1="{p1[0]:.1f}" y1="{p1[1]:.1f}" x2="{q1[0]:.1f}" y2="{q1[1]:.1f}" stroke="#1c120a" stroke-width="3"/>')
-    for t in (0.35, 0.7):  # horizontal purlins
-        a, b = lerp(A, D, t), lerp(B, C, t)
-        out.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="#1c120a" stroke-width="3.5" opacity=".8"/>')
-    out.append(f'<polygon points="{pts([A, B, (B[0]+2, B[1]+10), (A[0], A[1]+12)])}" fill="#1c120a"/>')
-    # broken rafters poking above the ridge and a gable-end ladder of boards
-    for x in (420, 505, 570, 650, 730):
-        y = A[1] + (B[1] - A[1]) * (x - A[0]) / (B[0] - A[0])
-        out.append(f'<line x1="{x}" y1="{y:.1f}" x2="{x + r.randint(-14, 14)}" y2="{y - r.randint(14, 30):.1f}" stroke="#1c120a" stroke-width="3"/>')
-    out.append(f'<polyline points="{pts([B, (884, 560), C])}" fill="none" stroke="#20150c" stroke-width="6" stroke-linejoin="round"/>')
-    out.append(f'<polyline points="{pts([B, (870, 500), (930, 590)])}" fill="none" stroke="#7b5a32" stroke-width="2" opacity=".5"/>')
+        e0, e1, g1, g0 = lerp2(EL, ER, s0), lerp2(EL, ER, s1), lerp2(RL, RR, s1), lerp2(RL, RR, s0)
+        poly = pts([e0, e1, g1, g0])
+        out.append(f'<polygon points="{poly}" fill="{r.choice(cols)}"/><polygon points="{poly}" fill="url(#roofg)"/>')
+        if r.random() < .55:
+            t0, t1 = r.uniform(.08, .5), r.uniform(.55, .96)
+            a_, b_, c_, d_ = lerp2(e0, g0, t0), lerp2(e1, g1, t0), lerp2(e1, g1, t1), lerp2(e0, g0, t1)
+            out.append(f'<polygon points="{pts([a_, b_, c_, d_])}" fill="#b08a48" opacity="{r.uniform(.22,.42):.2f}"/>')
+        out.append(f'<line x1="{e1[0]:.1f}" y1="{e1[1]:.1f}" x2="{g1[0]:.1f}" y2="{g1[1]:.1f}" stroke="#1c120a" stroke-width="2.4"/>')
+    for i in (3, 7, 10):  # missing boards near the ridge
+        s0, s1 = i / n, (i + 1) / n
+        a_, b_ = lerp2(lerp2(EL, ER, s0), lerp2(RL, RR, s0), .62), lerp2(lerp2(EL, ER, s1), lerp2(RL, RR, s1), .62)
+        c_, d_ = lerp2(lerp2(EL, ER, s1), lerp2(RL, RR, s1), .9), lerp2(lerp2(EL, ER, s0), lerp2(RL, RR, s0), .9)
+        out.append(f'<polygon points="{pts([a_, b_, c_, d_])}" fill="#0f0905" opacity=".9"/>')
+    for t in (0.34, 0.68):  # purlins
+        a_, b_ = lerp2(EL, RL, t), lerp2(ER, RR, t)
+        out.append(f'<line x1="{a_[0]:.1f}" y1="{a_[1]:.1f}" x2="{b_[0]:.1f}" y2="{b_[1]:.1f}" stroke="#1c120a" stroke-width="3" opacity=".75"/>')
+    # fascia, ridge cap, bargeboards, broken rafters
+    out.append(f'<polyline points="{pts([EL, ER])}" stroke="#1c120a" stroke-width="6" fill="none" stroke-linecap="round"/>')
+    out.append(f'<polyline points="{pts([EL, RL, RR])}" stroke="#1c120a" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
+    out.append(f'<polyline points="{pts([ER, RR, BK])}" stroke="#20150c" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
+    out.append(f'<polyline points="{pts([ER, RR])}" stroke="#a97d46" stroke-width="1.6" fill="none" opacity=".45"/>')
+    for x in (330, 410, 500, 590, 680):
+        y = RL[1] + (RR[1] - RL[1]) * (x - RL[0]) / (RR[0] - RL[0])
+        out.append(f'<line x1="{x}" y1="{y:.1f}" x2="{x + r.randint(-10, 10)}" y2="{y - r.randint(14, 30):.1f}" stroke="#1c120a" stroke-width="3" stroke-linecap="round"/>')
     return ''.join(out)
 
 def land():
@@ -102,23 +117,48 @@ def land():
 <linearGradient id="wallg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3e2a1a"/><stop offset=".6" stop-color="#6b4a2a"/><stop offset="1" stop-color="#4c331e"/></linearGradient>
 <linearGradient id="roofg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset=".55" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#e0a458" stop-opacity=".16"/></linearGradient>
 <radialGradient id="barnlight" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e0a458" stop-opacity=".30"/><stop offset="1" stop-color="#e0a458" stop-opacity="0"/></radialGradient>
+<linearGradient id="haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f566a" stop-opacity="0"/><stop offset="1" stop-color="#6f566a" stop-opacity=".5"/></linearGradient>
 <filter id="b12" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12"/></filter>
 </defs>'''
     b = ''
-    # far hills (left) and tree line / farm lights (right)
-    hills = [(0, 628), (90, 618), (190, 626), (270, 644), (300, 650), (0, 650)]
-    b += f'<polygon points="{pts(hills)}" fill="#1a1520"/>'
-    b += f'<rect x="1130" y="{HORIZON-12}" width="470" height="30" fill="#14111a"/>'
-    x = 1130
-    while x < 1600:
-        h = r.randint(8, 22); w = r.randint(8, 16)
-        b += f'<polygon points="{x},{HORIZON+2} {x+w/2},{HORIZON-h} {x+w},{HORIZON+2}" fill="#0f0c14"/>'; x += r.randint(7, 15)
-    for lx in (1000, 1018, 1040, 1058):
+    # far hills, then several tree lines getting darker and larger toward us (field distance)
+    def ridge_pts(base, amp, seed, step=40):
+        rr = random.Random(seed); y = base; out = []
+        for x in range(-40, W + 80, step):
+            y += rr.uniform(-amp, amp); y = max(base - 3*amp, min(base + amp, y)); out.append((x, y))
+        return out
+    def smooth_hill(color, base, amp, seed, opacity=1):
+        p = ridge_pts(base, amp, seed)
+        return f'<polygon points="{pts(p + [(W+80, HORIZON+6), (-40, HORIZON+6)])}" fill="{color}" opacity="{opacity}"/>'
+    def treeline(color, hmin, hmax, density, seed, opacity=1, x0=-10, x1=W+10, base=HORIZON+3, blob=.35, clump=0):
+        rr = random.Random(seed); o = []; x = x0
+        while x < x1:
+            if clump and rr.random() < clump: x += rr.randint(40, 120); continue
+            h = rr.uniform(hmin, hmax); w = h * rr.uniform(.26, .36)
+            if rr.random() < blob:  # round deciduous crown on a short trunk
+                rw = h * .34
+                o.append(f'<ellipse cx="{x:.1f}" cy="{base - h*.62:.1f}" rx="{rw:.1f}" ry="{h*.4:.1f}" fill="{color}"/><rect x="{x-1.2:.1f}" y="{base - h*.3:.1f}" width="2.4" height="{h*.32:.1f}" fill="{color}"/>')
+            else:
+                o.append(f'<polygon points="{x:.1f},{base - h:.1f} {x - w:.1f},{base:.1f} {x + w:.1f},{base:.1f}" fill="{color}"/>')
+            x += rr.uniform(density * .6, density * 1.4)
+        return f'<g opacity="{opacity}">' + ''.join(o) + '</g>'
+    b = smooth_hill('#463a52', HORIZON - 14, 5, 41, .75)
+    b += smooth_hill('#3a3046', HORIZON - 7, 4, 52, .9)
+    b += treeline('#2d2540', 6, 13, 5, 61, 1, base=HORIZON - 2)
+    b += f'<rect x="0" y="{HORIZON-26}" width="{W}" height="40" fill="url(#haze)"/>'
+    b += treeline('#2a2236', 9, 22, 8, 62, .95, clump=.12, base=HORIZON + 1)
+    b += treeline('#1c1626', 14, 36, 14, 63, 1, x0=1050, base=HORIZON + 3, blob=.5)
+    b += treeline('#1c1626', 14, 30, 16, 64, 1, x1=330, base=HORIZON + 3, blob=.5)
+    b += treeline('#120d19', 24, 52, 30, 65, 1, x0=1180, base=HORIZON + 6, blob=.55)
+    for lx in (1002, 1020, 1042, 1060):
         b += f'<rect x="{lx}" y="{HORIZON+3}" width="9" height="4" fill="#cdbfd0" opacity=".55"/>'
-    b += f'<rect x="1560" y="{HORIZON-6}" width="3" height="3" fill="#ff6a3a"/>'
+    b += f'<rect x="1574" y="{HORIZON-4}" width="3" height="3" fill="#ff6a3a"/><rect x="420" y="{HORIZON-1}" width="3" height="2" fill="#e8c38a" opacity=".7"/>'
     # golden field with long grass texture
     b += f'<rect x="0" y="{HORIZON}" width="{W}" height="{H-HORIZON}" fill="url(#field)"/>'
     b += f'<ellipse cx="560" cy="700" rx="520" ry="70" fill="url(#barnlight)" filter="url(#b12)"/>'
+    for k in range(-14, 15):  # field rows converging on the horizon
+        b += f'<line x1="{800 + k*14:.0f}" y1="{HORIZON}" x2="{800 + k*150:.0f}" y2="{H}" stroke="#120c06" stroke-width="{1 + abs(k)*.08:.1f}" opacity=".16"/>'
+    b += f'<rect x="0" y="{HORIZON}" width="{W}" height="26" fill="#6f566a" opacity=".22"/>'
     for i in range(1700):
         y = r.uniform(HORIZON, H); depth = (y - HORIZON) / (H - HORIZON)
         x = r.uniform(0, W); l = 3 + depth * 26 + r.uniform(0, 6)
@@ -128,7 +168,7 @@ def land():
     b += '<g>' + barn() + '</g>'
     # tall grass shadowing the barn base
     for i in range(380):
-        x = r.uniform(120, 960); y = r.uniform(690, 735); l = r.uniform(18, 46)
+        x = r.uniform(180, 860); y = r.uniform(692, 738); l = r.uniform(18, 46)
         b += f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x + r.uniform(-5,5):.1f}" y2="{y - l:.1f}" stroke="{r.choice(["#2b1f10","#3d2b14","#5a4220"])}" stroke-width="{r.uniform(1.2,2.4):.1f}" stroke-linecap="round" opacity=".85"/>'
     return svg(b, defs)
 

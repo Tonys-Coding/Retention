@@ -1754,3 +1754,35 @@ body.theme-tatooine .db-main {
 }
 .fc-swatch:hover { transform: translate(-1px, -1px); box-shadow: 2px 2px 0 var(--shadow-color); }
 .fc-swatch.is-selected { outline: 3px solid var(--text-primary); outline-offset: 2px; }
+
+
+/* Scenery mode: hide the dashboard so the theme's artwork can be enjoyed */
+.scenery-btn {
+    position: fixed;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 900;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 3px solid var(--border-color);
+    box-shadow: 3px 3px 0 var(--shadow-color);
+    cursor: pointer;
+    opacity: 0.85;
+}
+.scenery-btn:hover { opacity: 1; transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shadow-color); }
+.scenery-btn .scenery-eye-off { display: none; }
+body.scenery-mode .scenery-btn .scenery-eye { display: none; }
+body.scenery-mode .scenery-btn .scenery-eye-off { display: block; }
+.db-sidebar, .db-main { transition: opacity 0.3s ease, visibility 0.3s; }
+body.scenery-mode .db-sidebar,
+body.scenery-mode .db-main {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}

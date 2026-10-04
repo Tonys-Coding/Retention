@@ -1465,6 +1465,16 @@ function setupEvents() {
         hint.style.display = 'block';
     };
     initFolderColorPicker();
+    const sceneryBtn = $('btn-scenery');
+    const setScenery = (on) => {
+        document.body.classList.toggle('scenery-mode', on);
+        sceneryBtn.setAttribute('aria-pressed', String(on));
+        const label = on ? 'Show the dashboard again' : "Hide the dashboard to see the theme's scenery (Esc to bring it back)";
+        sceneryBtn.title = label;
+        sceneryBtn.setAttribute('aria-label', label);
+    };
+    sceneryBtn.onclick = () => setScenery(!document.body.classList.contains('scenery-mode'));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('scenery-mode')) setScenery(false); });
     $('btn-new-folder').onclick = () => {
         addMode = 'folder';
         dom.modalTitle.textContent = 'New Folder';
