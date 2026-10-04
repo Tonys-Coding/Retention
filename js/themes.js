@@ -157,6 +157,8 @@ export const THEMES = [
         pattern: 'Mandalorian helmet', ...BOBA_ART, tile: BOBA_TILE },
     { id: 'fjord', name: 'Fjord', collection: 'landscapes', bg: '#dfe6ea', card: '#f8fafb', text: '#2b3a44', sub: '#5b6d79', border: '#2b3a44', shadow: '#7d93a1', btnBg: '#2b3a44', btnText: '#f8fafb',
         pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
+    { id: 'storm', name: 'Storm', collection: 'landscapes', animated: true, scene: 'storm', bg: '#1a1424', card: '#241d2c', text: '#ece4f2', sub: '#b3a6c4', border: '#4a3d5a', shadow: '#0d0a12', btnBg: '#d99a3e', btnText: '#1a1020',
+        pattern: 'Animated storm', img: 'url("images/storm-still.svg")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
         pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
     { id: 'campfire', name: 'Campfire', collection: 'cozy', animated: true, scene: 'campfire', bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
@@ -225,7 +227,25 @@ const ROCK_SEEDS = [ // [x, y, rx, ry, back?] in the pit's 260x110 space
 ];
 
 let sceneCount = 0;
+const createStormScene = () => {
+    const scene = document.createElement('div');
+    scene.className = 'scene scene-storm';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML = `
+        <div class="st-sky"></div>
+        <div class="st-drift"><div class="st-drift-inner"></div></div>
+        <div class="st-sheet"></div>
+        <div class="st-bolt st-bolt-a"></div>
+        <div class="st-bolt st-bolt-b"></div>
+        <div class="st-land"></div>
+        <div class="st-wash"></div>
+        <div class="st-rain-mask"><div class="st-rain st-rain-1"></div><div class="st-rain st-rain-2"></div></div>
+        <div class="st-grass"></div>`;
+    return scene;
+};
+
 export const createScene = (kind) => {
+    if (kind === 'storm') return createStormScene();
     if (kind !== 'campfire') return null;
     const n = ++sceneCount; // unique ids: a scene can be on screen twice (page + library preview)
     const rock = ([x, y, rx, ry], i) => {

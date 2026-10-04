@@ -505,6 +505,30 @@ body.theme-library button.secondary { background: #272d3f; color: #ece4d4; borde
 body.theme-library .maze-bg { display: none !important; }
 body.theme-library input, body.theme-library textarea { color: #ece4d4; }
 
+/* Thunderstorm Theme (animated: layered DOM scene, see createStormScene in js/themes.js) */
+body.theme-storm {
+    --bg-primary: #1a1424;
+    --bg-secondary: #241d2c;
+    --bg-overlay: rgba(26, 20, 36, 0.94);
+    --text-primary: #ece4f2;
+    --text-secondary: #b3a6c4;
+    --border-color: #4a3d5a;
+    --shadow-color: #0d0a12;
+    --hover-bg: #30283a;
+    --input-bg: #17111f;
+
+    background-color: var(--bg-primary);
+    background-image: url("../images/storm-still.svg");
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+body.theme-storm button.primary { background: #d99a3e; color: #1a1020; border-color: #d99a3e; }
+body.theme-storm button.secondary { background: #241d2c; color: #ece4f2; border-color: #4a3d5a; }
+body.theme-storm .maze-bg { display: none !important; }
+body.theme-storm input, body.theme-storm textarea { color: #ece4f2; }
+
 /* Campfire Theme (animated: the scene is an animated SVG, see images/campfire-scene.svg) */
 body.theme-campfire {
     --bg-primary: #080a10;
@@ -630,9 +654,68 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
 @keyframes flame-b { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 30% { transform: scale(1.06, 0.92) skewX(2.5deg) translateX(1%); } 60% { transform: scale(0.94, 1.09) skewX(-2deg) translateX(-1%); } 85% { transform: scale(1.02, 0.98) skewX(1deg); } }
 @keyframes ember { 0% { opacity: 0; transform: translate3d(0, 0, 0); } 12% { opacity: 0.85; } 100% { opacity: 0; transform: translate3d(var(--dx), -24cqmin, 0); } }
 @keyframes smoke { 0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate3d(var(--sx, 0), -26cqmin, 0) scale(2.4); } }
+
+/* ----- Thunderstorm scene: every layer is a full-size box sharing the same cover/bottom-center
+   mapping as the art, and only transform/opacity animate (compositor, steady when idle). ----- */
+.scene-storm > div { position: absolute; inset: 0; background-repeat: no-repeat; background-size: cover; background-position: center bottom; }
+.scene-storm .st-sky { background-image: url("../images/storm-sky.svg"); }
+.scene-storm .st-land { background-image: url("../images/storm-land.svg"); }
+.scene-storm .st-drift { overflow: hidden; }
+.scene-storm .st-drift-inner {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 200%;
+    background: url("../images/storm-wisps.svg") repeat-x;
+    background-size: 50% 100%;
+    opacity: 0.5;
+    animation: st-drift 220s linear infinite;
+    will-change: transform;
+}
+.scene-storm .st-sheet {
+    background: radial-gradient(ellipse 34% 30% at 76% 38%, rgba(190, 165, 240, 0.34), transparent 72%);
+    opacity: 0;
+    animation: st-sheet 9s ease-in-out infinite;
+    will-change: opacity;
+}
+.scene-storm .st-bolt { opacity: 0; will-change: opacity; }
+.scene-storm .st-bolt-a { background-image: url("../images/storm-bolt-a.svg"); animation: st-flash-a 14s linear infinite; }
+.scene-storm .st-bolt-b { background-image: url("../images/storm-bolt-b.svg"); animation: st-flash-b 21s linear infinite -9s; }
+.scene-storm .st-wash {
+    background: radial-gradient(ellipse 80% 70% at 72% 40%, rgba(180, 160, 235, 0.16), transparent 75%);
+    opacity: 0;
+    animation: st-wash 14s linear infinite;
+    will-change: opacity;
+}
+.scene-storm .st-rain-mask {
+    background: none;
+    -webkit-mask-image: radial-gradient(ellipse 52% 62% at 74% 60%, #000 18%, transparent 80%);
+    mask-image: radial-gradient(ellipse 52% 62% at 74% 60%, #000 18%, transparent 80%);
+    overflow: hidden;
+}
+.scene-storm .st-rain {
+    position: absolute; left: 0; width: 100%; top: -400px; height: calc(100% + 400px);
+    background: url("../images/storm-rain.svg") repeat;
+    will-change: transform;
+}
+.scene-storm .st-rain-1 { background-size: 400px 400px; opacity: 0.85; animation: st-rain-1 1.8s linear infinite; }
+.scene-storm .st-rain-2 { background-size: 260px 260px; opacity: 0.5; animation: st-rain-2 2.7s linear infinite; }
+.scene-storm .st-grass {
+    left: -2%; width: 104%;
+    background-image: url("../images/storm-grass.svg");
+    transform-origin: 50% 100%;
+    animation: st-sway 7s ease-in-out infinite;
+    will-change: transform;
+}
+@keyframes st-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+@keyframes st-sheet { 0%, 100% { opacity: 0; } 45% { opacity: 0.55; } 60% { opacity: 0.25; } 75% { opacity: 0.7; } 90% { opacity: 0; } }
+@keyframes st-flash-a { 0%, 100% { opacity: 0; } 1% { opacity: 1; } 1.8% { opacity: 0.25; } 2.6% { opacity: 0.95; } 3.6% { opacity: 0.3; } 4.6% { opacity: 0; } }
+@keyframes st-flash-b { 0%, 100% { opacity: 0; } 1% { opacity: 0.75; } 2% { opacity: 0.15; } 3% { opacity: 0.55; } 4.5% { opacity: 0; } }
+@keyframes st-wash { 0%, 100% { opacity: 0; } 1% { opacity: 1; } 2% { opacity: 0.4; } 2.8% { opacity: 0.9; } 7% { opacity: 0.12; } 11% { opacity: 0; } }
+@keyframes st-rain-1 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 400px, 0); } }
+@keyframes st-rain-2 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 260px, 0); } }
+@keyframes st-sway { 0%, 100% { transform: skewX(-0.8deg); } 50% { transform: skewX(1deg); } }
 @media (prefers-reduced-motion: reduce) {
     .scene * { animation: none !important; }
     .scene-campfire .ember, .scene-campfire .smoke { display: none; }
+    .scene-storm .st-rain-mask, .scene-storm .st-bolt, .scene-storm .st-wash { display: none; }
 }
 
 /* TRANSPARENCY BLOCK */
@@ -677,6 +760,7 @@ body.theme-boba .view,
 body.theme-fjord .view,
 body.theme-library .view,
 body.theme-campfire .view,
+body.theme-storm .view,
 body.theme-strawberry .view,
 body.theme-autumn .list-container,
 body.theme-vaporwave .list-container,
@@ -695,6 +779,7 @@ body.theme-boba .list-container,
 body.theme-fjord .list-container,
 body.theme-library .list-container,
 body.theme-campfire .list-container,
+body.theme-storm .list-container,
 body.theme-strawberry .list-container {
     background: transparent !important;
 }

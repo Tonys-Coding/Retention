@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v50';
+const CACHE_NAME = 'retention-v51';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -23,6 +23,14 @@ const APP_SHELL = [
     './js/themes-library.js',
     './js/utils.js',
     './images/campfire-scene.svg',
+    './images/storm-still.svg',
+    './images/storm-sky.svg',
+    './images/storm-land.svg',
+    './images/storm-wisps.svg',
+    './images/storm-grass.svg',
+    './images/storm-rain.svg',
+    './images/storm-bolt-a.svg',
+    './images/storm-bolt-b.svg',
     './js/practice-test.js',
     './js/quiz-editor.js',
     './js/import-help.js',
