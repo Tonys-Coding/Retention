@@ -57,7 +57,13 @@ def barn():
     EL, ER = (188, 606), (664, 602)        # front eave, left/right (with overhang)
     RL, RR = (277, 456), (749, 452)        # ridge, left/right
     BK = (832, 574)                        # back-top corner of the gable end
-    out = ['<ellipse cx="570" cy="724" rx="340" ry="13" fill="#0a0704" opacity=".65"/>']
+    out = [
+        # contact shadows hugging both base lines so the barn sits in the ground
+        '<polygon points="176,720 664,722 700,748 150,752" fill="url(#ao)"/>',
+        '<polygon points="660,724 834,696 884,716 690,752" fill="url(#ao)"/>',
+    ]
+    # stone footings under the logs
+    out.append('<polygon points="204,722 662,722 662,732 204,734" fill="#191109"/><polygon points="660,724 832,696 832,706 660,734" fill="#130c07"/>')
     # long front wall of stacked logs
     out.append('<polygon points="210,606 660,603 660,724 210,724" fill="url(#wallg)"/>')
     for i in range(1, 10):
@@ -116,6 +122,7 @@ def land():
 <linearGradient id="field" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26230f"/><stop offset=".18" stop-color="#3a3016"/><stop offset=".6" stop-color="#5a4219"/><stop offset="1" stop-color="#2a1c0d"/></linearGradient>
 <linearGradient id="wallg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3e2a1a"/><stop offset=".6" stop-color="#6b4a2a"/><stop offset="1" stop-color="#4c331e"/></linearGradient>
 <linearGradient id="roofg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset=".55" stop-color="#000" stop-opacity=".18"/><stop offset="1" stop-color="#e0a458" stop-opacity=".16"/></linearGradient>
+<linearGradient id="ao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".7"/><stop offset=".5" stop-color="#000" stop-opacity=".3"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
 <radialGradient id="barnlight" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e0a458" stop-opacity=".30"/><stop offset="1" stop-color="#e0a458" stop-opacity="0"/></radialGradient>
 <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6f566a" stop-opacity="0"/><stop offset="1" stop-color="#6f566a" stop-opacity=".5"/></linearGradient>
 <filter id="b12" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="12"/></filter>
@@ -166,10 +173,13 @@ def land():
         col = r.choice(['#8a6a2a', '#a07a30', '#6a5222', '#b58a3a', '#4a3a1c'])
         b += f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x + r.uniform(-3,3):.1f}" y2="{y - l:.1f}" stroke="{col}" stroke-width="{0.8 + depth*1.6:.1f}" stroke-linecap="round" opacity="{0.12 + 0.5*lit*r.random()*(0.4+depth):.2f}"/>'
     b += '<g>' + barn() + '</g>'
-    # tall grass shadowing the barn base
-    for i in range(380):
-        x = r.uniform(180, 860); y = r.uniform(692, 738); l = r.uniform(18, 46)
-        b += f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{x + r.uniform(-5,5):.1f}" y2="{y - l:.1f}" stroke="{r.choice(["#2b1f10","#3d2b14","#5a4220"])}" stroke-width="{r.uniform(1.2,2.4):.1f}" stroke-linecap="round" opacity=".85"/>'
+    # tall grass planted along both base lines, overlapping the footings
+    for i in range(900):
+        x = r.uniform(165, 880)
+        yb = 726 if x <= 660 else 726 - (x - 660) * 28 / 172
+        y = yb + r.uniform(-4, 26); l = r.uniform(16, 52) * (0.7 + (y - yb + 4) / 60)
+        col = r.choice(["#1c130a", "#2b1f10", "#3d2b14", "#5a4220", "#7a5a26"])
+        b += f'<path d="M{x:.1f} {y:.1f} q{r.uniform(-4,4):.1f} {-l*0.5:.1f} {r.uniform(-9,9):.1f} {-l:.1f}" stroke="{col}" stroke-width="{r.uniform(1.2,2.6):.1f}" stroke-linecap="round" fill="none" opacity=".9"/>'
     return svg(b, defs)
 
 # Foreground swaying grass (separate layer so it can sway on the compositor)
