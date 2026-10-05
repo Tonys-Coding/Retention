@@ -159,6 +159,8 @@ export const THEMES = [
         pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
     { id: 'storm', name: 'Storm', collection: 'landscapes', animated: true, scene: 'storm', bg: '#1a1424', card: '#241d2c', text: '#ece4f2', sub: '#b3a6c4', border: '#4a3d5a', shadow: '#0d0a12', btnBg: '#d99a3e', btnText: '#1a1020',
         pattern: 'Animated storm', img: 'url("images/storm-still.webp")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
+    { id: 'city', name: 'City Lights', collection: 'landscapes', animated: true, scene: 'city', bg: '#09090d', card: '#16141a', text: '#f2eadf', sub: '#b8a88e', border: '#4a3a2a', shadow: '#050507', btnBg: '#ff9f43', btnText: '#17100a',
+        pattern: 'Animated skyline', img: 'url("images/city-still.webp")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
         pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
     { id: 'campfire', name: 'Campfire', collection: 'cozy', animated: true, scene: 'campfire', bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
@@ -265,7 +267,25 @@ const createStormScene = () => {
     return scene;
 };
 
+const createCityScene = () => {
+    const scene = document.createElement('div');
+    scene.className = 'scene scene-city';
+    scene.setAttribute('aria-hidden', 'true');
+    scene.innerHTML = `
+        <div class="ct-sky"></div>
+        <div class="st-box ct-drift"><div class="ct-drift-inner"></div></div>
+        <div class="st-box ct-city"></div>
+        <div class="st-box ct-lights ct-lights-a"></div>
+        <div class="st-box ct-lights ct-lights-b"></div>
+        <div class="st-box ct-water"></div>
+        <div class="st-box ct-shimmer"></div>
+        <div class="st-box ct-ferry"></div>
+        <div class="st-box ct-beacon"></div>`;
+    return scene;
+};
+
 export const createScene = (kind) => {
+    if (kind === 'city') return createCityScene();
     if (kind === 'storm') return createStormScene();
     if (kind !== 'campfire') return null;
     const n = ++sceneCount; // unique ids: a scene can be on screen twice (page + library preview)

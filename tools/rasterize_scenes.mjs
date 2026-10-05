@@ -13,6 +13,14 @@ mkdirSync(tmp, { recursive: true });
 
 // name -> { svg, out, crop: [x0, y0, x1, y1] in canvas units, alpha, q, scale }
 const jobs = [
+    { svg: 'city-sky.svg', out: 'city-sky', crop: [0, 0, 1600, 900], q: 78 },
+    { svg: 'city-wisps.svg', out: 'city-wisps', crop: [0, 0, 1600, 470], alpha: true, q: 40, scale: 0.6 },
+    { svg: 'city-skyline.svg', out: 'city-skyline', crop: [0, 60, 1600, 780], alpha: true, q: 80 },
+    { svg: 'city-lights-a.svg', out: 'city-lights-a', crop: [0, 60, 1600, 780], alpha: true, q: 70 },
+    { svg: 'city-lights-b.svg', out: 'city-lights-b', crop: [0, 60, 1600, 780], alpha: true, q: 70 },
+    { svg: 'city-water.svg', out: 'city-water', crop: [0, 760, 1600, 900], q: 80 },
+    { svg: 'city-shimmer.svg', out: 'city-shimmer', crop: [0, 760, 1600, 900], alpha: true, q: 75 },
+    { svg: 'city-still.svg', out: 'city-still', crop: [0, 0, 1600, 900], q: 72, scale: 0.55 },
     { svg: 'storm-sky.svg', out: 'storm-sky', crop: [0, 0, 1600, 900], q: 80 },
     { svg: 'storm-land.svg', out: 'storm-land', crop: [0, 0, 1600, 900], alpha: true, q: 82 },
     { svg: 'storm-wisps.svg', out: 'storm-wisps', crop: [0, 0, 1600, 770], alpha: true, q: 40, scale: 0.6 },

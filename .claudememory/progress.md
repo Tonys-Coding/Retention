@@ -6,11 +6,12 @@
 - [x] AI generation from PDF / Drive PDF / pasted text, background jobs in the extension, live progress banner
 - [x] Google Drive auto-sync with conflict prompt
 - [x] Progress page, daily goal, milestones, review log
-- [x] 23 themes (2 animated), themes library, favorites
+- [x] 24 themes (3 animated), themes library, favorites
 - [x] PWA (offline via `sw.js`), extension popup, web dashboard
 - [x] Promo video (Remotion) from real UI recordings
 
 ## Recent Changes (newest first)
+- 2026-10-05: Third animated theme, **City Lights** (Landscapes; `tools/gen_city_scene.py` -> `images/city-*.webp`, `createCityScene`, `.scene-city` CSS: two out-of-phase window-twinkle layers, water shimmer sway, slow cloud drift, ferry, beacon). Daily goal input on the Progress page now uses theme colors (`--input-bg`, `--text-primary`). `sw.js` cache v56.
 - 2026-10-05: Animated-theme performance pass: SVG art pre-rendered to WebP (`tools/rasterize_scenes.mjs`, sources in `tools/art/`), removed fixed full-page SVG backgrounds, right-sized Storm layers, rain mask replaced by baked fade + cloudbase overlay, lightning now JS-scheduled (random 11-19s / 16-27s, layers only exist during a flash), glows opacity-only, previews pause off-screen. `sw.js` cache v55.
 - 2026-10-05: **Progress & metrics update.** New IndexedDB store `reviews` (DB v5, one row per answer incl. skips, `ms` capped 90s) written by `recordStudyResult(know, ctx)`/`recordSkip` (`db.js`); pure analytics in `js/stats.js`; loaders + goal/achievement storage in `js/progress-data.js` (synced via Drive `preferences`; `reviews` is in the backup too); UI in `js/progress-view.js` (Progress page `#view-progress`, `#progress` hash, deck panel, mastery bars on grid cards, home goal ring) and an upgraded popup stats view. Toasts for goal reached/milestones via `scheduleProgressCheck` (debounced on `db_updated`). `sw.js` cache v54.
 - 2026-10-04: Storm barn no longer floats: stone footings, contact shadows along both base lines, dense grass planted along the base. `sw.js` cache v53.

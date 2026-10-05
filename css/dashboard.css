@@ -1055,6 +1055,7 @@ body.theme-fjord .db-main,
 body.theme-library .db-main,
 body.theme-campfire .db-main,
 body.theme-storm .db-main,
+body.theme-city .db-main,
 body.theme-strawberry .db-main,
 body.theme-tatooine .db-main {
     background: transparent !important;
@@ -1806,7 +1807,12 @@ body.scenery-mode .db-main {
 .pg-sub { margin: 4px 0 0; font-size: 13px; color: var(--text-secondary); max-width: 560px; }
 .pg-controls { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .pg-goal { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
-.pg-goal input { width: 78px; margin: 0; padding: 8px 10px; font-weight: 800; text-align: center; }
+.pg-goal input {
+    width: 78px; margin: 0; padding: 8px 10px; font-weight: 800; text-align: center;
+    background: var(--input-bg); color: var(--text-primary);
+    border: 3px solid var(--border-color); border-radius: 0; appearance: textfield; -moz-appearance: textfield;
+}
+.pg-goal input:focus { outline: none; box-shadow: 4px 4px 0 var(--text-primary); }
 .pg-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(166px, 1fr)); gap: 16px; }
 .pg-tiles--small { margin-bottom: 14px; }
 .pg-tile { background: var(--bg-secondary); border: 4px solid var(--border-color); box-shadow: 5px 5px 0 var(--shadow-color); padding: 18px; text-align: center; }
