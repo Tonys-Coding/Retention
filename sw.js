@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v53';
+const CACHE_NAME = 'retention-v54';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -22,6 +22,9 @@ const APP_SHELL = [
     './js/themes.js',
     './js/themes-library.js',
     './js/utils.js',
+    './js/stats.js',
+    './js/progress-data.js',
+    './js/progress-view.js',
     './images/campfire-scene.svg',
     './images/storm-still.svg',
     './images/storm-sky.svg',

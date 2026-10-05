@@ -1,7 +1,7 @@
 import { storage } from './env.js';
 
 const DB_NAME = 'RetentionDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export let db;
 
@@ -59,6 +59,13 @@ export const initDB = () => {
             // v4: practice quiz attempts, kept separate from study stats and card mastery
             if (!db.objectStoreNames.contains('quizResults')) {
                 db.createObjectStore('quizResults', { keyPath: 'id', autoIncrement: true });
+            }
+
+            // v5: one row per flashcard answer (powers the Progress page); `stats` keeps the daily totals
+            if (!db.objectStoreNames.contains('reviews')) {
+                const reviewStore = db.createObjectStore('reviews', { keyPath: 'id', autoIncrement: true });
+                reviewStore.createIndex('date', 'date', { unique: false });
+                reviewStore.createIndex('deckId', 'deckId', { unique: false });
             }
         };
     });
@@ -307,7 +314,51 @@ export const deleteCard = (id) => {
     });
 }
 
-export const recordStudyResult = (know) => {
+const localDateString = (ts = Date.now()) => {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Time on a card above this is treated as idle (tab left open), so study time stays honest
+export const MAX_REVIEW_MS = 90000;
+
+/**
+ * Appends one answer to the review log. Never throws: tracking must not break studying.
+ * @param {{ deckId?: number, cardId?: number, result: 'know'|'forgot'|'skip', type?: string, ms?: number }} review
+ */
+export const addReview = (review) => new Promise((resolve) => {
+    try {
+        const ts = Date.now();
+        const row = {
+            ts, date: localDateString(ts),
+            deckId: review.deckId ?? null, cardId: review.cardId ?? null,
+            result: review.result, type: review.type === 'cloze' ? 'cloze' : 'standard',
+            ms: Math.max(0, Math.min(MAX_REVIEW_MS, Math.round(review.ms || 0)))
+        };
+        const transaction = db.transaction(['reviews'], 'readwrite');
+        transaction.objectStore('reviews').add(row);
+        transaction.oncomplete = () => { markDbDirty(); resolve(row); };
+        transaction.onerror = (e) => { e.preventDefault(); console.error('addReview failed:', transaction.error); resolve(null); };
+    } catch (e) {
+        console.error('addReview failed:', e);
+        resolve(null);
+    }
+});
+
+export const getReviews = () => new Promise((resolve) => {
+    try {
+        const request = db.transaction(['reviews'], 'readonly').objectStore('reviews').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => { e.preventDefault(); resolve([]); };
+    } catch (e) { resolve([]); }
+});
+
+/**
+ * Records a Know/Forgot answer: updates the daily totals and appends a review row.
+ * `context` = { deckId, cardId, type, ms } (all optional).
+ */
+export const recordStudyResult = (know, context = {}) => {
+    addReview({ ...context, result: know ? 'know' : 'forgot' });
     return new Promise((resolve, reject) => {
         const dateStr = new Date().toISOString().split('T')[0];
         const transaction = db.transaction(['stats'], 'readwrite');
@@ -323,6 +374,9 @@ export const recordStudyResult = (know) => {
         transaction.onerror = (e) => { e.preventDefault(); reject(transaction.error); };
     });
 };
+
+/** Records a skipped card (kept out of accuracy, counted as activity and time). */
+export const recordSkip = (context = {}) => addReview({ ...context, result: 'skip' });
 
 export const getStats = () => {
     return new Promise((resolve, reject) => {

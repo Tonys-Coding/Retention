@@ -247,22 +247,11 @@
             <button class="icon-btn" id="btn-back-stats" style="display: flex; align-items: center; justify-content: center;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             </button>
-            <h2>Your Stats</h2>
+            <h2>Your Progress</h2>
         </div>
-        <div class="list-container" style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
-                <h3 style="margin-top: 0;">Daily Streak</h3>
-                <h1 style="font-size: 48px; margin: 0;" id="stat-streak">0</h1>
-                <p style="margin-bottom: 0; color: var(--text-secondary);">days in a row</p>
-            </div>
-            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
-                <h3 style="margin-top: 0;">Overall Accuracy</h3>
-                <h1 style="font-size: 48px; margin: 0;" id="stat-accuracy">0%</h1>
-            </div>
-            <div style="background: var(--bg-secondary); border: 3px solid var(--border-color); padding: 16px; box-shadow: 4px 4px 0px 0px var(--shadow-color); text-align: center;">
-                <h3 style="margin-top: 0;">Cards Mastered</h3>
-                <h1 style="font-size: 48px; margin: 0;" id="stat-mastered">0</h1>
-            </div>
+        <div class="list-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <div id="stats-summary" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <button id="btn-open-progress" class="primary" style="width: 100%;">Open full progress in dashboard</button>
         </div>
     </div>
 

@@ -51,6 +51,19 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 *   **Context Menu Magic:** Highlight text on any website, right-click, and select "Add to Retention (AI)" to instantly beam a generated flashcard into your Inbox.
 *   **Practice quizzes too:** The same AI can write multiple choice, true/false and fill-in-the-blank practice quizzes (see Practice Quiz Decks below).
 
+###  Progress & Insights
+Retention keeps a private log of every card you answer, so you can see how you are really doing (all calculated on your device and included in your Drive backup):
+*   **Progress page** (sidebar **Progress**, or the chart button in the extension popup): streak and longest streak, study time (today / week / all time), accuracy, answers per day, and mastered cards.
+*   **Activity heatmap:** six months of studying at a glance, plus a 7 / 30 / 90 day chart of cards answered with your accuracy line.
+*   **Mastery breakdown:** Mastered / Still learning / Not studied for everything, with a one-click **Review still-learning cards**. Every deck and folder card shows a mastery bar and percentage.
+*   **Per-deck stats:** accuracy, answers, time, last studied and trouble cards at the top of each deck, plus a table of all decks on the Progress page.
+*   **Hardest cards:** the cards you forget most, with **Study these 10**.
+*   **When you study best:** volume and accuracy by hour of day and weekday.
+*   **Quiz history:** attempts, best / latest / average score, trend per quiz, and accuracy by question type.
+*   **Daily goal & milestones:** set a daily card goal (default 20) with a progress ring on the home screen and in the popup, goal streaks, and 14 unlockable milestones (streaks, answers, mastered decks, perfect quizzes, study time).
+*   **Export:** **Download my stats (CSV)** gives you the full answer log. Time on a card is capped at 90 seconds so leaving a tab open does not inflate study time.
+History before this update only has daily totals (streak and accuracy), so per-card charts fill in from the day you update.
+
 ###  Practice Quiz Decks
 Alongside flashcard decks, Retention has **practice quiz decks** (with their own test-sheet icon) for exam-style review:
 *   **Three question types:** Multiple choice (2–6 choices), True / False, and Fill in the blank (forgiving of case, punctuation and small typos, with an "I was right" override).

@@ -1,7 +1,10 @@
-import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, reparentOrphans, isQuizDeck, getQuizResults } from './db.js';
+import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, recordSkip, reparentOrphans, isQuizDeck, getQuizResults } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml, isCloseAnswer, pickQuickTen, shuffleInPlace } from './utils.js';
+import { loadProgressData, checkAchievements } from './progress-data.js';
+import { buildDayMap, summarize, masteryBreakdown, dailySeries, formatDuration } from './stats.js';
+import { ringHtml, masteryBarHtml } from './progress-view.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderImportHelp } from './import-help.js';
 import { renderAiQuizForm } from './ai-quiz.js';
@@ -861,12 +864,16 @@ const startStudySession = (source, isQuickStudy = false) => {
 document.getElementById('btn-start-study').addEventListener('click', () => startStudySession('deckDetails'));
 document.getElementById('btn-quick-10').addEventListener('click', () => startStudySession('deckDetails', true));
 
+let cardShownAt = 0; // when the current card appeared (for study time)
+const reviewContext = () => { const c = studyCards[studyIndex]; return { deckId: c?.deckId, cardId: c?.id, type: c?.type, ms: Date.now() - cardShownAt }; };
+
 const updateStudyView = () => {
     if (studyIndex >= studyCards.length) {
         showStudyComplete();
         return;
     }
     saveStudySession();
+    cardShownAt = Date.now();
     
     const card = studyCards[studyIndex];
     document.getElementById('study-progress-text').textContent = `${studyIndex + 1} of ${studyCards.length}`;
@@ -1015,6 +1022,7 @@ document.getElementById('btn-submit-cloze').addEventListener('click', () => {
 });
 
 document.getElementById('btn-skip-cloze').addEventListener('click', () => {
+    recordSkip(reviewContext());
     studyIndex++;
     updateStudyView();
 });
@@ -1036,7 +1044,7 @@ const handleTraditionalResult = async (know) => {
             card.status = 'learning';
         }
         await updateCard(card);
-        await recordStudyResult(know);
+        await recordStudyResult(know, { deckId: card.deckId, cardId: card.id, type: card.type, ms: Date.now() - cardShownAt });
         
         studyIndex++;
         updateStudyView();
@@ -1048,6 +1056,7 @@ const handleTraditionalResult = async (know) => {
 document.getElementById('btn-study-forgot-trad').addEventListener('click', () => handleTraditionalResult(false));
 document.getElementById('btn-study-know-trad').addEventListener('click', () => handleTraditionalResult(true));
 document.getElementById('btn-study-skip-trad').addEventListener('click', () => {
+    recordSkip(reviewContext());
     studyIndex++;
     updateStudyView();
 });
@@ -1183,53 +1192,31 @@ document.getElementById('input-rename-deck').addEventListener('keypress', (e) =>
 });
 
 const loadStats = async () => {
-    const stats = await getStats();
-    let totalKnow = 0;
-    let totalForgot = 0;
-    let streak = 0;
-    
-    if (stats.length > 0) {
-        stats.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        for (const stat of stats) {
-            totalKnow += stat.know;
-            totalForgot += stat.forgot;
-        }
-        
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        let currentCheck = new Date(today);
-        
-        const hasToday = stats.some(s => s.date === today.toISOString().split('T')[0]);
-        if (!hasToday) {
-            currentCheck.setDate(currentCheck.getDate() - 1);
-        }
-        
-        for (let i = 0; i < stats.length; i++) {
-            const statDateStr = currentCheck.toISOString().split('T')[0];
-            const found = stats.find(s => s.date === statDateStr);
-            if (found) {
-                streak++;
-                currentCheck.setDate(currentCheck.getDate() - 1);
-            } else {
-                break;
-            }
-        }
-    }
-    
-    const accuracy = totalKnow + totalForgot > 0 ? Math.round((totalKnow / (totalKnow + totalForgot)) * 100) : 0;
-    
-    const decks = await getDecks();
-    let masteredCount = 0;
-    for (const deck of decks) {
-        const cards = await getCardsByDeck(deck.id);
-        masteredCount += cards.filter(c => c.status === 'mastered').length;
-    }
-    
-    document.getElementById('stat-streak').textContent = streak;
-    document.getElementById('stat-accuracy').textContent = accuracy + '%';
-    document.getElementById('stat-mastered').textContent = masteredCount;
+    const data = await loadProgressData();
+    const summary = summarize(buildDayMap(data.reviews, data.legacyStats), data.cards, { goal: data.goal });
+    const mastery = masteryBreakdown(data.cards);
+    const week = dailySeries(buildDayMap(data.reviews, data.legacyStats), 7);
+    const max = Math.max(1, ...week.map((d) => d.reviews));
+    const dayName = (d) => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(d + 'T12:00').getDay()];
+    document.getElementById('stats-summary').innerHTML = `
+        <div class="pp-card pp-goal">
+            <div class="pp-ring">${ringHtml(Math.min(summary.today, 9999), summary.goal, 78)}</div>
+            <div><div class="pp-big">${summary.goalMet ? 'Goal reached' : `${summary.goal - summary.today} to go`}</div><div class="pp-sub">Today's goal: ${summary.goal} cards</div></div>
+        </div>
+        <div class="pp-grid">
+            <div class="pp-card"><b>${summary.streak}</b><span>Day streak</span><em>Best ${summary.longestStreak}</em></div>
+            <div class="pp-card"><b>${summary.know + summary.forgot ? summary.accuracy + '%' : '–'}</b><span>Accuracy</span><em>${summary.reviews} answers</em></div>
+            <div class="pp-card"><b>${formatDuration(summary.ms7)}</b><span>This week</span><em>${formatDuration(summary.msToday)} today</em></div>
+            <div class="pp-card"><b>${summary.mastered}</b><span>Mastered</span><em>${mastery.masteredPct}% of ${mastery.total}</em></div>
+        </div>
+        <div class="pp-card pp-wide"><span>Mastery</span>${masteryBarHtml(mastery, { legend: true })}</div>
+        <div class="pp-card pp-wide"><span>Last 7 days</span><div class="pp-week">${week.map((d) => `<div title="${d.date}: ${d.reviews} cards"><i style="height:${Math.max(3, (d.reviews / max) * 100)}%"></i><u>${dayName(d.date)}</u></div>`).join('')}</div></div>`;
+    checkAchievements(data).then((fresh) => { if (fresh.length) showToast(`Milestone unlocked: ${fresh[0].name}`); }).catch(() => {});
 };
+
+document.getElementById('btn-open-progress').addEventListener('click', () => {
+    chrome.tabs.create({ url: 'dashboard.html#progress' });
+});
 
 document.getElementById('btn-view-stats').addEventListener('click', async () => {
     await loadStats();

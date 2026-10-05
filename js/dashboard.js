@@ -2,10 +2,13 @@ import { isExtension, storage, runtime } from './env.js';
 import { processPdfChunks } from './ai-processor.js';
 import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
-import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getAllCards, isQuizDeck, getQuizResults } from './db.js';
+import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, recordSkip, getReviews, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getAllCards, isQuizDeck, getQuizResults } from './db.js';
 import { exportDeckToCSV } from './csv.js';
 import { escapeHtml, isCloseAnswer, pickQuickTen } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
+import { renderProgress, deckPanelHtml, masteryBarHtml, ringHtml } from './progress-view.js';
+import { loadProgressData, setGoal, checkAchievements, getGoal } from './progress-data.js';
+import { buildDayMap, summarize, masteryBreakdown, achievementContext, reviewsToCsv, formatDuration, dateString, ACHIEVEMENTS } from './stats.js';
 import { renderThemesLibrary } from './themes-library.js';
 import { renderPracticeTest, quizDeckIcon, quizDeckMeta, summarizeAttempts } from './practice-test.js';
 import { renderQuizEditor } from './quiz-editor.js';
@@ -178,6 +181,10 @@ async function init() {
         browseHint: 'Star and reorder favorites there'
     });
     $('btn-sidebar-themes').onclick = showThemes;
+    $('btn-sidebar-progress').onclick = showProgress;
+    $('db-stat-today-card').onclick = showProgress;
+    $('db-stat-today-card').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showProgress(); } };
+    globalThis.addEventListener('db_updated', scheduleProgressCheck);
     $('sidebar-home').onclick = () => showHome();
     setupEvents();
     await refreshSidebar();
@@ -191,6 +198,9 @@ async function init() {
     const linkedDeck = deckLink ? (await getDecks()).find((d) => d.id === Number(deckLink[2])) : null;
     if (hash === '#themes') {
         showThemes();
+    } else if (hash === '#progress') {
+        await showHome(); // so Back returns home
+        showProgress();
     } else if (linkedDeck) {
         await showHome(); // so Back returns home
         if (deckLink[1] === 'test') showPracticeTest(linkedDeck);
@@ -575,49 +585,77 @@ function highlightNav(id) {
 
 // ===== VIEWS =====
 async function loadStats() {
-    const stats = await getStats();
-    let totalKnow = 0;
-    let totalForgot = 0;
-    let streak = 0;
-    
-    if (stats.length > 0) {
-        stats.sort((a, b) => new Date(b.date) - new Date(a.date));
-        for (const stat of stats) {
-            totalKnow += stat.know;
-            totalForgot += stat.forgot;
-        }
-        
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        let currentCheck = new Date(today);
-        
-        const hasToday = stats.some(s => s.date === today.toISOString().split('T')[0]);
-        if (!hasToday) {
-            currentCheck.setDate(currentCheck.getDate() - 1);
-        }
-        
-        for (let i = 0; i < stats.length; i++) {
-            const statDateStr = currentCheck.toISOString().split('T')[0];
-            const found = stats.find(s => s.date === statDateStr);
-            if (found) {
-                streak++;
-                currentCheck.setDate(currentCheck.getDate() - 1);
-            } else break;
-        }
+    const data = await loadProgressData();
+    const summary = summarize(buildDayMap(data.reviews, data.legacyStats), data.cards, { goal: data.goal });
+    const mastery = masteryBreakdown(data.cards);
+    dom.statStreak.textContent = summary.streak;
+    dom.statAccuracy.textContent = summary.know + summary.forgot ? `${summary.accuracy}%` : '0%';
+    dom.statMastered.textContent = summary.mastered;
+    $('db-stat-ring').innerHTML = ringHtml(Math.min(summary.today, 9999), summary.goal, 76);
+    $('db-stat-today-sub').textContent = summary.goalMet ? 'Goal reached' : `${summary.goal - summary.today} to go`;
+    $('db-stat-streak-sub').textContent = summary.longestStreak > summary.streak ? `Best ${summary.longestStreak}` : (summary.streak ? 'Personal best' : 'Study today to start');
+    $('db-stat-time-sub').textContent = summary.msAll ? `${formatDuration(summary.ms7)} studied this week` : '';
+    $('db-stat-mastered-sub').textContent = mastery.total ? `${mastery.masteredPct}% of ${mastery.total} cards` : '';
+}
+
+// ===== PROGRESS PAGE =====
+async function showProgress() {
+    currentView = 'progress';
+    hideAll();
+    dom.mainTitle.textContent = 'Progress';
+    dom.btnBack.style.display = 'block';
+    dom.btnStudy.style.display = 'none';
+    highlightNav('');
+    $('btn-sidebar-progress').classList.add('active');
+    $('view-progress').classList.add('active');
+    let data = await loadProgressData();
+    const fresh = await checkAchievements(data);
+    if (fresh.length) {
+        data = await loadProgressData();
+        fresh.forEach((a, i) => setTimeout(() => showToast(`Milestone unlocked: ${a.name}`), i * 2600));
     }
-    
-    dom.statStreak.textContent = streak;
-    const total = totalKnow + totalForgot;
-    dom.statAccuracy.textContent = total === 0 ? '0%' : Math.round((totalKnow / total) * 100) + '%';
-    // Cards currently marked mastered (matches the popup), not the number of "Know" answers
-    const allCards = await getAllCards();
-    dom.statMastered.textContent = allCards.filter((c) => c.status === 'mastered').length;
+    renderProgress($('view-progress'), data, {
+        onGoalChange: async (n) => { await setGoal(n); showToast(`Daily goal set to ${n} cards.`); showProgress(); },
+        onStudyDeck: (id) => { const d = data.decks.find((x) => x.id === id); if (d) { pendingStudyBack = showProgress; startStudyDeck(d.id, d.name); } },
+        onStudyHardest: (cards, title = 'Hardest cards') => { pendingStudyBack = showProgress; beginStudy(cards, `Studying: ${title}`, null); },
+        onExport: () => {
+            const blob = new Blob([reviewsToCsv(data.reviews, data.decks, data.cards)], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `retention-stats-${dateString()}.csv`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+    });
+    window.scrollTo(0, 0);
+    dom.mainBody.scrollTop = 0;
+}
+
+// Toasts for new milestones and the daily goal, shortly after activity settles
+let progressToastTimer = null;
+function scheduleProgressCheck() {
+    clearTimeout(progressToastTimer);
+    progressToastTimer = setTimeout(async () => {
+        try {
+            const data = await loadProgressData();
+            const summary = summarize(buildDayMap(data.reviews, data.legacyStats), data.cards, { goal: data.goal });
+            const messages = [];
+            if (summary.goalMet && localStorage.getItem('goal_toast_date') !== dateString()) {
+                localStorage.setItem('goal_toast_date', dateString());
+                messages.push(`Daily goal reached: ${summary.goal} cards!`);
+            }
+            (await checkAchievements(data)).forEach((a) => messages.push(`Milestone unlocked: ${a.name}`));
+            messages.forEach((m, i) => setTimeout(() => showToast(m), i * 2600));
+        } catch (e) { console.error('progress check failed', e); }
+    }, 2500);
 }
 
 function hideAll() {
     dom.viewTest.classList.remove('active');
     dom.btnStudy.textContent = 'Study';
     $('view-themes').classList.remove('active');
+    $('view-progress').classList.remove('active');
+    $('btn-sidebar-progress').classList.remove('active');
     $('btn-sidebar-themes').classList.remove('active');
     dom.viewGrid.style.display = 'none';
     dom.viewStatsBar.style.display = 'none';
@@ -676,6 +714,7 @@ async function showHome() {
         const dragData = { type: 'folder', id: f.id };
         const onDrop = async (e) => await handleDrop(e, f.id);
         
+        const folderCards = await getCardsByFolder(f.id);
         dom.viewGrid.appendChild(makeGridCard(
             getFolderIcon(f.color), f.name, folderMeta(f, decks, folders),
             () => showFolder(f.id, f.name),
@@ -683,7 +722,8 @@ async function showHome() {
             f.color,
             null,
             dragData,
-            onDrop
+            onDrop,
+            masteryBarOf(folderCards)
         ));
     }
     
@@ -695,13 +735,14 @@ async function showHome() {
         const dragData = { type: 'deck', id: d.id };
         
         dom.viewGrid.appendChild(makeGridCard(
-            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards`,
+            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards${cards.length ? ` · ${masteryBreakdown(cards).masteredPct}% mastered` : ''}`,
             () => openDeckPrimary(d),
             (e) => showDeckMenu(e, d),
             null,
             quickStudyAction,
             dragData,
-            null
+            null,
+            quiz ? '' : masteryBarOf(cards)
         ));
     }
 }
@@ -740,6 +781,7 @@ async function showFolder(folderId, folderName) {
         const dragData = { type: 'folder', id: f.id };
         const onDrop = async (e) => await handleDrop(e, f.id);
         
+        const folderCards = await getCardsByFolder(f.id);
         dom.viewGrid.appendChild(makeGridCard(
             getFolderIcon(f.color), f.name, folderMeta(f, decks, folders),
             () => showFolder(f.id, f.name),
@@ -747,7 +789,8 @@ async function showFolder(folderId, folderName) {
             f.color,
             null,
             dragData,
-            onDrop
+            onDrop,
+            masteryBarOf(folderCards)
         ));
     }
 
@@ -758,13 +801,14 @@ async function showFolder(folderId, folderName) {
         const dragData = { type: 'deck', id: d.id };
         
         dom.viewGrid.appendChild(makeGridCard(
-            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards`,
+            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards${cards.length ? ` · ${masteryBreakdown(cards).masteredPct}% mastered` : ''}`,
             () => openDeckPrimary(d),
             (e) => showDeckMenu(e, d),
             null,
             quickStudyAction,
             dragData,
-            null
+            null,
+            quiz ? '' : masteryBarOf(cards)
         ));
     }
 }
@@ -780,6 +824,8 @@ function setBreakableText(el, text) {
     });
 }
 
+// Thin mastered / learning / not-studied bar for a deck or folder card
+const masteryBarOf = (cards) => (cards.length ? masteryBarHtml(masteryBreakdown(cards), { thin: true }) : '');
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 // "8 decks · 2 folders" (folder count only when there are sub-folders): direct children
 const folderMeta = (folder, decks, folders) => {
@@ -788,7 +834,7 @@ const folderMeta = (folder, decks, folders) => {
     return subfolders ? `${deckText} · ${plural(subfolders, 'folder')}` : deckText;
 };
 
-function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop) {
+function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop, barHtml = '') {
     const card = document.createElement('div');
     card.className = 'db-card';
     if (dragData?.type === 'folder') card.classList.add('db-card--folder');
@@ -804,6 +850,7 @@ function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickSt
             <h3>${icon}<span class="db-card-title"></span></h3>
             <button class="db-card-menu" title="Options">${ICON.dots}</button>
         </div>
+        ${barHtml ? `<div class="db-card-bar">${barHtml}</div>` : ''}
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: auto;">
             <span class="db-card-meta">${meta}</span>
             ${quickHtml}
@@ -913,6 +960,7 @@ async function loadDeckCards() {
     const cards = await getCardsByDeck(editingDeckId);
     const mastered = cards.filter(c => c.status === 'mastered').length;
     $('deck-mastery').textContent = `${cards.length} cards · ${mastered} mastered · ${cards.length > 0 ? Math.round((mastered / cards.length) * 100) : 0}% mastery`;
+    getReviews().then((reviews) => { $('deck-stats-panel').innerHTML = deckPanelHtml(editingDeckId, { reviews, cards }); });
 
     const list = $('deck-cards-list');
     list.innerHTML = '';
@@ -1146,6 +1194,9 @@ function shuffle(arr) {
 }
 
 let currentStudySessionKey = null;
+let studyBack = null;          // where Back returns after studying (e.g. the Progress page)
+let pendingStudyBack = null;   // set by a launcher; claimed by the next beginStudy
+let cardShownAt = 0; // when the current card appeared (for study time)
 
 function saveProgress() {
     if (!currentStudySessionKey) return;
@@ -1177,6 +1228,7 @@ async function startStudyDeck(deckId, deckName, isQuickStudy = false) {
 }
 
 function beginStudy(cards, title, sessionKey) {
+    studyBack = pendingStudyBack; pendingStudyBack = null;
     if (!cards.length) { showToast('No cards to study.'); return; }
     currentView = 'study';
     hideAll();
@@ -1222,6 +1274,7 @@ function renderCard() {
     dom.studyActions.classList.remove('visible');
     const c = studyCards[studyIndex];
     isCloze = (c.type === 'cloze');
+    cardShownAt = Date.now();
     dom.studyProgress.textContent = `${studyIndex + 1} / ${studyCards.length}`;
     const total = studyStats.know + studyStats.forgot;
     dom.studyMastery.textContent = `Mastery: ${total === 0 ? 0 : Math.round((studyStats.know / total) * 100)}%`;
@@ -1309,12 +1362,15 @@ function checkCloze() {
 
 function handleResult(isCorrect) {
     if (!hasRevealed) return;
+    const card = studyCards[studyIndex];
+    const context = { deckId: card?.deckId, cardId: card?.id, type: card?.type, ms: Date.now() - cardShownAt };
     if (isCorrect === true || isCorrect === false) {
-        const card = studyCards[studyIndex];
         if (isCorrect) studyStats.know++; else studyStats.forgot++;
-        recordStudyResult(isCorrect);
+        recordStudyResult(isCorrect, context);
         card.status = isCorrect ? 'mastered' : 'learning';
         updateCard(card).catch(console.error);
+    } else {
+        recordSkip(context);
     }
     studyIndex++;
     saveProgress();
@@ -1404,6 +1460,7 @@ function showComplete() {
     dom.viewComplete.classList.add('active');
     dom.completeCount.textContent = studyCards.length;
     triggerCelebration();
+    scheduleProgressCheck();
 }
 
 // ===== EVENTS =====
@@ -1425,7 +1482,8 @@ function setupEvents() {
         if (currentView === 'test') {
             testBack();
         } else if (currentView === 'study' || currentView === 'complete') {
-            if (editingDeckId) openDeckEdit(editingDeckId, editingDeckName);
+            if (studyBack) { const back = studyBack; studyBack = null; back(); }
+            else if (editingDeckId) openDeckEdit(editingDeckId, editingDeckName);
             else if (currentFolderId) showFolder(currentFolderId, currentFolderName);
             else showHome();
         } else if (currentView === 'deck') {

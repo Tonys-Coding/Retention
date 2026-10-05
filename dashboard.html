@@ -32,6 +32,10 @@
         </div>
         <nav class="db-sidebar-nav" id="sidebar-nav"></nav>
         <div class="db-sidebar-footer" style="padding: 16px;">
+            <button id="btn-sidebar-progress" class="db-sidebar-themes" type="button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 20V10M12 20V4M6 20v-4"></path></svg>
+                PROGRESS
+            </button>
             <button id="btn-sidebar-themes" class="db-sidebar-themes" type="button">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>
                 THEMES
@@ -106,17 +110,25 @@
 
             <!-- Stats Bar -->
             <div id="view-stats-bar" class="db-stats-bar" style="display: none;">
+                <div class="db-stat-card db-stat-card--link" id="db-stat-today-card" role="button" tabindex="0" title="Open Progress">
+                    <div id="db-stat-ring" class="db-stat-ring"></div>
+                    <div class="db-stat-label">Today's goal</div>
+                    <div class="db-stat-sub" id="db-stat-today-sub"></div>
+                </div>
                 <div class="db-stat-card">
                     <div class="db-stat-value" id="db-stat-streak">0</div>
                     <div class="db-stat-label">Daily Streak</div>
+                    <div class="db-stat-sub" id="db-stat-streak-sub"></div>
                 </div>
                 <div class="db-stat-card">
                     <div class="db-stat-value" id="db-stat-accuracy">0%</div>
                     <div class="db-stat-label">Overall Accuracy</div>
+                    <div class="db-stat-sub" id="db-stat-time-sub"></div>
                 </div>
                 <div class="db-stat-card">
                     <div class="db-stat-value" id="db-stat-mastered">0</div>
                     <div class="db-stat-label">Cards Mastered</div>
+                    <div class="db-stat-sub" id="db-stat-mastered-sub"></div>
                 </div>
             </div>
 
@@ -126,6 +138,7 @@
             <!-- Deck Edit View -->
             <div class="db-deck-edit" id="view-deck">
                 <div class="db-deck-stats" id="deck-mastery">0 cards · 0 mastered</div>
+                <div id="deck-stats-panel"></div>
                 <div class="db-deck-cards" id="deck-cards-list"></div>
 
                 <!-- Quiz deck: question list + Add/Edit Question (js/quiz-editor.js) -->
@@ -201,6 +214,7 @@
             <div class="db-test" id="view-test"></div>
             <!-- Themes library -->
             <div class="db-themes" id="view-themes"></div>
+            <div class="db-progress" id="view-progress"></div>
             <div class="db-complete" id="view-complete">
                 <h1>Session Complete!</h1>
                 <p>You reviewed <strong id="complete-count">0</strong> cards.</p>

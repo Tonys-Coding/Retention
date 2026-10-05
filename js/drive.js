@@ -19,6 +19,7 @@
 import { getDecks, getFolders, getStats, db, SYNC_DIRTY_KEY } from './db.js';
 import { isExtension, storage } from './env.js';
 import { getSyncedFavorites, restoreFavorites } from './themes.js';
+import { getSyncedProgressPrefs, restoreProgressPrefs } from './progress-data.js';
 
 const BACKUP_NAME = 'retention_backup.json';
 const DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
@@ -192,11 +193,15 @@ const buildBackup = async () => {
         cards: await readAll('cards'),
         stats: await getStats(),
         quizResults: await readAll('quizResults'),
+        reviews: await readAll('reviews'),
         exportedAt: new Date().toISOString()
     };
     // Only once customized, so a default list never overwrites another device's
     const themeFavorites = await getSyncedFavorites();
-    if (themeFavorites) backup.preferences = { themeFavorites };
+    const progressPrefs = await getSyncedProgressPrefs();
+    if (themeFavorites || Object.keys(progressPrefs).length) {
+        backup.preferences = { ...(themeFavorites ? { themeFavorites } : {}), ...progressPrefs };
+    }
     return JSON.stringify(backup);
 };
 
@@ -247,9 +252,10 @@ const restoreBackup = async (token, file) => {
     if (Array.isArray(data.preferences?.themeFavorites)) {
         await restoreFavorites(data.preferences.themeFavorites);
     }
+    if (data.preferences) await restoreProgressPrefs(data.preferences);
 
     // Older backups may lack a store (e.g. quizResults); leave that local data alone
-    const storeNames = ['folders', 'decks', 'cards', 'stats', 'quizResults'].filter(name => Array.isArray(data[name]));
+    const storeNames = ['folders', 'decks', 'cards', 'stats', 'quizResults', 'reviews'].filter(name => Array.isArray(data[name]));
     if (storeNames.length === 0) return;
     await new Promise((resolve, reject) => {
         const tx = db.transaction(storeNames, 'readwrite');
