@@ -158,11 +158,11 @@ export const THEMES = [
     { id: 'fjord', name: 'Fjord', collection: 'landscapes', bg: '#dfe6ea', card: '#f8fafb', text: '#2b3a44', sub: '#5b6d79', border: '#2b3a44', shadow: '#7d93a1', btnBg: '#2b3a44', btnText: '#f8fafb',
         pattern: 'Misty mountains', ...FJORD_ART, tile: FJORD_TILE },
     { id: 'storm', name: 'Storm', collection: 'landscapes', animated: true, scene: 'storm', bg: '#1a1424', card: '#241d2c', text: '#ece4f2', sub: '#b3a6c4', border: '#4a3d5a', shadow: '#0d0a12', btnBg: '#d99a3e', btnText: '#1a1020',
-        pattern: 'Animated storm', img: 'url("images/storm-still.svg")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
+        pattern: 'Animated storm', img: 'url("images/storm-still.webp")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'library', name: 'Night Library', collection: 'cozy', bg: '#1d2230', card: '#272d3f', text: '#ece4d4', sub: '#b3a68d', border: '#4b5470', shadow: '#0f121b', btnBg: '#e0a458', btnText: '#1d2230',
         pattern: 'Bookshelves', ...LIBRARY_ART, tile: LIBRARY_TILE },
     { id: 'campfire', name: 'Campfire', collection: 'cozy', animated: true, scene: 'campfire', bg: '#080a10', card: '#1c1512', text: '#f3e3cf', sub: '#c79a76', border: '#5a3a24', shadow: '#050302', btnBg: '#ff8a2b', btnText: '#1a0d05',
-        pattern: 'Animated campfire', img: 'url("images/campfire-scene.svg")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
+        pattern: 'Animated campfire', img: 'url("images/campfire-still.webp")', size: 'cover', pos: 'center bottom', repeat: 'no-repeat' },
     { id: 'strawberry', name: 'Strawberry', collection: 'cafe', bg: '#FA2A28', card: '#FEC0A9', text: '#B60D17', sub: '#336B26', border: '#B60D17', shadow: '#B60D17', btnBg: '#C9CF56', btnText: '#336B26',
         pattern: 'Seeds', img: 'radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px), radial-gradient(ellipse at center, #C9CF56 3px, transparent 4px)', size: '60px 80px', pos: '0 0, 30px 40px' }
 ].map((t) => ({ size: 'auto', pos: '0 0', repeat: 'repeat', tileImg: t.img, ...t }));
@@ -227,20 +227,41 @@ const ROCK_SEEDS = [ // [x, y, rx, ry, back?] in the pit's 260x110 space
 ];
 
 let sceneCount = 0;
+// Lightning is scheduled from JS: its layers are display:none except during a flash, so an idle storm
+// has almost nothing to composite. Flashes are slightly randomized, calm and infrequent.
+const scheduleLightning = (scene) => {
+    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const run = (cls, ms, minWait, maxWait, firstWait) => {
+        const tick = () => {
+            if (!scene.isConnected) { if (scene.dataset.seen) return; setTimeout(tick, 1000); return; }
+            scene.dataset.seen = '1';
+            scene.classList.add(cls);
+            setTimeout(() => scene.classList.remove(cls), ms);
+            setTimeout(tick, minWait + Math.random() * (maxWait - minWait));
+        };
+        setTimeout(tick, firstWait);
+    };
+    run('fl-a', 1900, 11000, 19000, 3500);
+    run('fl-b', 900, 16000, 27000, 9000);
+    run('pulse', 5200, 8000, 14000, 6000);
+};
+
 const createStormScene = () => {
     const scene = document.createElement('div');
     scene.className = 'scene scene-storm';
     scene.setAttribute('aria-hidden', 'true');
     scene.innerHTML = `
         <div class="st-sky"></div>
-        <div class="st-drift"><div class="st-drift-inner"></div></div>
-        <div class="st-sheet"></div>
-        <div class="st-bolt st-bolt-a"></div>
-        <div class="st-bolt st-bolt-b"></div>
+        <div class="st-box st-rain-box"><div class="st-rain"></div></div>
+        <div class="st-box st-cloudbase"></div>
+        <div class="st-box st-drift"><div class="st-drift-inner"></div></div>
+        <div class="st-box st-sheet"></div>
+        <div class="st-box st-bolt st-bolt-a"></div>
+        <div class="st-box st-bolt st-bolt-b"></div>
+        <div class="st-box st-wash"></div>
         <div class="st-land"></div>
-        <div class="st-wash"></div>
-        <div class="st-rain-mask"><div class="st-rain st-rain-1"></div><div class="st-rain st-rain-2"></div></div>
-        <div class="st-grass"></div>`;
+        <div class="st-box st-grass"></div>`;
+    scheduleLightning(scene);
     return scene;
 };
 
@@ -279,6 +300,7 @@ export const createScene = (kind) => {
             <linearGradient id="fg-mid-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd25a"/><stop offset=".5" stop-color="#ffa63a" stop-opacity=".9"/><stop offset="1" stop-color="#ff8a24" stop-opacity="0"/></linearGradient>
             <linearGradient id="fg-core-${n}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff6d4"/><stop offset=".55" stop-color="#ffe49a" stop-opacity=".9"/><stop offset="1" stop-color="#ffd25a" stop-opacity="0"/></linearGradient>
         </defs></svg>
+        <div class="cf-backdrop"></div>
         <div class="fire">
             <div class="fire-glow"></div>
             <svg class="pit pit-back" viewBox="0 0 260 110" aria-hidden="true"><defs>${logPaint}</defs>

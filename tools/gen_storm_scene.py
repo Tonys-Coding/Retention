@@ -196,15 +196,23 @@ def grass():
         b += f'<ellipse cx="{x:.1f}" cy="{H-h:.1f}" rx="5" ry="{r.uniform(8,16):.1f}" fill="#b0872f" opacity=".55" transform="rotate({r.uniform(-18,18):.0f} {x:.1f} {H-h:.1f})"/>'
     return svg(b, defs)
 
+RAIN_W, RAIN_H = 700, 400   # canvas units; the tile repeats vertically only (see .st-rain-box in style.css)
+
 def rain():
+    """Seamless-vertical tile of streaks with the horizontal fade baked in (so the page needs no CSS mask).
+    Two populations (long/bold and short/faint) give the depth of two layers in one."""
     r = random.Random(2)
     s = ''
-    for i in range(34):
-        x, y, l = r.uniform(0, 400), r.uniform(0, 400), r.uniform(22, 60)
-        for dx in (-400, 0, 400):
-            for dy in (-400, 0, 400):
-                s += f'<line x1="{x+dx:.1f}" y1="{y+dy:.1f}" x2="{x+dx-l*.14:.1f}" y2="{y+dy+l:.1f}" stroke="#d6c6ee" stroke-width="{r.uniform(.8,1.5):.1f}" stroke-linecap="round" opacity="{r.uniform(.12,.34):.2f}"/>'
-    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">{s}</svg>'
+    for count, (lmin, lmax), (wmin, wmax), (omin, omax) in ((46, (34, 64), (1.1, 1.7), (.2, .4)), (50, (16, 34), (.7, 1.1), (.1, .26))):
+        for i in range(count):
+            x, y, l = r.uniform(8, RAIN_W - 8), r.uniform(0, RAIN_H), r.uniform(lmin, lmax)
+            bell = math.sin(math.pi * x / RAIN_W) ** 1.4          # 0 at the sides, 1 in the middle
+            op = r.uniform(omin, omax) * bell
+            if op < .02: continue
+            w = r.uniform(wmin, wmax)
+            for dy in (-RAIN_H, 0, RAIN_H):
+                s += f'<line x1="{x:.1f}" y1="{y+dy:.1f}" x2="{x-l*.14:.1f}" y2="{y+dy+l:.1f}" stroke="#d6c6ee" stroke-width="{w:.1f}" stroke-linecap="round" opacity="{op:.2f}"/>'
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {RAIN_W} {RAIN_H}">{s}</svg>'
 
 # ── Lightning bolt geometry (static; the overlay animates its opacity) ───
 def bolt(x0, y0, x1, y1, seed, jag=22, depth=0):
@@ -243,5 +251,5 @@ dedup = lambda s, pfx: re.sub(r'id="([^"]+)"', lambda m: f'id="{pfx}{m.group(1)}
 dedup_ids = lambda s, pfx: re.sub(r'url\(#([^)]+)\)', lambda m: f'url(#{pfx}{m.group(1)})', re.sub(r'id="([^"]+)"', lambda m: f'id="{pfx}{m.group(1)}"', s))
 files['storm-still.svg'] = svg(inner(dedup_ids(sk, 'a')) + inner(dedup_ids(ld, 'b')))
 for name, content in files.items():
-    open(f'images/{name}', 'w').write(content)
+    open(f'tools/art/{name}', 'w').write(content)
     print(name, len(content))

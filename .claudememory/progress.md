@@ -11,6 +11,7 @@
 - [x] Promo video (Remotion) from real UI recordings
 
 ## Recent Changes (newest first)
+- 2026-10-05: Animated-theme performance pass: SVG art pre-rendered to WebP (`tools/rasterize_scenes.mjs`, sources in `tools/art/`), removed fixed full-page SVG backgrounds, right-sized Storm layers, rain mask replaced by baked fade + cloudbase overlay, lightning now JS-scheduled (random 11-19s / 16-27s, layers only exist during a flash), glows opacity-only, previews pause off-screen. `sw.js` cache v55.
 - 2026-10-05: **Progress & metrics update.** New IndexedDB store `reviews` (DB v5, one row per answer incl. skips, `ms` capped 90s) written by `recordStudyResult(know, ctx)`/`recordSkip` (`db.js`); pure analytics in `js/stats.js`; loaders + goal/achievement storage in `js/progress-data.js` (synced via Drive `preferences`; `reviews` is in the backup too); UI in `js/progress-view.js` (Progress page `#view-progress`, `#progress` hash, deck panel, mastery bars on grid cards, home goal ring) and an upgraded popup stats view. Toasts for goal reached/milestones via `scheduleProgressCheck` (debounced on `db_updated`). `sw.js` cache v54.
 - 2026-10-04: Storm barn no longer floats: stone footings, contact shadows along both base lines, dense grass planted along the base. `sw.js` cache v53.
 - 2026-10-04: Scenery mode (`#btn-scenery`, `body.scenery-mode` hides `.db-sidebar`/`.db-main`; Esc exits; dashboard only). Storm art revised: properly gabled log barn (oblique view), layered far tree lines + haze + converging field rows. `sw.js` cache v52.

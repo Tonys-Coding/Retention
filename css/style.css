@@ -518,18 +518,14 @@ body.theme-storm {
     --input-bg: #17111f;
 
     background-color: var(--bg-primary);
-    background-image: url("../images/storm-still.svg");
-    background-size: cover;
-    background-position: center bottom;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    /* the animated scene (created by themes.js) provides the artwork */
 }
 body.theme-storm button.primary { background: #d99a3e; color: #1a1020; border-color: #d99a3e; }
 body.theme-storm button.secondary { background: #241d2c; color: #ece4f2; border-color: #4a3d5a; }
 body.theme-storm .maze-bg { display: none !important; }
 body.theme-storm input, body.theme-storm textarea { color: #ece4f2; }
 
-/* Campfire Theme (animated: the scene is an animated SVG, see images/campfire-scene.svg) */
+/* Campfire Theme (animated: DOM scene from createScene in js/themes.js over images/campfire-scene.webp) */
 body.theme-campfire {
     --bg-primary: #080a10;
     --bg-secondary: #1c1512;
@@ -542,11 +538,7 @@ body.theme-campfire {
     --input-bg: #120d0b;
 
     background-color: var(--bg-primary);
-    background-image: url("../images/campfire-scene.svg");
-    background-size: cover;
-    background-position: center bottom;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    /* the animated scene (created by themes.js) provides the artwork */
 }
 body.theme-campfire button.primary { background: #ff8a2b; color: #1a0d05; border-color: #ff8a2b; }
 body.theme-campfire button.secondary { background: #1c1512; color: #f3e3cf; border-color: #5a3a24; }
@@ -565,6 +557,7 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
     container-type: size;
 }
 .scene-campfire { --fire-w: 9cqmin; }
+.scene-campfire .cf-backdrop { position: absolute; inset: 0; background: url("../images/campfire-scene.webp") center bottom / cover no-repeat; }
 .scene-campfire .fire {
     position: absolute;
     left: 50%;
@@ -578,13 +571,13 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
     position: absolute;
     left: 50%;
     border-radius: 50%;
-    will-change: transform, opacity;
+    will-change: opacity;
 }
 .scene-campfire .fire-glow {
     bottom: 12%;
     width: calc(var(--fire-w) * 12);
     height: calc(var(--fire-w) * 7);
-    background: radial-gradient(ellipse at center, rgba(200, 100, 40, 0.24), rgba(150, 62, 22, 0.09) 42%, transparent 70%);
+    background: radial-gradient(ellipse closest-side, rgba(200, 100, 40, 0.24), rgba(150, 62, 22, 0.09) 59%, transparent 100%);
     transform: translate(-50%, 45%);
     animation: fire-glow 4.4s ease-in-out infinite;
 }
@@ -592,7 +585,7 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
     bottom: 6%;
     width: calc(var(--fire-w) * 3.4);
     height: calc(var(--fire-w) * 2.4);
-    background: radial-gradient(ellipse at center, rgba(255, 170, 80, 0.30), rgba(255, 120, 40, 0.1) 50%, transparent 72%);
+    background: radial-gradient(ellipse closest-side, rgba(255, 170, 80, 0.30), rgba(255, 120, 40, 0.1) 70%, transparent 100%);
     transform: translate(-50%, 40%);
     animation: fire-glow 2.3s ease-in-out infinite -0.8s;
 }
@@ -649,73 +642,74 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
 .scene-campfire .s2 { animation-delay: -3.7s; --sx: 6cqmin; }
 .scene-campfire .s3 { animation-delay: -7.3s; --sx: -5cqmin; }
 .scene-campfire .s1 { --sx: 1cqmin; }
-@keyframes fire-glow { 0%, 100% { opacity: 0.8; transform: translate(-50%, 45%) scale(1); } 40% { opacity: 1; transform: translate(-50%, 45%) scale(1.05); } 70% { opacity: 0.72; transform: translate(-50%, 45%) scale(0.98); } }
+@keyframes fire-glow { 0%, 100% { opacity: 0.8; } 40% { opacity: 1; } 70% { opacity: 0.72; } }
 @keyframes flame-a { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 25% { transform: scale(0.94, 1.08) skewX(-2.5deg) translateX(-1%); } 55% { transform: scale(1.05, 0.93) skewX(2deg) translateX(1%); } 80% { transform: scale(0.97, 1.05) skewX(-1deg); } }
 @keyframes flame-b { 0%, 100% { transform: scale(1, 1) skewX(0deg); } 30% { transform: scale(1.06, 0.92) skewX(2.5deg) translateX(1%); } 60% { transform: scale(0.94, 1.09) skewX(-2deg) translateX(-1%); } 85% { transform: scale(1.02, 0.98) skewX(1deg); } }
 @keyframes ember { 0% { opacity: 0; transform: translate3d(0, 0, 0); } 12% { opacity: 0.85; } 100% { opacity: 0; transform: translate3d(var(--dx), -24cqmin, 0); } }
 @keyframes smoke { 0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate3d(var(--sx, 0), -26cqmin, 0) scale(2.4); } }
 
-/* ----- Thunderstorm scene: every layer is a full-size box sharing the same cover/bottom-center
-   mapping as the art, and only transform/opacity animate (compositor, steady when idle). ----- */
-.scene-storm > div { position: absolute; inset: 0; background-repeat: no-repeat; background-size: cover; background-position: center bottom; }
-.scene-storm .st-sky { background-image: url("../images/storm-sky.svg"); }
-.scene-storm .st-land { background-image: url("../images/storm-land.svg"); }
-.scene-storm .st-drift { overflow: hidden; }
+/* ----- Thunderstorm scene. Performance notes: art is pre-rendered WebP (no SVG filters at runtime); every
+   layer is sized to just the part of the 1600x900 canvas it covers (--u = canvas unit in px, same cover /
+   bottom-centre mapping as the art), so the browser composites small layers; only transform/opacity animate;
+   lightning layers are display:none except during a flash (JS adds .fl-a / .fl-b / .pulse, see createStormScene). ----- */
+.scene-storm { --u: max(calc(100cqw / 1600), calc(100cqh / 900)); }
+.scene-storm .st-sky, .scene-storm .st-land { position: absolute; inset: 0; background-repeat: no-repeat; background-size: cover; background-position: center bottom; }
+.scene-storm .st-sky { background-image: url("../images/storm-sky.webp"); }
+.scene-storm .st-land { background-image: url("../images/storm-land.webp"); }
+/* a box covering canvas rectangle (--x0,--y0)-(--x1,--y1) */
+.scene-storm .st-box {
+    position: absolute;
+    left: calc(50% + (var(--x0) - 800) * var(--u));
+    bottom: calc((900 - var(--y1)) * var(--u));
+    width: calc((var(--x1) - var(--x0)) * var(--u));
+    height: calc((var(--y1) - var(--y0)) * var(--u));
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+.scene-storm .st-drift { --x0: 0; --y0: 0; --x1: 1600; --y1: 770; overflow: hidden; }
 .scene-storm .st-drift-inner {
     position: absolute; top: 0; bottom: 0; left: 0; width: 200%;
-    background: url("../images/storm-wisps.svg") repeat-x;
+    background: url("../images/storm-wisps.webp") repeat-x;
     background-size: 50% 100%;
     opacity: 0.5;
     animation: st-drift 220s linear infinite;
     will-change: transform;
 }
-.scene-storm .st-sheet {
-    background: radial-gradient(ellipse 34% 30% at 76% 38%, rgba(190, 165, 240, 0.34), transparent 72%);
-    opacity: 0;
-    animation: st-sheet 9s ease-in-out infinite;
-    will-change: opacity;
-}
-.scene-storm .st-bolt { opacity: 0; will-change: opacity; }
-.scene-storm .st-bolt-a { background-image: url("../images/storm-bolt-a.svg"); animation: st-flash-a 14s linear infinite; }
-.scene-storm .st-bolt-b { background-image: url("../images/storm-bolt-b.svg"); animation: st-flash-b 21s linear infinite -9s; }
-.scene-storm .st-wash {
-    background: radial-gradient(ellipse 80% 70% at 72% 40%, rgba(180, 160, 235, 0.16), transparent 75%);
-    opacity: 0;
-    animation: st-wash 14s linear infinite;
-    will-change: opacity;
-}
-.scene-storm .st-rain-mask {
-    background: none;
-    -webkit-mask-image: radial-gradient(ellipse 52% 62% at 74% 60%, #000 18%, transparent 80%);
-    mask-image: radial-gradient(ellipse 52% 62% at 74% 60%, #000 18%, transparent 80%);
-    overflow: hidden;
-}
+.scene-storm .st-sheet { --x0: 700; --y0: 100; --x1: 1600; --y1: 560; background: radial-gradient(ellipse closest-side at 62% 55%, rgba(190, 165, 240, 0.34), transparent 100%); display: none; }
+.scene-storm .st-wash { --x0: 500; --y0: 60; --x1: 1600; --y1: 660; background: radial-gradient(ellipse closest-side at 64% 52%, rgba(180, 160, 235, 0.16), transparent 100%); display: none; }
+.scene-storm .st-bolt { display: none; }
+.scene-storm .st-bolt-a { --x0: 930; --y0: 330; --x1: 1270; --y1: 690; background-image: url("../images/storm-bolt-a.webp"); }
+.scene-storm .st-bolt-b { --x0: 520; --y0: 300; --x1: 760; --y1: 420; background-image: url("../images/storm-bolt-b.webp"); }
+.scene-storm.fl-a .st-bolt-a { display: block; animation: st-flash-a 0.8s linear 1 both; }
+.scene-storm.fl-a .st-wash { display: block; animation: st-wash 1.8s linear 1 both; }
+.scene-storm.fl-b .st-bolt-b { display: block; animation: st-flash-b 0.8s linear 1 both; }
+.scene-storm.pulse .st-sheet { display: block; animation: st-sheet 5s ease-in-out 1 both; }
+/* Rain: no mask (masks are expensive while animating). The tile has its horizontal fade baked in, the
+   bottom is hidden by the land layer, and .st-cloudbase (sky pixels with a baked fade) softens the top. */
+.scene-storm .st-cloudbase { --x0: 860; --y0: 220; --x1: 1560; --y1: 340; background-image: url("../images/storm-cloudbase.webp"); }
+.scene-storm .st-rain-box { --x0: 860; --y0: 230; --x1: 1560; --y1: 650; overflow: hidden; }
 .scene-storm .st-rain {
-    position: absolute; left: 0; width: 100%; top: -400px; height: calc(100% + 400px);
-    background: url("../images/storm-rain.svg") repeat;
+    position: absolute; left: 0; width: 100%;
+    top: calc(-400 * var(--u)); height: calc(100% + 400 * var(--u));
+    background: url("../images/storm-rain.webp") repeat-y;
+    background-size: 100% calc(400 * var(--u));
+    opacity: 0.9;
+    animation: st-rain-1 1.8s linear infinite;
     will-change: transform;
 }
-.scene-storm .st-rain-1 { background-size: 400px 400px; opacity: 0.85; animation: st-rain-1 1.8s linear infinite; }
-.scene-storm .st-rain-2 { background-size: 260px 260px; opacity: 0.5; animation: st-rain-2 2.7s linear infinite; }
-.scene-storm .st-grass {
-    left: -2%; width: 104%;
-    background-image: url("../images/storm-grass.svg");
-    transform-origin: 50% 100%;
-    animation: st-sway 7s ease-in-out infinite;
-    will-change: transform;
-}
+.scene-storm .st-grass { --x0: -40; --y0: 560; --x1: 1640; --y1: 900; background-image: url("../images/storm-grass.webp"); transform-origin: 50% 100%; animation: st-sway 7s ease-in-out infinite; will-change: transform; }
 @keyframes st-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
-@keyframes st-sheet { 0%, 100% { opacity: 0; } 45% { opacity: 0.55; } 60% { opacity: 0.25; } 75% { opacity: 0.7; } 90% { opacity: 0; } }
-@keyframes st-flash-a { 0%, 100% { opacity: 0; } 1% { opacity: 1; } 1.8% { opacity: 0.25; } 2.6% { opacity: 0.95; } 3.6% { opacity: 0.3; } 4.6% { opacity: 0; } }
-@keyframes st-flash-b { 0%, 100% { opacity: 0; } 1% { opacity: 0.75; } 2% { opacity: 0.15; } 3% { opacity: 0.55; } 4.5% { opacity: 0; } }
-@keyframes st-wash { 0%, 100% { opacity: 0; } 1% { opacity: 1; } 2% { opacity: 0.4; } 2.8% { opacity: 0.9; } 7% { opacity: 0.12; } 11% { opacity: 0; } }
-@keyframes st-rain-1 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 400px, 0); } }
-@keyframes st-rain-2 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 260px, 0); } }
+@keyframes st-sheet { 0%, 100% { opacity: 0; } 25% { opacity: 0.55; } 40% { opacity: 0.25; } 60% { opacity: 0.7; } 90% { opacity: 0; } }
+@keyframes st-flash-a { 0% { opacity: 0; } 4% { opacity: 1; } 14% { opacity: 0.25; } 28% { opacity: 0.95; } 42% { opacity: 0.3; } 58% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes st-flash-b { 0% { opacity: 0; } 5% { opacity: 0.75; } 18% { opacity: 0.15; } 32% { opacity: 0.55; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes st-wash { 0% { opacity: 0; } 3% { opacity: 1; } 12% { opacity: 0.4; } 20% { opacity: 0.9; } 55% { opacity: 0.12; } 100% { opacity: 0; } }
+@keyframes st-rain-1 { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, calc(400 * var(--u)), 0); } }
 @keyframes st-sway { 0%, 100% { transform: skewX(-0.8deg); } 50% { transform: skewX(1deg); } }
+.scene.is-paused * { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
     .scene * { animation: none !important; }
     .scene-campfire .ember, .scene-campfire .smoke { display: none; }
-    .scene-storm .st-rain-mask, .scene-storm .st-bolt, .scene-storm .st-wash { display: none; }
+    .scene-storm .st-rain-box, .scene-storm .st-bolt, .scene-storm .st-wash, .scene-storm .st-sheet { display: none !important; }
 }
 
 /* TRANSPARENCY BLOCK */

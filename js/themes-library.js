@@ -132,7 +132,11 @@ function renderThemeCard(theme, favs, activeId) {
     preview.append(mini, buttons);
     if (theme.scene) {
         const scene = createScene(theme.scene);
-        if (scene) preview.prepend(scene);
+        if (scene) {
+            preview.prepend(scene);
+            // Animate only while the card is on screen
+            if ('IntersectionObserver' in window) new IntersectionObserver(([entry]) => scene.classList.toggle('is-paused', !entry.isIntersecting)).observe(preview);
+        }
     }
     if (theme.animated) {
         const badge = el('span', 'tl-badge-animated');

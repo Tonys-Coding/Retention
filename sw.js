@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v54';
+const CACHE_NAME = 'retention-v55';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -25,15 +25,17 @@ const APP_SHELL = [
     './js/stats.js',
     './js/progress-data.js',
     './js/progress-view.js',
-    './images/campfire-scene.svg',
-    './images/storm-still.svg',
-    './images/storm-sky.svg',
-    './images/storm-land.svg',
-    './images/storm-wisps.svg',
-    './images/storm-grass.svg',
-    './images/storm-rain.svg',
-    './images/storm-bolt-a.svg',
-    './images/storm-bolt-b.svg',
+    './images/campfire-scene.webp',
+    './images/campfire-still.webp',
+    './images/storm-still.webp',
+    './images/storm-sky.webp',
+    './images/storm-land.webp',
+    './images/storm-wisps.webp',
+    './images/storm-grass.webp',
+    './images/storm-rain.webp',
+    './images/storm-cloudbase.webp',
+    './images/storm-bolt-a.webp',
+    './images/storm-bolt-b.webp',
     './js/practice-test.js',
     './js/quiz-editor.js',
     './js/import-help.js',

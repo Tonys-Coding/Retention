@@ -138,5 +138,5 @@ for x, h, w, side in [(48, 780, 190, 1), (205, 600, 150, 1), (350, 470, 112, 1),
 add(f'<ellipse cx="800" cy="900" rx="900" ry="520" fill="url(#amb)"/>')
 add(f'<rect width="{W}" height="{H}" fill="url(#vig)"/>')
 add('</svg>')
-open('images/campfire-scene.svg', 'w').write('\n'.join(out))
+open('tools/art/campfire-scene.svg', 'w').write('\n'.join(out))
 print(len('\n'.join(out)))
