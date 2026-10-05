@@ -7,7 +7,7 @@
  * left un-cached (they require live connectivity).
  */
 
-const CACHE_NAME = 'retention-v56';
+const CACHE_NAME = 'retention-v57';
 
 const APP_SHELL = [
     './dashboard.html',
@@ -37,8 +37,8 @@ const APP_SHELL = [
     './images/city-sky.webp',
     './images/city-wisps.webp',
     './images/city-skyline.webp',
-    './images/city-lights-a.webp',
-    './images/city-lights-b.webp',
+    './images/city-clouds.webp',
+    './images/city-windows.json',
     './images/city-water.webp',
     './images/city-shimmer.webp',
     './images/city-still.webp',

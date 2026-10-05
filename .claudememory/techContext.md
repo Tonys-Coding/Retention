@@ -19,7 +19,7 @@
 ## Deployment Strategy
 - **Web/PWA:** GitHub Pages serves the **`gh-pages`** branch (a plain mirror of `main`) at `https://Tonys-Coding.github.io/Retention/dashboard.html`.
 - **Extension:** loaded unpacked from the repo root (or Chrome Web Store); click **Reload** on `chrome://extensions` after changes.
-- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v56`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
+- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v57`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
 - **No production DB:** all data is local to each device; Drive backup is the only cloud copy.
 
 ## Tooling
@@ -34,3 +34,4 @@
 ## Progress / analytics
 - Source of truth for history is the `reviews` store (`{ts, date (local YYYY-MM-DD), deckId, cardId, result: know|forgot|skip, type, ms}`); `stats` (UTC daily totals) is kept for legacy history and fills only days before the first review. All calculations live in `js/stats.js` (pure, no DOM): add metrics there, render in `progress-view.js`. Streaks use local dates.
 - Study entry points must pass context: `recordStudyResult(know, {deckId, cardId, type, ms})` / `recordSkip(ctx)` (dashboard `handleResult`, popup `handleTraditionalResult` + skip buttons).
+- City Lights windows: static skyline WebP has NO windows; `images/city-windows.json` (palette + `[x,y,w,h,colorIdx,on,alpha,p]`, art units) is drawn on `<canvas class=ct-windows>` and random windows are re-rolled every 0.5-1.6s (only dirty rects repaint). Pattern to reuse for any "many tiny things that change rarely" effect: canvas + timer instead of CSS animations on many layers.

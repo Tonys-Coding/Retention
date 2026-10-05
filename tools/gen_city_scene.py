@@ -27,14 +27,15 @@ BUILDINGS = [
 ]
 
 def windows_for(b, lit_p, cell=(7, 9), pal=None, dim=1.0):
+    """Every window cell of a building as (x, y, w, h, color, alpha, on, p). `on` is the initial state; the app
+    keeps flipping windows on/off at random, drawing them on a canvas (see startCityWindows in js/themes.js)."""
     x, w, h, = b[0], b[1], b[2]
     top = GROUND - h
     out = []
     for yy in range(int(top) + 8, GROUND - 6, cell[1] + 1):
         for xx in range(int(x) + 5, int(x + w) - 7, cell[0] + 2):
-            if R.random() < lit_p:
-                col = R.choice(pal or (WARM if R.random() < .88 else COOL))
-                out.append((xx, yy, cell[0] - 1, cell[1] - 2, col, R.uniform(.55, 1) * dim))
+            col = R.choice(pal or (WARM if R.random() < .88 else COOL))
+            out.append((xx, yy, cell[0] - 1, cell[1] - 2, col, R.uniform(.6, 1) * dim, R.random() < lit_p, lit_p))
     return out
 
 def build_city():
@@ -72,8 +73,7 @@ def build_city():
             wl = []
             for col in range(0, int(w) - 10, 6):  # dense vertical window columns
                 for yy in range(int(top) + 50, GROUND - 6, 11):
-                    if R.random() < .74:
-                        c = R.choice(WARM[:4]); wl.append((x + 5 + col, yy, 4, 7, c, R.uniform(.6, 1)))
+                    wl.append((x + 5 + col, yy, 4, 7, R.choice(WARM[:4]), R.uniform(.6, 1), R.random() < .74, .74))
             wins += wl
             parts.append(f'<ellipse cx="{x+w/2}" cy="{top+16}" rx="{w*.8:.0f}" ry="40" fill="#ffe9b0" opacity=".16" filter="url(#halo)"/>')
             parts.append(f'<path d="M{x} {top+46} Q{x} {top} {x+w/2} {top} Q{x+w} {top} {x+w} {top+46}Z" fill="#ffe9b8"/>')
@@ -104,7 +104,7 @@ def build_city():
                 parts.append(f'<rect x="{x+4+i}" y="{top+30}" width="5" height="{h-36}" fill="{col}" opacity=".95"/>')
             parts.append(f'<polygon points="{x+w/2-14},{top+30} {x+w/2},{top-26} {x+w/2+14},{top+30}" fill="#ffd0ee"/><rect x="{x+10}" y="{top+30}" width="{w-20}" height="10" fill="#fff0fa"/>')
             parts.append(f'<line x1="{x+w/2}" y1="{top-26}" x2="{x+w/2}" y2="{top-60}" stroke="#ffd0ee" stroke-width="2"/>')
-            wins += [(x + 8 + i * 9, top + 60 + j * 22, 3, 8, '#fff0fa', .8) for i in range(8) for j in range(0, int(h / 22) - 2) if R.random() < .4]
+            wins += [(x + 8 + i * 9, top + 60 + j * 22, 3, 8, '#fff0fa', .8, R.random() < .4, .4) for i in range(8) for j in range(0, int(h / 22) - 2)]
     # promenade: low glowing buildings and the bright orange waterfront line
     for xx in range(0, W, 38):
         hh = R.randint(16, 40)
@@ -116,34 +116,31 @@ def build_city():
 GRAD = '''<linearGradient id="bshade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient>'''
 
 def win_rects(wins, scale_a=1.0):
-    return ''.join(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{c}" opacity="{a*scale_a:.2f}"/>' for x, y, w, h, c, a in wins)
+    return ''.join(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{c}" opacity="{a*scale_a:.2f}"/>' for x, y, w, h, c, a, on, p in wins if on)
 
 CITY, WINS = build_city()
 # split lit windows into two groups that will "breathe" out of phase
-GROUP_A = [w for i, w in enumerate(WINS) if i % 5 == 0]
-GROUP_B = [w for i, w in enumerate(WINS) if i % 5 == 1]
 HALO = '<filter id="halo" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.2"/></filter>'
 
 def skyline_svg():
     glow = f'<linearGradient id="baseglow" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff7a22" stop-opacity=".45"/><stop offset=".25" stop-color="#ff7a22" stop-opacity=".12"/><stop offset="1" stop-color="#ff7a22" stop-opacity="0"/></linearGradient>'
-    body = f'<g id="city">{CITY}{win_rects(WINS, .78)}</g>'
+    # windows are NOT baked in: the app draws them on a canvas so they can switch on and off
+    body = f'<g id="city">{CITY}</g>'
     body += f'<rect x="0" y="{GROUND-260}" width="{W}" height="262" fill="url(#baseglow)"/>'
-    # soft halos on the brightest facades
-    body += f'<g filter="url(#halo)" opacity=".5">{win_rects([w for w in WINS if w[4] in WARM[:4]][::6], 1)}</g>'
     return svg(body, GRAD + glow + HALO)
 
-def lights_svg(group):
-    return svg(f'<g filter="url(#halo)">{win_rects(group, 1)}</g>{win_rects(group, .95)}', HALO)
-
 def sky_svg():
-    defs = f'''<linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050507"/><stop offset=".5" stop-color="#101016"/><stop offset=".78" stop-color="#2a1a18"/><stop offset="1" stop-color="#43241a"/></linearGradient>
-<filter id="cl" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".0034 .0085" numOctaves="5" seed="14"/><feColorMatrix type="matrix" values="0 0 0 0 .13  0 0 0 0 .13  0 0 0 0 .16  2.6 0 0 0 -1.02"/></filter>
-<filter id="cl2" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".0028 .02" numOctaves="4" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 .36  0 0 0 0 .3  0 0 0 0 .3  2.2 0 0 0 -1.12"/></filter>
-<linearGradient id="mtop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".7" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-<mask id="mk"><rect width="{W}" height="{GROUND}" fill="url(#mtop)"/></mask>
+    defs = f'''<linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#050507"/><stop offset=".5" stop-color="#0e0e14"/><stop offset=".78" stop-color="#2a1a18"/><stop offset="1" stop-color="#43241a"/></linearGradient>
 <radialGradient id="cityglow" cx=".5" cy="1" r=".7"><stop offset="0" stop-color="#ff7a3a" stop-opacity=".42"/><stop offset=".6" stop-color="#a33a1a" stop-opacity=".12"/><stop offset="1" stop-color="#a33a1a" stop-opacity="0"/></radialGradient>'''
-    body = f'<rect width="{W}" height="{H}" fill="url(#sg)"/><rect width="{W}" height="{GROUND}" filter="url(#cl)" mask="url(#mk)"/><rect width="{W}" height="{GROUND}" filter="url(#cl2)" mask="url(#mk)" opacity=".12"/><ellipse cx="800" cy="{GROUND}" rx="1000" ry="420" fill="url(#cityglow)"/>'
+    body = f'<rect width="{W}" height="{H}" fill="url(#sg)"/><ellipse cx="800" cy="{GROUND}" rx="1000" ry="420" fill="url(#cityglow)"/>'
     return svg(body, defs)
+
+def clouds_svg():
+    """Main cloud masses: seamless horizontally (stitchTiles) so the app can scroll it forever."""
+    defs = f'''<filter id="cf" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".0034 .0085" numOctaves="5" seed="14" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 .15  0 0 0 0 .15  0 0 0 0 .18  2.7 0 0 0 -1.0"/></filter>
+<linearGradient id="cm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="cmk"><rect width="{W}" height="{GROUND}" fill="url(#cm)"/></mask>'''
+    return svg(f'<rect width="{W}" height="{GROUND}" filter="url(#cf)" mask="url(#cmk)"/>', defs)
 
 def wisps_svg():
     defs = f'''<filter id="wf" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".0032 .011" numOctaves="4" seed="9" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 .36  0 0 0 0 .33  0 0 0 0 .34  2.2 0 0 0 -1.0"/></filter>
@@ -176,14 +173,24 @@ def shimmer_svg():
         s += f'<rect x="{x:.0f}" y="{y:.0f}" width="{l:.0f}" height="{t:.1f}" rx="{t/2:.1f}" fill="{col}" opacity="{r.uniform(.18,.5)*wt:.2f}"/>'
     return svg(f'<g filter="url(#sb)">{s}</g>', '<filter id="sb" x="-5%" y="-20%" width="110%" height="140%"><feGaussianBlur stdDeviation="1.6 0.6"/></filter>')
 
+def skyline_with_windows_svg():
+    s = skyline_svg()
+    return s.replace('</svg>', f'<g>{win_rects(WINS, .85)}</g></svg>')
+
 def still_svg():
     def ids(s, p): return re.sub(r'url\(#([^)]+)\)', lambda m: f'url(#{p}{m.group(1)})', re.sub(r'id="([^"]+)"', lambda m: f'id="{p}{m.group(1)}"', re.sub(r'href="#([^"]+)"', lambda m: f'href="#{p}{m.group(1)}"', s)))
     inner = lambda s: re.search(r'<svg[^>]*>(.*)</svg>', s, re.S).group(1)
-    return svg(''.join(ids(inner(f()), p) for f, p in ((sky_svg, 'a'), (skyline_svg, 'b'), (water_svg, 'c'))))
+    return svg(''.join(ids(inner(f()), p) for f, p in ((sky_svg, 'a'), (clouds_svg, 'd'), (skyline_with_windows_svg, 'b'), (water_svg, 'c'))))
 
-files = {'city-sky.svg': sky_svg(), 'city-wisps.svg': wisps_svg(), 'city-skyline.svg': skyline_svg(),
-         'city-lights-a.svg': lights_svg(GROUP_A), 'city-lights-b.svg': lights_svg(GROUP_B),
+files = {'city-sky.svg': sky_svg(), 'city-clouds.svg': clouds_svg(), 'city-wisps.svg': wisps_svg(), 'city-skyline.svg': skyline_svg(),
          'city-water.svg': water_svg(), 'city-shimmer.svg': shimmer_svg(), 'city-still.svg': still_svg()}
 for name, content in files.items():
     open(f'tools/art/{name}', 'w').write(content)
     print(name, len(content))
+
+# Window data for the app: positions are canvas units; the app draws them on a canvas and flips them at random.
+import json
+palette = sorted({w[4] for w in WINS})
+data = {'palette': palette, 'windows': [[w[0], w[1], w[2], w[3], palette.index(w[4]), 1 if w[6] else 0, round(w[5], 2), round(w[7], 2)] for w in WINS]}
+open('images/city-windows.json', 'w').write(json.dumps(data, separators=(',', ':')))
+print('city-windows.json', len(WINS), 'windows')

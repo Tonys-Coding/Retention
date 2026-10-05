@@ -1,0 +1,3 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice"><defs><filter id="cf" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".0034 .0085" numOctaves="5" seed="14" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 .15  0 0 0 0 .15  0 0 0 0 .18  2.7 0 0 0 -1.0"/></filter>
+<linearGradient id="cm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<mask id="cmk"><rect width="1600" height="760" fill="url(#cm)"/></mask></defs><rect width="1600" height="760" filter="url(#cf)" mask="url(#cmk)"/></svg>

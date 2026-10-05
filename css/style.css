@@ -730,32 +730,21 @@ body.theme-campfire input, body.theme-campfire textarea { color: #f3e3cf; }
 /* ----- City Lights scene (same layer rules as Storm: WebP art, canvas-sized boxes, transform/opacity only) ----- */
 .scene-city { --u: max(calc(100cqw / 1600), calc(100cqh / 900)); }
 .scene-city .ct-sky { position: absolute; inset: 0; background: url("../images/city-sky.webp") center bottom / cover no-repeat; }
-.scene-city .ct-drift { --x0: 0; --y0: 0; --x1: 1600; --y1: 470; overflow: hidden; }
-.scene-city .ct-drift-inner { position: absolute; top: 0; bottom: 0; left: 0; width: 200%; background: url("../images/city-wisps.webp") repeat-x; background-size: 50% 100%; opacity: 0.3; animation: st-drift 260s linear infinite; will-change: transform; }
-.scene-city .ct-city, .scene-city .ct-lights { --x0: 0; --y0: 60; --x1: 1600; --y1: 780; }
+.scene-city .ct-clouds, .scene-city .ct-drift { --x0: 0; --y0: 0; --x1: 1600; --y1: 560; overflow: hidden; }
+.scene-city .ct-drift { --y1: 470; }
+.scene-city .ct-drift-inner { position: absolute; top: 0; bottom: 0; left: 0; width: 200%; background: url("../images/city-wisps.webp") repeat-x; background-size: 50% 100%; opacity: 0.32; animation: st-drift 140s linear infinite; will-change: transform; }
+.scene-city .ct-clouds-inner { background-image: url("../images/city-clouds.webp"); opacity: 0.95; animation-duration: 230s; }
+.scene-city .ct-city, .scene-city .ct-windows { --x0: 0; --y0: 60; --x1: 1600; --y1: 780; }
 .scene-city .ct-city { background-image: url("../images/city-skyline.webp"); }
-.scene-city .ct-lights-a { background-image: url("../images/city-lights-a.webp"); animation: ct-breathe 7s ease-in-out infinite; will-change: opacity; }
-.scene-city .ct-lights-b { background-image: url("../images/city-lights-b.webp"); animation: ct-breathe 9s ease-in-out infinite -3.5s; will-change: opacity; }
 .scene-city .ct-water { --x0: 0; --y0: 760; --x1: 1600; --y1: 900; background-image: url("../images/city-water.webp"); }
-.scene-city .ct-shimmer { --x0: -30; --y0: 760; --x1: 1630; --y1: 900; background-image: url("../images/city-shimmer.webp"); animation: ct-sway 12s ease-in-out infinite alternate; will-change: transform, opacity; }
-.scene-city .ct-ferry {
-    --x0: 0; --y0: 768; --x1: 74; --y1: 784;
-    background:
-        radial-gradient(circle at 50% 50%, #fff3c8 0 38%, transparent 42%) 50% 0 / 9% 30% no-repeat,
-        linear-gradient(#ffd98a, #ffd98a) 14% 42% / 62% 16% no-repeat,
-        linear-gradient(#0b0807, #0b0807) 0 55% / 100% 45% no-repeat;
-    animation: ct-ferry 190s linear infinite -60s;
-    will-change: transform;
-}
+.scene-city .ct-shimmer { --x0: -30; --y0: 760; --x1: 1630; --y1: 900; background-image: url("../images/city-shimmer.webp"); animation: ct-sway 11s ease-in-out infinite alternate; will-change: transform, opacity; }
 .scene-city .ct-beacon { --x0: 221; --y0: 256; --x1: 231; --y1: 266; border-radius: 50%; background: radial-gradient(circle, #ff5a4a 0 35%, rgba(255, 90, 74, 0) 70%); animation: ct-blink 3.4s ease-in-out infinite; will-change: opacity; }
-@keyframes ct-breathe { 0%, 100% { opacity: 0.18; } 50% { opacity: 1; } }
-@keyframes ct-sway { from { transform: translate3d(calc(var(--u) * -14), 0, 0); opacity: 0.55; } to { transform: translate3d(calc(var(--u) * 14), 0, 0); opacity: 0.95; } }
-@keyframes ct-ferry { from { transform: translate3d(calc(var(--u) * -120), 0, 0); } to { transform: translate3d(calc(var(--u) * 1720), 0, 0); } }
+@keyframes ct-sway { from { transform: translate3d(calc(var(--u) * -22), 0, 0); opacity: 0.5; } to { transform: translate3d(calc(var(--u) * 22), 0, 0); opacity: 0.95; } }
 @keyframes ct-blink { 0%, 55%, 100% { opacity: 0.15; } 70%, 85% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
     .scene * { animation: none !important; }
     .scene-campfire .ember, .scene-campfire .smoke { display: none; }
-    .scene-city .ct-ferry, .scene-city .ct-drift-inner { animation: none; }
+    .scene-city .ct-drift-inner { animation: none; }
     .scene-storm .st-rain-box, .scene-storm .st-bolt, .scene-storm .st-wash, .scene-storm .st-sheet { display: none !important; }
 }
 
