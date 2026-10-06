@@ -53,16 +53,14 @@ Don't waste hours typing out flashcards manually. Supply an OpenRouter API key a
 
 ###  Progress & Insights
 Retention keeps a private log of every card you answer, so you can see how you are really doing (all calculated on your device and included in your Drive backup):
-*   **Progress page** (sidebar **Progress**, or the chart button in the extension popup): streak and longest streak, study time (today / week / all time), accuracy, answers per day, and mastered cards.
-*   **Activity heatmap:** six months of studying at a glance, plus a 7 / 30 / 90 day chart of cards answered with your accuracy line.
-*   **Mastery breakdown:** Mastered / Still learning / Not studied for everything, with a one-click **Review still-learning cards**. Every deck and folder card shows a mastery bar and percentage.
-*   **Per-deck stats:** accuracy, answers, time, last studied and trouble cards at the top of each deck, plus a table of all decks on the Progress page.
-*   **Hardest cards:** the cards you forget most, with **Study these 10**.
-*   **When you study best:** volume and accuracy by hour of day and weekday.
-*   **Quiz history:** attempts, best / latest / average score, trend per quiz, and accuracy by question type.
-*   **Daily goal & milestones:** set a daily card goal (default 20) with a progress ring on the home screen and in the popup, goal streaks, and 14 unlockable milestones (streaks, answers, mastered decks, perfect quizzes, study time).
-*   **Export:** **Download my stats (CSV)** gives you the full answer log. Time on a card is capped at 90 seconds so leaving a tab open does not inflate study time.
-History before this update only has daily totals (streak and accuracy), so per-card charts fill in from the day you update.
+*   **Progress page** (sidebar **Progress**, or the chart button in the extension popup), top to bottom: plain-language **insights** (streak at risk, week-over-week changes, stale decks, your toughest deck, your best study hour), summary tiles (today's goal ring, streak, study time this week, accuracy, mastered, total answers), the activity heatmap, trends, hardest cards, quizzes, milestones, and deck mastery.
+*   **Activity heatmap with a day panel:** six months of studying; hover any day (or click to pin it) to see its cards, knew/forgot/skipped split, accuracy, study time, session window and the decks you studied.
+*   **Cards per day** (7 / 30 / 90 days) with a 7-day rolling accuracy line, **mastery** (Mastered / Still learning / Not studied) with a "Focus next" list of decks with the most still-learning cards.
+*   **Hardest cards:** the cards you miss most, with their deck and **Study these 10**. Early on it ranks by cards you have missed so far (it sharpens as you study) and falls back to cards marked "still learning".
+*   **Practice quizzes:** a bar per attempt (oldest to newest, with an 80% goal line), latest / best / average and change since your first attempt, plus accuracy by question type.
+*   **Deck mastery explorer:** every flashcard deck as a compact tile with mastery bar, accuracy, time and last studied. Search, filter by status (Not started / In progress / Needs review / Stale / Mastered) or folder, sort six ways, and expand beyond the first 12.
+*   **Deck panel, mastery bars and goals:** per-deck stats at the top of each deck, mastery bars on deck and folder cards, a daily goal (default 20) with progress ring on home and in the popup, goal streaks and 14 unlockable milestones.
+*   **Export:** **Download my stats (CSV)** gives you the full answer log. Time on a card is capped at 90 seconds so leaving a tab open does not inflate study time. History before tracking started only has daily totals, so per-card charts fill in from the day you update.
 
 ###  Practice Quiz Decks
 Alongside flashcard decks, Retention has **practice quiz decks** (with their own test-sheet icon) for exam-style review:

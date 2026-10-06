@@ -177,21 +177,34 @@ export const timePatterns = (reviews = []) => {
 };
 
 // ─── Cards and decks ─────────────────────────────────────────────────
-/** Cards you forget most often (needs a few reviews to be meaningful). */
+/**
+ * Cards you forget most often. Per-card history is thin at first (every card is only seen now and then), so
+ * this works in tiers: cards missed at least twice or with 3+ answers first, then any card missed once, then,
+ * if there are no logged misses at all, cards currently marked "still learning".
+ * Returns { items: [{ card, know, forgot, total, accuracy }], source: 'reviews' | 'status', early: boolean }.
+ */
 export const hardestCards = (reviews = [], cards = [], { limit = 10, minReviews = 3 } = {}) => {
     const byCard = new Map();
     for (const r of reviews) {
         if (r.cardId == null || r.result === 'skip') continue;
-        const e = byCard.get(r.cardId) || { know: 0, forgot: 0 };
+        const e = byCard.get(r.cardId) || { know: 0, forgot: 0, last: 0 };
         if (r.result === 'know') e.know++; else e.forgot++;
+        if (r.ts > e.last) e.last = r.ts;
         byCard.set(r.cardId, e);
     }
     const cardById = new Map(cards.map((c) => [c.id, c]));
-    return [...byCard.entries()]
+    const rows = [...byCard.entries()]
         .map(([id, e]) => ({ card: cardById.get(id), ...e, total: e.know + e.forgot, accuracy: percent(e.know, e.know + e.forgot) }))
-        .filter((x) => x.card && x.total >= minReviews && x.forgot > 0)
-        .sort((a, b) => a.accuracy - b.accuracy || b.forgot - a.forgot)
-        .slice(0, limit);
+        .filter((x) => x.card && x.forgot > 0);
+    const rank = (a, b) => a.accuracy - b.accuracy || b.forgot - a.forgot || b.last - a.last;
+    const solid = rows.filter((x) => x.total >= minReviews || x.forgot >= 2).sort(rank);
+    const solidIds = new Set(solid.map((x) => x.card.id));
+    const rest = rows.filter((x) => !solidIds.has(x.card.id)).sort((a, b) => b.last - a.last);
+    const items = [...solid, ...rest].slice(0, limit);
+    if (items.length) return { items, source: 'reviews', early: solid.length < Math.min(limit, items.length) };
+    const learning = cards.filter((c) => c.status === 'learning').slice(0, limit)
+        .map((card) => ({ card, know: 0, forgot: 0, total: 0, accuracy: 0 }));
+    return { items: learning, source: 'status', early: false };
 };
 
 /** Stats for one deck, or for several (a folder's decks) when `deckIds` is a Set/array. */
@@ -241,7 +254,7 @@ export const quizStats = (quizResults = [], decks = [], cards = []) => {
         return {
             deckId: e.deckId, name: deckName.get(e.deckId) || e.name, attempts: e.attempts.length,
             best: Math.max(...ps), latest: ps[ps.length - 1], average: Math.round(ps.reduce((x, y) => x + y, 0) / ps.length),
-            history: ps.slice(-12), improved: ps.length > 1 ? ps[ps.length - 1] - ps[0] : 0
+            history: ps.slice(-12), attempts: e.attempts.slice(-12), allAttempts: e.attempts.length, improved: ps.length > 1 ? ps[ps.length - 1] - ps[0] : 0
         };
     }).sort((a, b) => b.attempts - a.attempts);
     const all = quizResults;
@@ -295,4 +308,106 @@ export const reviewsToCsv = (reviews = [], decks = [], cards = []) => {
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const rows = reviews.map((r) => [new Date(r.ts).toISOString(), r.date, deckName.get(r.deckId) || '', cardTerm.get(r.cardId) || '', r.result, r.type, (r.ms / 1000).toFixed(1)].map(esc).join(','));
     return ['timestamp,date,deck,card,result,type,seconds', ...rows].join('\n');
+};
+
+
+// ─── Aggregates (single pass, so big libraries stay fast) ────────────
+/** Map deckId -> mastery counts + review stats, built in one pass over cards and reviews. */
+export const deckAggregates = (cards = [], reviews = []) => {
+    const map = new Map();
+    const get = (id) => {
+        let e = map.get(id);
+        if (!e) { e = { deckId: id, total: 0, mastered: 0, learning: 0, notStudied: 0, reviews: 0, know: 0, forgot: 0, ms: 0, lastStudied: null }; map.set(id, e); }
+        return e;
+    };
+    for (const c of cards) {
+        const e = get(c.deckId);
+        e.total++;
+        if (c.status === 'mastered') e.mastered++; else if (c.status === 'learning') e.learning++; else e.notStudied++;
+    }
+    for (const r of reviews) {
+        if (r.deckId == null) continue;
+        const e = get(r.deckId);
+        e.reviews++;
+        e.ms += r.ms || 0;
+        if (r.result === 'know') e.know++; else if (r.result === 'forgot') e.forgot++;
+        if (!e.lastStudied || r.ts > e.lastStudied) e.lastStudied = r.ts;
+    }
+    for (const e of map.values()) { e.masteredPct = percent(e.mastered, e.total); e.accuracy = percent(e.know, e.know + e.forgot); }
+    return map;
+};
+
+/** Reviews grouped by local date (for the heatmap's day panel). */
+export const groupByDate = (reviews = []) => {
+    const map = new Map();
+    for (const r of reviews) { const list = map.get(r.date); if (list) list.push(r); else map.set(r.date, [r]); }
+    return map;
+};
+
+export const dayDetails = (date, byDate, deckName, legacyDay) => {
+    const list = byDate.get(date) || [];
+    const d = { date, reviews: list.length, know: 0, forgot: 0, skip: 0, ms: 0, decks: [], first: null, last: null, legacy: false };
+    const perDeck = new Map();
+    for (const r of list) {
+        d.ms += r.ms || 0;
+        if (r.result === 'know') d.know++; else if (r.result === 'forgot') d.forgot++; else d.skip++;
+        perDeck.set(r.deckId, (perDeck.get(r.deckId) || 0) + 1);
+        if (!d.first || r.ts < d.first) d.first = r.ts;
+        if (!d.last || r.ts > d.last) d.last = r.ts;
+    }
+    if (!list.length && legacyDay) { d.reviews = legacyDay.reviews; d.know = legacyDay.know; d.forgot = legacyDay.forgot; d.legacy = true; }
+    d.accuracy = percent(d.know, d.know + d.forgot);
+    d.decks = [...perDeck.entries()].map(([id, count]) => ({ name: deckName(id), count })).sort((a, b) => b.count - a.count);
+    return d;
+};
+
+/** Last 7 days vs the 7 before: volume, accuracy and time with deltas. */
+export const weeklyComparison = (dayMap, today = dateString()) => {
+    const sum = (from, to) => {
+        const o = { reviews: 0, know: 0, forgot: 0, ms: 0, days: 0 };
+        for (let i = from; i <= to; i++) {
+            const d = dayMap.get(addDays(today, -i));
+            if (!d) continue;
+            o.reviews += d.reviews; o.know += d.know; o.forgot += d.forgot; o.ms += d.ms; o.days++;
+        }
+        o.accuracy = o.know + o.forgot ? percent(o.know, o.know + o.forgot) : null;
+        return o;
+    };
+    const cur = sum(0, 6), prev = sum(7, 13);
+    return { cur, prev,
+        reviewsDelta: prev.reviews ? Math.round(((cur.reviews - prev.reviews) / prev.reviews) * 100) : null,
+        accuracyDelta: cur.accuracy != null && prev.accuracy != null ? cur.accuracy - prev.accuracy : null,
+        msDelta: prev.ms ? Math.round(((cur.ms - prev.ms) / prev.ms) * 100) : null };
+};
+
+/** Rolling accuracy over `window` days (weighted by answers), null where there is no data yet. */
+export const rollingAccuracy = (series, window = 7) => series.map((_, i) => {
+    let know = 0, forgot = 0;
+    for (let j = Math.max(0, i - window + 1); j <= i; j++) { know += series[j].know; forgot += series[j].forgot; }
+    return know + forgot >= 3 ? percent(know, know + forgot) : null;
+});
+
+export const DECK_STALE_DAYS = 14;
+
+/** Plain-language observations with an optional action, most important first. */
+export const buildInsights = ({ summary, weekly, patterns, deckAgg, decks, quiz, today = dateString(), now = Date.now() }) => {
+    const out = [];
+    const flash = (tone, text, action) => out.push({ tone, text, action });
+    if (!summary.today && summary.streak > 0) flash('warn', `Study today to keep your ${summary.streak}-day streak alive.`);
+    else if (summary.today && !summary.goalMet) flash('info', `${summary.goal - summary.today} more card${summary.goal - summary.today === 1 ? '' : 's'} to reach today's goal.`);
+    else if (summary.goalMet && summary.goalStreak > 1) flash('good', `Daily goal met ${summary.goalStreak} days in a row.`);
+    if (weekly.reviewsDelta != null && Math.abs(weekly.reviewsDelta) >= 20) flash(weekly.reviewsDelta > 0 ? 'good' : 'info', `You answered ${Math.abs(weekly.reviewsDelta)}% ${weekly.reviewsDelta > 0 ? 'more' : 'fewer'} cards than the week before.`);
+    if (weekly.accuracyDelta != null && Math.abs(weekly.accuracyDelta) >= 5) flash(weekly.accuracyDelta > 0 ? 'good' : 'warn', `Accuracy ${weekly.accuracyDelta > 0 ? 'up' : 'down'} ${Math.abs(weekly.accuracyDelta)} points this week (${weekly.cur.accuracy}%).`);
+    const stale = decks.filter((d) => d.kind !== 'quiz').map((d) => ({ d, a: deckAgg.get(d.id) })).filter((x) => x.a && x.a.total >= 5 && x.a.lastStudied && (now - x.a.lastStudied) / 864e5 >= DECK_STALE_DAYS);
+    if (stale.length) flash('warn', `${stale.length} deck${stale.length === 1 ? '' : 's'} you studied before ${stale.length === 1 ? 'has' : 'have'} not been reviewed in ${DECK_STALE_DAYS}+ days.`, { type: 'filter', value: 'stale', label: 'Show' });
+    const weak = decks.filter((d) => d.kind !== 'quiz').map((d) => ({ d, a: deckAgg.get(d.id) })).filter((x) => x.a && x.a.know + x.a.forgot >= 15 && x.a.accuracy < 60).sort((a, b) => a.a.accuracy - b.a.accuracy)[0];
+    if (weak) flash('warn', `"${weak.d.name}" is your toughest deck: ${weak.a.accuracy}% accuracy over ${weak.a.know + weak.a.forgot} answers.`, { type: 'study-deck', value: weak.d.id, label: 'Study' });
+    const hour = patterns.hours.map((h, i) => ({ ...h, i })).filter((h) => h.know + h.forgot >= 8).sort((a, b) => b.accuracy - a.accuracy)[0];
+    if (hour) flash('info', `You answer most accurately around ${hour.i % 12 || 12}${hour.i < 12 ? ' AM' : ' PM'} (${hour.accuracy}%).`);
+    const types = Object.entries(quiz.byType).filter(([, v]) => v.total >= 8).sort((a, b) => a[1].accuracy - b[1].accuracy)[0];
+    const labels = { mcq: 'multiple choice', tf: 'true/false', fitb: 'fill-in-the-blank' };
+    if (types && types[1].accuracy < 70) flash('info', `Quiz weak spot: ${labels[types[0]]} questions (${types[1].accuracy}% correct).`);
+    const toMilestone = summary.reviews < 1000 ? 1000 - summary.reviews : null;
+    if (toMilestone && toMilestone <= 150) flash('good', `${toMilestone} more answers to the Thousand club.`);
+    return out.slice(0, 5);
 };

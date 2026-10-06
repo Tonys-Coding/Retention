@@ -7,12 +7,14 @@
 
 import { escapeHtml } from './utils.js';
 import {
-    DEFAULT_DAILY_GOAL, ACHIEVEMENTS, buildDayMap, summarize, masteryBreakdown, heatmap, dailySeries,
-    timePatterns, hardestCards, deckStats, quizStats, achievementContext, formatDuration, formatAgo, percent, addDays, dateString
+    DEFAULT_DAILY_GOAL, DECK_STALE_DAYS, ACHIEVEMENTS, buildDayMap, summarize, masteryBreakdown, heatmap, dailySeries, rollingAccuracy,
+    timePatterns, hardestCards, deckStats, deckAggregates, groupByDate, dayDetails, weeklyComparison, buildInsights,
+    quizStats, achievementContext, formatDuration, formatAgo, percent, addDays, dateString
 } from './stats.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DECKS_PER_PAGE = 12;
 
 // ─── Small reusable widgets ──────────────────────────────────────────
 /** Circular progress (value/max) with the number in the middle. */
@@ -40,17 +42,18 @@ export const masteryBarHtml = (b, { legend = false, thin = false } = {}) => {
         <span><i class="pg-dot is-new"></i>Not studied <b>${b.notStudied}</b></span></div>` : ''}`;
 };
 
-const sparkline = (values, w = 90, h = 26) => {
-    if (values.length < 2) return '';
-    const step = w / (values.length - 1);
-    const pts = values.map((v, i) => `${(i * step).toFixed(1)},${(h - 2 - (v / 100) * (h - 4)).toFixed(1)}`).join(' ');
-    return `<svg class="pg-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline></svg>`;
-};
+const tile = (label, value, subs = [], extra = '') =>
+    `<div class="pg-tile">${extra}<div class="pg-tile-value">${value}</div><div class="pg-tile-label">${label}</div>${subs.filter(Boolean).map((s) => `<div class="pg-tile-sub">${s}</div>`).join('')}</div>`;
 
-const tile = (label, value, sub = '', extra = '') => `<div class="pg-tile">${extra}<div class="pg-tile-value">${value}</div><div class="pg-tile-label">${label}</div>${sub ? `<div class="pg-tile-sub">${sub}</div>` : ''}</div>`;
+const signed = (n, suffix = '') => `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n)}${suffix}`;
+const fmtDate = (date) => {
+    const [y, m, d] = date.split('-').map(Number);
+    return new Date(y, m - 1, d, 12).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+};
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 // ─── Charts ──────────────────────────────────────────────────────────
-const heatmapSvg = (cols) => {
+const heatmapSvg = (cols, selected) => {
     const cell = 13, gap = 3, left = 28, top = 18;
     const width = left + cols.length * (cell + gap), height = top + 7 * (cell + gap);
     let months = '', lastMonth = -1;
@@ -58,26 +61,48 @@ const heatmapSvg = (cols) => {
         const m = Number(col[0].date.slice(5, 7)) - 1;
         if (m !== lastMonth && Number(col[0].date.slice(8)) <= 7) { months += `<text x="${left + x * (cell + gap)}" y="11" class="pg-axis">${MONTHS[m]}</text>`; lastMonth = m; }
         return col.map((d, y) => (d.level < 0 ? '' :
-            `<rect class="pg-hm l${d.level}" x="${left + x * (cell + gap)}" y="${top + y * (cell + gap)}" width="${cell}" height="${cell}" rx="2"><title>${d.date}: ${d.reviews} card${d.reviews === 1 ? '' : 's'}${d.ms ? ` · ${formatDuration(d.ms)}` : ''}</title></rect>`)).join('');
+            `<rect class="pg-hm l${d.level}${d.date === selected ? ' is-selected' : ''}" data-date="${d.date}" x="${left + x * (cell + gap)}" y="${top + y * (cell + gap)}" width="${cell}" height="${cell}" rx="2"></rect>`)).join('');
     }).join('');
     const labels = [1, 3, 5].map((i) => `<text x="0" y="${top + i * (cell + gap) + 10}" class="pg-axis">${WEEKDAYS[i]}</text>`).join('');
-    return `<svg class="pg-heatmap" viewBox="0 0 ${width} ${height}" width="${Math.round(width * 1.65)}" role="img" aria-label="Study activity over the last six months">${months}${labels}${cells}</svg>`;
+    return `<svg class="pg-heatmap" viewBox="0 0 ${width} ${height}" width="${Math.round(width * 1.55)}" role="img" aria-label="Study activity over the last six months. Hover or tap a day for details.">${months}${labels}${cells}</svg>`;
 };
 
-const trendSvg = (series) => {
-    const w = 640, h = 190, padL = 30, padB = 22, padT = 10;
+const dayPanelHtml = (d, today) => {
+    const head = `<div class="pg-day-date">${fmtDate(d.date)}${d.date === today ? ' <em>Today</em>' : ''}</div>`;
+    if (!d.reviews) return `${head}<p class="pg-empty">No studying on this day.</p>`;
+    const total = d.know + d.forgot + d.skip || 1;
+    const seg = (n, cls, label) => (n ? `<span class="pg-seg ${cls}" style="width:${(n / total) * 100}%" title="${label}: ${n}"></span>` : '');
+    return `${head}
+        <div class="pg-day-big">${d.reviews}<span> card${d.reviews === 1 ? '' : 's'} answered</span></div>
+        <div class="pg-mastery pg-mastery--thin">${seg(d.know, 'is-mastered', 'Knew it')}${seg(d.forgot, 'is-forgot', 'Forgot')}${seg(d.skip, 'is-new', 'Skipped')}</div>
+        <div class="pg-legend"><span><i class="pg-dot is-mastered"></i>Knew <b>${d.know}</b></span><span><i class="pg-dot is-forgot"></i>Forgot <b>${d.forgot}</b></span>${d.skip ? `<span><i class="pg-dot is-new"></i>Skipped <b>${d.skip}</b></span>` : ''}</div>
+        <div class="pg-day-facts">
+            <div><b>${d.know + d.forgot ? d.accuracy + '%' : '–'}</b><span>accuracy</span></div>
+            <div><b>${d.ms ? formatDuration(d.ms) : '–'}</b><span>study time</span></div>
+            ${d.first ? `<div><b>${fmtTime(d.first)}</b><span>${d.last - d.first > 60000 ? `to ${fmtTime(d.last)}` : 'first answer'}</span></div>` : ''}
+        </div>
+        ${d.decks.length ? `<div class="pg-day-decks"><span class="pg-day-sub">Decks studied</span>${d.decks.slice(0, 5).map((k) => `<div><span>${escapeHtml(k.name)}</span><b>${k.count}</b></div>`).join('')}${d.decks.length > 5 ? `<div class="pg-day-more">+${d.decks.length - 5} more</div>` : ''}</div>` : ''}
+        ${d.legacy ? '<p class="pg-day-note">Only daily totals exist for this day (detailed tracking started later).</p>' : ''}`;
+};
+
+const trendSvg = (series, rolling) => {
+    const w = 640, h = 200, padL = 30, padR = 30, padB = 22, padT = 10;
     const max = Math.max(5, ...series.map((d) => d.reviews));
-    const bw = (w - padL) / series.length;
+    const plotW = w - padL - padR, plotH = h - padB - padT;
+    const bw = plotW / series.length;
     const bars = series.map((d, i) => {
-        const bh = (d.reviews / max) * (h - padB - padT);
+        const bh = (d.reviews / max) * plotH;
         return `<rect class="pg-bar" x="${(padL + i * bw + bw * 0.15).toFixed(1)}" y="${(h - padB - bh).toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${bh.toFixed(1)}" rx="2"><title>${d.date}: ${d.reviews} cards${d.accuracy == null ? '' : ` · ${d.accuracy}% correct`}</title></rect>`;
     }).join('');
-    const pts = series.map((d, i) => (d.accuracy == null ? null : [padL + i * bw + bw / 2, padT + (1 - d.accuracy / 100) * (h - padB - padT)])).filter(Boolean);
+    const pts = rolling.map((v, i) => (v == null ? null : [padL + i * bw + bw / 2, padT + (1 - v / 100) * plotH])).filter(Boolean);
     const line = pts.length > 1 ? `<polyline class="pg-line" points="${pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}" fill="none"></polyline>` : '';
     const every = Math.max(1, Math.round(series.length / 6));
     const ticks = series.map((d, i) => (i % every === 0 ? `<text class="pg-axis" x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${h - 6}" text-anchor="middle">${Number(d.date.slice(5, 7))}/${Number(d.date.slice(8))}</text>` : '')).join('');
-    const grid = [0, 0.5, 1].map((f) => `<line class="pg-grid" x1="${padL}" x2="${w}" y1="${(h - padB - f * (h - padB - padT)).toFixed(1)}" y2="${(h - padB - f * (h - padB - padT)).toFixed(1)}"></line><text class="pg-axis" x="0" y="${(h - padB - f * (h - padB - padT) + 3).toFixed(1)}">${Math.round(max * f)}</text>`).join('');
-    return `<svg class="pg-trend" viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Cards answered per day">${grid}${bars}${line}${ticks}</svg>`;
+    const grid = [0, 0.5, 1].map((f) => {
+        const y = (h - padB - f * plotH).toFixed(1);
+        return `<line class="pg-grid" x1="${padL}" x2="${w - padR}" y1="${y}" y2="${y}"></line><text class="pg-axis" x="${padL - 6}" y="${(Number(y) + 3).toFixed(1)}" text-anchor="end">${Math.round(max * f)}</text><text class="pg-axis pg-axis--acc" x="${w - padR + 6}" y="${(Number(y) + 3).toFixed(1)}">${Math.round(100 * f)}%</text>`;
+    }).join('');
+    return `<svg class="pg-trend" viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Cards answered per day with 7-day accuracy">${grid}${bars}${line}${ticks}</svg>`;
 };
 
 const barRow = (labels, items, fmt) => {
@@ -86,47 +111,45 @@ const barRow = (labels, items, fmt) => {
         <div class="pg-bars-bar"><span style="height:${(it.count / max) * 100}%"></span></div><div class="pg-bars-label">${labels[i]}</div></div>`).join('')}</div>`;
 };
 
-// ─── Page ────────────────────────────────────────────────────────────
-const state = { range: 30 };
+// ─── Sections ────────────────────────────────────────────────────────
+const section = (title, body, { sub = '', cls = '', actions = '', id = '' } = {}) =>
+    `<section class="pg-card ${cls}"${id ? ` id="${id}"` : ''}><div class="pg-card-head"><div><h3 class="pg-h">${title}</h3>${sub ? `<p class="pg-sub">${sub}</p>` : ''}</div>${actions}</div>${body}</section>`;
 
-const buildModel = (ctx) => {
-    const goal = ctx.goal || DEFAULT_DAILY_GOAL;
-    const dayMap = buildDayMap(ctx.reviews, ctx.legacyStats);
-    const summary = summarize(dayMap, ctx.cards, { goal });
-    return { goal, dayMap, summary };
-};
+const insightsHtml = (list) => (list.length ? `<div class="pg-insights">${list.map((i, n) => `<div class="pg-insight pg-insight--${i.tone}"><span class="pg-insight-dot" aria-hidden="true"></span><span>${escapeHtml(i.text)}</span>${i.action ? `<button type="button" class="secondary pg-insight-btn" data-pg="insight" data-n="${n}">${escapeHtml(i.action.label)}</button>` : ''}</div>`).join('')}</div>` : '');
 
-const section = (title, body, { sub = '', cls = '', actions = '' } = {}) =>
-    `<section class="pg-card ${cls}"><div class="pg-card-head"><div><h3 class="pg-h">${title}</h3>${sub ? `<p class="pg-sub">${sub}</p>` : ''}</div>${actions}</div>${body}</section>`;
-
-const decksTable = (ctx) => {
-    const quizIds = new Set(ctx.decks.filter((d) => d.kind === 'quiz').map((d) => d.id));
-    const rows = ctx.decks.filter((d) => !quizIds.has(d.id)).map((d) => ({ d, s: deckStats(d.id, ctx.reviews, ctx.cards) }))
-        .filter((r) => r.s.total > 0)
-        .sort((a, b) => (b.s.lastStudied || 0) - (a.s.lastStudied || 0) || b.s.total - a.s.total);
-    if (!rows.length) return '<p class="pg-empty">No flashcard decks yet.</p>';
-    return `<div class="pg-table" role="table">${rows.map(({ d, s }) => `<div class="pg-row" role="row">
-        <div class="pg-row-main"><div class="pg-row-name">${escapeHtml(d.name)}</div><div class="pg-row-sub">${s.total} cards · ${formatAgo(s.lastStudied)}</div></div>
-        <div class="pg-row-bar">${masteryBarHtml(s, { thin: true })}</div>
-        <div class="pg-row-num"><b>${s.masteredPct}%</b><span>mastered</span></div>
-        <div class="pg-row-num"><b>${s.reviews ? s.accuracy + '%' : '–'}</b><span>accuracy</span></div>
-        <div class="pg-row-num"><b>${formatDuration(s.ms)}</b><span>time</span></div>
-        <button type="button" class="secondary pg-row-btn" data-pg="study-deck" data-id="${d.id}">Study</button></div>`).join('')}</div>`;
+const attemptsChart = (d) => {
+    const cls = (p) => (p >= 80 ? 'is-ok' : p >= 50 ? 'is-mid' : 'is-low');
+    const base = d.allAttempts - d.attempts.length;
+    return `<div class="pg-attempts" role="img" aria-label="Score of each attempt, oldest to newest"><div class="pg-attempts-goal" title="80% goal"></div>${d.attempts.map((a, i) => {
+        const when = a.at ? new Date(a.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+        return `<div class="pg-attempt" title="Attempt ${base + i + 1}${when ? ` · ${when}` : ''} · ${a.percent}%${a.total ? ` (${a.correct} of ${a.total})` : ''}${a.durationMs ? ` · ${formatDuration(a.durationMs)}` : ''}">
+            <span class="pg-attempt-pct">${a.percent}%</span><div class="pg-attempt-bar"><i class="${cls(a.percent)}" style="height:${Math.max(4, a.percent)}%"></i></div><span class="pg-attempt-n">#${base + i + 1}</span></div>`;
+    }).join('')}</div>`;
 };
 
 const quizSection = (q) => {
     if (!q.attempts) return '<p class="pg-empty">Take a practice quiz and your scores will show up here.</p>';
     const types = [['mcq', 'Multiple choice'], ['tf', 'True / false'], ['fitb', 'Fill in the blank']].filter(([k]) => q.byType[k].total)
-        .map(([k, label]) => `<div class="pg-type"><span>${label}</span><div class="pg-meter"><span style="width:${q.byType[k].accuracy}%"></span></div><b>${q.byType[k].accuracy}%</b></div>`).join('');
-    const decks = q.perDeck.map((d) => `<div class="pg-row pg-row--quiz"><div class="pg-row-main"><div class="pg-row-name">${escapeHtml(d.name || 'Quiz')}</div><div class="pg-row-sub">${d.attempts} attempt${d.attempts === 1 ? '' : 's'}</div></div>
-        <div class="pg-row-bar">${sparkline(d.history)}</div>
-        <div class="pg-row-num"><b>${d.latest}%</b><span>latest</span></div><div class="pg-row-num"><b>${d.best}%</b><span>best</span></div><div class="pg-row-num"><b>${d.average}%</b><span>average</span></div>
-        <div class="pg-row-num"><b class="${d.improved >= 0 ? 'is-up' : 'is-down'}">${d.improved >= 0 ? '+' : ''}${d.improved}</b><span>since first</span></div></div>`).join('');
+        .map(([k, label]) => `<div class="pg-type"><span>${label}</span><div class="pg-meter"><span style="width:${q.byType[k].accuracy}%"></span></div><b>${q.byType[k].accuracy}%</b><em>${q.byType[k].right}/${q.byType[k].total}</em></div>`).join('');
+    const decks = q.perDeck.map((d) => `<article class="pg-quiz">
+        <div class="pg-quiz-head"><div><div class="pg-row-name">${escapeHtml(d.name || 'Quiz')}</div><div class="pg-row-sub">${d.allAttempts} attempt${d.allAttempts === 1 ? '' : 's'}${d.allAttempts > d.attempts.length ? ` · showing last ${d.attempts.length}` : ''}</div></div>
+            <div class="pg-quiz-stats"><div><b>${d.latest}%</b><span>latest</span></div><div><b>${d.best}%</b><span>best</span></div><div><b>${d.average}%</b><span>average</span></div>
+            ${d.allAttempts > 1 ? `<div><b class="${d.improved >= 0 ? 'is-up' : 'is-down'}">${signed(d.improved, ' pts')}</b><span>since attempt 1</span></div>` : ''}</div></div>
+        ${attemptsChart(d)}<div class="pg-attempts-cap">Each bar is one attempt, oldest to newest. The dashed line marks 80%.</div></article>`).join('');
     return `<div class="pg-tiles pg-tiles--small">${tile('Attempts', q.attempts)}${tile('Average score', q.average + '%')}${tile('Best score', q.best + '%')}${tile('Time in quizzes', formatDuration(q.ms))}</div>
-        ${types ? `<div class="pg-types">${types}</div>` : ''}<div class="pg-table">${decks}</div>`;
+        ${types ? `<div class="pg-types-title">Accuracy by question type</div><div class="pg-types">${types}</div>` : ''}<div class="pg-quizzes">${decks}</div>`;
 };
 
-const achievementsGrid = (ctx, unlocked) => `<div class="pg-achievements">${ACHIEVEMENTS.map((a) => {
+const hardestSection = (res, deckName) => {
+    const { items, source, early } = res;
+    if (!items.length) return '<p class="pg-empty">No missed cards yet. Cards you forget will show up here, with the decks they come from.</p>';
+    const note = source === 'status' ? 'No answers logged yet, so these are cards currently marked <b>still learning</b>.' : early ? 'Early data: ranked by the cards you have missed so far. It sharpens as you keep studying.' : '';
+    return `${note ? `<p class="pg-sub pg-sub--tight">${note}</p>` : ''}<ol class="pg-hard">${items.map((h) => `<li><div class="pg-hard-main"><div class="pg-hard-term">${escapeHtml(String(h.card.term).slice(0, 90))}</div><div class="pg-hard-deck">${escapeHtml(deckName(h.card.deckId))}</div></div>
+        <div class="pg-hard-meta">${source === 'status' ? 'still learning' : `<b>${h.forgot}</b> missed of ${h.total}<br>${h.accuracy}% correct`}</div></li>`).join('')}</ol>
+        <button type="button" class="primary pg-wide" data-pg="study-hardest">Study these ${items.length}</button>`;
+};
+
+const achievementsGrid = (unlocked) => `<div class="pg-achievements">${ACHIEVEMENTS.map((a) => {
     const when = unlocked[a.id];
     return `<div class="pg-ach${when ? ' is-unlocked' : ''}" title="${escapeHtml(a.desc)}"><div class="pg-ach-icon" aria-hidden="true">${when
         ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
@@ -134,57 +157,199 @@ const achievementsGrid = (ctx, unlocked) => `<div class="pg-achievements">${ACHI
         <div class="pg-ach-name">${escapeHtml(a.name)}</div><div class="pg-ach-desc">${when ? `Unlocked ${when}` : escapeHtml(a.desc)}</div></div>`;
 }).join('')}</div>`;
 
+// ─── Deck mastery explorer (bottom of the page) ──────────────────────
+const STATUS = {
+    new: { label: 'Not started', cls: 'is-new' },
+    progress: { label: 'In progress', cls: 'is-progress' },
+    review: { label: 'Needs review', cls: 'is-review' },
+    stale: { label: 'Stale', cls: 'is-stale' },
+    mastered: { label: 'Mastered', cls: 'is-mastered' }
+};
+const deckStatus = (a, now) => {
+    if (a.masteredPct >= 90) return 'mastered';
+    if (a.lastStudied && (now - a.lastStudied) / 864e5 >= DECK_STALE_DAYS) return 'stale';
+    if (!a.mastered && !a.learning) return 'new';
+    if ((a.know + a.forgot >= 10 && a.accuracy < 60) || a.learning / a.total >= 0.4) return 'review';
+    return 'progress';
+};
+const SORTS = {
+    recent: ['Recently studied', (a, b) => (b.agg.lastStudied || 0) - (a.agg.lastStudied || 0) || b.agg.total - a.agg.total],
+    lowest: ['Lowest mastery', (a, b) => a.agg.masteredPct - b.agg.masteredPct || b.agg.total - a.agg.total],
+    highest: ['Highest mastery', (a, b) => b.agg.masteredPct - a.agg.masteredPct || b.agg.total - a.agg.total],
+    size: ['Most cards', (a, b) => b.agg.total - a.agg.total],
+    time: ['Most study time', (a, b) => b.agg.ms - a.agg.ms],
+    name: ['Name (A–Z)', (a, b) => a.deck.name.localeCompare(b.deck.name, undefined, { numeric: true })]
+};
+
+const buildDeckExplorer = (ctx, deckAgg, now) => {
+    const folderById = new Map((ctx.folders || []).map((f) => [f.id, f]));
+    const folderPath = (id) => { const names = []; for (let f = folderById.get(id), n = 0; f && n < 8; f = folderById.get(f.parentId), n++) names.unshift(f.name); return names.join(' / '); };
+    const descendants = (rootId) => { const ids = new Set([rootId]); let grew = true; while (grew) { grew = false; for (const f of ctx.folders || []) if (!ids.has(f.id) && ids.has(f.parentId)) { ids.add(f.id); grew = true; } } return ids; };
+    const rows = ctx.decks.filter((d) => d.kind !== 'quiz').map((deck) => ({ deck, agg: deckAgg.get(deck.id) })).filter((r) => r.agg && r.agg.total > 0)
+        .map((r) => ({ ...r, status: deckStatus(r.agg, now), path: folderPath(r.deck.folderId) }));
+    return { rows, folderPath, descendants, folderOptions: (ctx.folders || []).filter((f) => rows.some((r) => descendants(f.id).has(r.deck.folderId))) };
+};
+
+const decksSection = (explorer, state) => {
+    if (!explorer.rows.length) return section('Deck mastery', '<p class="pg-empty">No flashcard decks yet.</p>', { id: 'pg-decks' });
+    const chips = ['all', 'new', 'progress', 'review', 'stale', 'mastered'].map((k) => `<button type="button" class="pg-chip" data-pg="dfilter" data-k="${k}" aria-pressed="false"><span>${k === 'all' ? 'All' : STATUS[k].label}</span> <b data-count="${k}">0</b></button>`).join('');
+    const folderOpts = ['<option value="all">All folders</option>', ...explorer.folderOptions.map((f) => `<option value="${f.id}">${escapeHtml(explorer.folderPath(f.id) || f.name)}</option>`)].join('');
+    const sortOpts = Object.entries(SORTS).map(([k, [label]]) => `<option value="${k}">${label}</option>`).join('');
+    return section('Deck mastery', `
+        <div class="pg-dk-controls">
+            <input type="search" id="pg-dk-q" class="pg-dk-search" placeholder="Search decks…" aria-label="Search decks" autocomplete="off">
+            <label class="pg-dk-select">Folder <select id="pg-dk-folder">${folderOpts}</select></label>
+            <label class="pg-dk-select">Sort <select id="pg-dk-sort">${sortOpts}</select></label>
+        </div>
+        <div class="pg-chips pg-chips--wrap" id="pg-dk-chips">${chips}</div>
+        <div class="pg-dk-summary" id="pg-dk-summary"></div>
+        <div class="pg-dk-grid" id="pg-dk-grid"></div>
+        <div class="pg-dk-more" id="pg-dk-more"></div>`, { sub: 'Find the decks that need attention. Filter by status, folder or name.', id: 'pg-decks' });
+};
+
+const wireDeckExplorer = (container, explorer, state, handlers, now) => {
+    const root = container.querySelector('#pg-decks'); // recreated on every render, so listeners never pile up
+    if (!root) return null;
+    const $ = (sel) => root.querySelector(sel);
+    const grid = $('#pg-dk-grid');
+    const sync = () => { $('#pg-dk-q').value = state.q; $('#pg-dk-folder').value = state.folder; $('#pg-dk-sort').value = state.sort; };
+    const render = () => {
+        const q = state.q.trim().toLowerCase();
+        const inFolder = state.folder === 'all' ? null : explorer.descendants(Number(state.folder));
+        const base = explorer.rows.filter((r) => (!q || r.deck.name.toLowerCase().includes(q)) && (!inFolder || inFolder.has(r.deck.folderId)));
+        const counts = { all: base.length, new: 0, progress: 0, review: 0, stale: 0, mastered: 0 };
+        base.forEach((r) => { counts[r.status]++; });
+        root.querySelectorAll('#pg-dk-chips .pg-chip').forEach((chip) => {
+            const k = chip.dataset.k;
+            chip.querySelector('b').textContent = counts[k];
+            chip.classList.toggle('is-active', state.filter === k);
+            chip.setAttribute('aria-pressed', String(state.filter === k));
+        });
+        const shown = base.filter((r) => state.filter === 'all' || r.status === state.filter).sort(SORTS[state.sort][1]);
+        const agg = shown.reduce((o, r) => ({ total: o.total + r.agg.total, mastered: o.mastered + r.agg.mastered, learning: o.learning + r.agg.learning, notStudied: o.notStudied + r.agg.notStudied }), { total: 0, mastered: 0, learning: 0, notStudied: 0 });
+        $('#pg-dk-summary').innerHTML = shown.length ? `<div class="pg-dk-sum-text"><b>${shown.length}</b> deck${shown.length === 1 ? '' : 's'} · <b>${agg.total.toLocaleString()}</b> cards · <b>${percent(agg.mastered, agg.total)}%</b> mastered</div>${masteryBarHtml(agg, { thin: true })}` : '';
+        const visible = state.all ? shown : shown.slice(0, DECKS_PER_PAGE);
+        grid.innerHTML = visible.length ? visible.map(({ deck, agg: a, status, path }) => `<article class="pg-dk ${STATUS[status].cls}">
+            <div class="pg-dk-top"><div class="pg-dk-name" title="${escapeHtml(deck.name)}">${escapeHtml(deck.name)}</div><span class="pg-dk-badge ${STATUS[status].cls}">${STATUS[status].label}</span></div>
+            <div class="pg-dk-path">${path ? escapeHtml(path) : 'No folder'}</div>
+            ${masteryBarHtml(a, { thin: true })}
+            <div class="pg-dk-pct"><b>${a.masteredPct}%</b> mastered <span>${a.mastered}/${a.total} cards</span></div>
+            <div class="pg-dk-meta">${a.know + a.forgot ? `${a.accuracy}% accuracy · ` : ''}${a.ms ? `${formatDuration(a.ms)} · ` : ''}${formatAgo(a.lastStudied, now).replace('Studied ', '')}</div>
+            <button type="button" class="secondary pg-dk-btn" data-pg="study-deck" data-id="${deck.id}">Study</button></article>`).join('')
+            : '<p class="pg-empty">No decks match these filters.</p>';
+        $('#pg-dk-more').innerHTML = shown.length > DECKS_PER_PAGE ? `<button type="button" class="secondary" data-pg="dall">${state.all ? 'Show fewer' : `Show all ${shown.length} decks`}</button>` : '';
+    };
+    root.addEventListener('input', (e) => { if (e.target.id === 'pg-dk-q') { state.q = e.target.value; state.all = false; render(); } });
+    root.addEventListener('change', (e) => {
+        if (e.target.id === 'pg-dk-folder') { state.folder = e.target.value; state.all = false; render(); }
+        if (e.target.id === 'pg-dk-sort') { state.sort = e.target.value; render(); }
+    });
+    root.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-pg]');
+        if (!el) return;
+        if (el.dataset.pg === 'dfilter') { state.filter = el.dataset.k; state.all = false; render(); }
+        else if (el.dataset.pg === 'dall') { state.all = !state.all; render(); }
+    });
+    sync();
+    render();
+    return { setFilter: (k) => { state.filter = k; state.all = false; render(); } };
+};
+
+// ─── Page ────────────────────────────────────────────────────────────
+const state = { range: 30, pinnedDay: null, decks: { filter: 'all', sort: 'recent', folder: 'all', q: '', all: false } };
+
 /**
  * Renders the whole Progress page.
- * ctx: { reviews, legacyStats, cards, decks, quizResults, goal, achievements }
- * handlers: { onGoalChange(n), onStudyDeck(id), onStudyHardest(cards), onExport() }
+ * ctx: { reviews, legacyStats, cards, decks, folders, quizResults, goal, achievements }
+ * handlers: { onGoalChange(n), onStudyDeck(id), onStudyHardest(cards, title), onExport() }
  */
 export const renderProgress = (container, ctx, handlers = {}) => {
-    const { goal, dayMap, summary } = buildModel(ctx);
+    const today = dateString();
+    const now = Date.now();
+    const goal = ctx.goal || DEFAULT_DAILY_GOAL;
+    const dayMap = buildDayMap(ctx.reviews, ctx.legacyStats);
+    const summary = summarize(dayMap, ctx.cards, { goal, today });
+    const weekly = weeklyComparison(dayMap, today);
     const mastery = masteryBreakdown(ctx.cards);
     const patterns = timePatterns(ctx.reviews);
     const hardest = hardestCards(ctx.reviews, ctx.cards, { limit: 10 });
     const quiz = quizStats(ctx.quizResults, ctx.decks, ctx.cards);
+    const deckAgg = deckAggregates(ctx.cards, ctx.reviews);
+    const byDate = groupByDate(ctx.reviews);
     const unlocked = ctx.achievements || {};
+    const deckNameOf = new Map(ctx.decks.map((d) => [d.id, d.name]));
+    const deckName = (id) => deckNameOf.get(id) || 'Deleted deck';
+    const insights = buildInsights({ summary, weekly, patterns, deckAgg, decks: ctx.decks, quiz, today, now });
     const hasData = summary.reviews > 0 || quiz.attempts > 0;
-    const bestHour = patterns.hours.map((h, i) => ({ ...h, i })).filter((h) => h.know + h.forgot >= 5).sort((a, b) => b.accuracy - a.accuracy || b.count - a.count)[0];
+    const explorer = buildDeckExplorer(ctx, deckAgg, now);
+
+    const lastActive = [...dayMap.keys()].filter((d) => d <= today).sort().pop() || today;
+    const selected = state.pinnedDay && state.pinnedDay <= today ? state.pinnedDay : null;
     const hourLabel = (i) => `${i % 12 || 12}${i < 12 ? 'a' : 'p'}`;
+    const bestHour = patterns.hours.map((h, i) => ({ ...h, i })).filter((h) => h.know + h.forgot >= 5).sort((a, b) => b.accuracy - a.accuracy || b.count - a.count)[0];
 
     const todayTile = `<div class="pg-tile pg-tile--ring"><div class="pg-tile-ring">${ringHtml(Math.min(summary.today, 9999), goal, 92)}</div><div class="pg-tile-label">Today</div><div class="pg-tile-sub">${summary.goalMet ? 'Daily goal reached' : `${Math.max(0, goal - summary.today)} to reach your goal`}</div></div>`;
     const tiles = `<div class="pg-tiles">
         ${todayTile}
-        ${tile('Day streak', summary.streak, `Longest ${summary.longestStreak} · Goal streak ${summary.goalStreak}`)}
-        ${tile('Study time', formatDuration(summary.msToday), `This week ${formatDuration(summary.ms7)} · All time ${formatDuration(summary.msAll)}`)}
-        ${tile('Accuracy', summary.know + summary.forgot ? summary.accuracy + '%' : '–', `${summary.know} known · ${summary.forgot} forgotten`)}
-        ${tile('Cards mastered', summary.mastered, `${mastery.masteredPct}% of ${mastery.total} cards`)}
-        ${tile('Total answers', summary.reviews.toLocaleString(), `${summary.activeDays} active day${summary.activeDays === 1 ? '' : 's'} · ${summary.avgPerActiveDay} per day`)}
+        ${tile('Day streak', summary.streak, [`Longest: ${summary.longestStreak} days`, `Goal streak: ${summary.goalStreak}`])}
+        ${tile('Study time this week', formatDuration(summary.ms7), [`Today: ${formatDuration(summary.msToday)}`, `All time: ${formatDuration(summary.msAll)}`])}
+        ${tile('Accuracy', summary.know + summary.forgot ? summary.accuracy + '%' : '–', [`${summary.know.toLocaleString()} known · ${summary.forgot.toLocaleString()} forgotten`, weekly.accuracyDelta != null ? `This week: ${weekly.cur.accuracy}%${weekly.accuracyDelta ? ` (${signed(weekly.accuracyDelta)})` : ''}` : ''])}
+        ${tile('Cards mastered', summary.mastered.toLocaleString(), [`${mastery.masteredPct}% of ${mastery.total.toLocaleString()} cards`])}
+        ${tile('Total answers', summary.reviews.toLocaleString(), [`This week: ${weekly.cur.reviews}${weekly.reviewsDelta != null ? ` (${signed(weekly.reviewsDelta, '%')})` : ''}`, `${summary.activeDays} active days · ${summary.avgPerActiveDay}/day`])}
     </div>`;
 
     const rangeBtns = [7, 30, 90].map((n) => `<button type="button" class="pg-chip${state.range === n ? ' is-active' : ''}" data-pg="range" data-n="${n}" aria-pressed="${state.range === n}">${n}D</button>`).join('');
-    const series = dailySeries(dayMap, state.range);
+    const series = dailySeries(dayMap, state.range, today);
+
+    // "Focus next": decks with the most still-learning cards
+    const focus = [...deckAgg.values()].filter((a) => a.learning > 0 && deckNameOf.has(a.deckId)).sort((a, b) => b.learning - a.learning).slice(0, 3);
+    const masteryBody = masteryBarHtml(mastery, { legend: true })
+        + (focus.length ? `<div class="pg-focus"><div class="pg-types-title">Focus next</div>${focus.map((a) => `<div class="pg-focus-row"><div class="pg-focus-main"><div class="pg-row-name">${escapeHtml(deckName(a.deckId))}</div><div class="pg-row-sub">${a.learning} still learning · ${a.masteredPct}% mastered</div></div><button type="button" class="secondary pg-row-btn" data-pg="study-deck" data-id="${a.deckId}">Study</button></div>`).join('')}</div>` : '')
+        + (mastery.learning ? `<button type="button" class="secondary pg-wide" data-pg="study-learning">Review all ${mastery.learning} still-learning cards</button>` : '');
 
     container.innerHTML = `<div class="pg">
         <div class="pg-top">
-            <div><h2 class="pg-title">Your progress</h2><p class="pg-sub">${hasData ? 'Everything here is calculated from your own studying and stays on your devices (and your Drive backup).' : 'Study a few cards and this page fills up with your streaks, accuracy, time and hardest cards.'}</p></div>
+            <div><h2 class="pg-title">Your progress</h2><p class="pg-sub">${hasData ? 'Calculated from your own studying; it stays on your devices and in your Drive backup.' : 'Study a few cards and this page fills up with your streaks, accuracy, time and hardest cards.'}</p></div>
             <div class="pg-controls">
                 <label class="pg-goal">Daily goal <input type="number" id="pg-goal" min="1" max="500" value="${goal}" aria-label="Daily goal in cards"> cards</label>
                 <button type="button" class="secondary" data-pg="export">Download my stats (CSV)</button>
             </div>
         </div>
+        ${insightsHtml(insights)}
         ${tiles}
-        ${section('Activity', heatmapSvg(heatmap(dayMap)) + `<div class="pg-hm-legend"><span>Less</span>${[0, 1, 2, 3, 4].map((l) => `<i class="pg-hm l${l}"></i>`).join('')}<span>More</span></div>`, { sub: 'Cards answered per day, last 6 months' })}
+        ${section('Activity', `<div class="pg-activity"><div class="pg-heat-wrap" id="pg-heat">${heatmapSvg(heatmap(dayMap, today), selected)}<div class="pg-hm-legend"><span>Less</span>${[0, 1, 2, 3, 4].map((l) => `<i class="pg-hm l${l}"></i>`).join('')}<span>More</span></div></div><aside class="pg-daypanel" id="pg-daypanel" aria-live="polite"></aside></div>`, { sub: 'Cards answered per day, last 6 months. Hover a day for details, click to pin it.' })}
         <div class="pg-cols">
-            ${section('Cards per day', `<div class="pg-legend pg-legend--top"><span><i class="pg-dot is-bar"></i>Cards answered</span><span><i class="pg-dot is-line"></i>Accuracy</span></div>${trendSvg(series)}`, { actions: `<div class="pg-chips">${rangeBtns}</div>` })}
-            ${section('Mastery', masteryBarHtml(mastery, { legend: true }) + (mastery.learning ? `<button type="button" class="secondary pg-wide" data-pg="study-learning">Review ${mastery.learning} still-learning card${mastery.learning === 1 ? '' : 's'}</button>` : ''), { sub: `${mastery.masteredPct}% of ${mastery.total} cards mastered` })}
+            ${section('Cards per day', `<div class="pg-legend pg-legend--top"><span><i class="pg-dot is-bar"></i>Cards answered</span><span><i class="pg-dot is-line"></i>7-day accuracy</span></div>${trendSvg(series, rollingAccuracy(dailySeries(dayMap, state.range + 6, today), 7).slice(6))}`, { actions: `<div class="pg-chips">${rangeBtns}</div>` })}
+            ${section('Mastery', masteryBody, { sub: `${mastery.masteredPct}% of ${mastery.total.toLocaleString()} cards mastered` })}
         </div>
-        ${section('Decks', decksTable(ctx), { sub: 'Mastery, accuracy and time per flashcard deck' })}
         <div class="pg-cols">
-            ${section('Hardest cards', hardest.length ? `<ol class="pg-hard">${hardest.map((h) => `<li><div class="pg-hard-term">${escapeHtml(String(h.card.term).slice(0, 90))}</div><div class="pg-hard-meta">${h.accuracy}% · ${h.forgot} miss${h.forgot === 1 ? '' : 'es'} in ${h.total}</div></li>`).join('')}</ol><button type="button" class="primary pg-wide" data-pg="study-hardest">Study these ${hardest.length}</button>` : '<p class="pg-empty">Cards you often forget will appear here after a few reviews.</p>')}
-            ${section('When you study best', (patterns.hours.some((h) => h.count) ? barRow(Array.from({ length: 24 }, (_, i) => (i % 3 === 0 ? hourLabel(i) : '')), patterns.hours, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + barRow(WEEKDAYS, patterns.weekdays, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + (bestHour ? `<p class="pg-insight">You are most accurate around <b>${hourLabel(bestHour.i)}</b> (${bestHour.accuracy}%).</p>` : '') : '<p class="pg-empty">Patterns appear after you have studied a bit.</p>'), { sub: 'By hour of day and day of week' })}
+            ${section('Hardest cards', hardestSection(hardest, deckName))}
+            ${section('When you study best', (patterns.hours.some((h) => h.count) ? barRow(Array.from({ length: 24 }, (_, i) => (i % 3 === 0 ? hourLabel(i) : '')), patterns.hours, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + barRow(WEEKDAYS, patterns.weekdays, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + (bestHour ? `<p class="pg-note">You are most accurate around <b>${hourLabel(bestHour.i)}</b> (${bestHour.accuracy}%).</p>` : '') : '<p class="pg-empty">Patterns appear after you have studied a bit.</p>'), { sub: 'By hour of day and day of week' })}
         </div>
         ${section('Practice quizzes', quizSection(quiz))}
-        ${section('Milestones', achievementsGrid(ctx, unlocked) + `<div class="pg-records"><span>Best day <b>${summary.bestDay ? `${summary.bestDay.reviews} cards` : '–'}</b></span><span>Longest streak <b>${summary.longestStreak} days</b></span><span>Best quiz <b>${quiz.attempts ? quiz.best + '%' : '–'}</b></span></div>`, { sub: `${Object.keys(unlocked).length} of ${ACHIEVEMENTS.length} unlocked` })}
+        ${section('Milestones', achievementsGrid(unlocked) + `<div class="pg-records"><span>Best day <b>${summary.bestDay ? `${summary.bestDay.reviews} cards` : '–'}</b></span><span>Longest streak <b>${summary.longestStreak} days</b></span><span>Best quiz <b>${quiz.attempts ? quiz.best + '%' : '–'}</b></span></div>`, { sub: `${Object.keys(unlocked).length} of ${ACHIEVEMENTS.length} unlocked` })}
+        ${decksSection(explorer, state.decks)}
     </div>`;
+
+    // Heatmap: hover previews a day in the side panel, click pins it
+    const panel = container.querySelector('#pg-daypanel');
+    const heat = container.querySelector('#pg-heat');
+    const legacyOf = (date) => { const d = dayMap.get(date); return d && d.legacy ? d : null; };
+    const showDay = (date) => { panel.innerHTML = dayPanelHtml(dayDetails(date, byDate, deckName, legacyOf(date)), today); };
+    const restingDay = () => state.pinnedDay || lastActive;
+    showDay(restingDay());
+    heat.addEventListener('mouseover', (e) => { const r = e.target.closest('[data-date]'); if (r) showDay(r.dataset.date); });
+    heat.addEventListener('mouseleave', () => showDay(restingDay()));
+    heat.addEventListener('click', (e) => {
+        const r = e.target.closest('[data-date]');
+        if (!r) return;
+        state.pinnedDay = state.pinnedDay === r.dataset.date ? null : r.dataset.date;
+        heat.querySelectorAll('.pg-hm.is-selected').forEach((n) => n.classList.remove('is-selected'));
+        if (state.pinnedDay) r.classList.add('is-selected');
+        showDay(restingDay());
+    });
+
+    const explorerApi = wireDeckExplorer(container, explorer, state.decks, handlers, now);
 
     container.onclick = (e) => {
         const el = e.target.closest('[data-pg]');
@@ -192,9 +357,14 @@ export const renderProgress = (container, ctx, handlers = {}) => {
         const action = el.dataset.pg;
         if (action === 'range') { state.range = Number(el.dataset.n); renderProgress(container, ctx, handlers); }
         else if (action === 'study-deck') handlers.onStudyDeck?.(Number(el.dataset.id));
-        else if (action === 'study-hardest') handlers.onStudyHardest?.(hardest.map((h) => h.card));
+        else if (action === 'study-hardest') handlers.onStudyHardest?.(hardest.items.map((h) => h.card));
         else if (action === 'study-learning') handlers.onStudyHardest?.(ctx.cards.filter((c) => c.status === 'learning'), 'Still learning');
         else if (action === 'export') handlers.onExport?.();
+        else if (action === 'insight') {
+            const act = insights[Number(el.dataset.n)]?.action;
+            if (act?.type === 'study-deck') handlers.onStudyDeck?.(act.value);
+            else if (act?.type === 'filter') { explorerApi?.setFilter(act.value); container.querySelector('#pg-decks')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
     };
     const goalInput = container.querySelector('#pg-goal');
     goalInput.onchange = () => {
@@ -208,7 +378,7 @@ export const renderProgress = (container, ctx, handlers = {}) => {
 export const deckPanelHtml = (deckId, ctx) => {
     const s = deckStats(deckId, ctx.reviews, ctx.cards);
     if (!s.total) return '';
-    const hard = hardestCards(ctx.reviews.filter((r) => r.deckId === deckId), ctx.cards, { limit: 3 });
+    const hard = hardestCards(ctx.reviews.filter((r) => r.deckId === deckId), ctx.cards.filter((c) => c.deckId === deckId), { limit: 3 });
     return `<div class="pg-deckpanel">
         <div class="pg-deckpanel-tiles">
             <div><b>${s.masteredPct}%</b><span>mastered</span></div>
@@ -218,7 +388,7 @@ export const deckPanelHtml = (deckId, ctx) => {
             <div><b>${s.lastStudied ? formatAgo(s.lastStudied).replace('Studied ', '') : 'Never'}</b><span>last studied</span></div>
         </div>
         ${masteryBarHtml(s, { legend: true })}
-        ${hard.length ? `<div class="pg-deckpanel-hard"><span>Trouble cards:</span> ${hard.map((h) => `<em>${escapeHtml(String(h.card.term).slice(0, 36))}</em>`).join(' ')}</div>` : ''}
+        ${hard.items.length && hard.source === 'reviews' ? `<div class="pg-deckpanel-hard"><span>Trouble cards:</span> ${hard.items.map((h) => `<em>${escapeHtml(String(h.card.term).slice(0, 36))}</em>`).join(' ')}</div>` : ''}
     </div>`;
 };
 
