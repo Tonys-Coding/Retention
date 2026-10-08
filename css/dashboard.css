@@ -2020,8 +2020,6 @@ body.scenery-mode .db-main {
 .db-card-meta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
 
 /* Deck icon: solid card, inverts on the selected sidebar row */
-.db-nav-item.active { --icon-hole: var(--text-primary); }
-.db-nav-item.active svg.db-deck-ico { stroke: none; }
 .db-nav-item--sub { padding-left: 44px; }
 
 /* Collapsible sidebar (desktop and tablet) */
@@ -2066,4 +2064,12 @@ body.scenery-mode .db-main {
     .db-stat-ring .pg-ring { width: 56px; height: 56px; }
     .db-sidebar-footer .dropdown > button { white-space: nowrap; font-size: 12px; padding-left: 6px; padding-right: 6px; }
     .db-grid-heading { margin-top: 4px; }
+}
+
+/* Collapse toggle lives inside the Retention header box */
+.db-sidebar-toggle { margin-left: auto; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+@media (min-width: 701px) {
+    body.sidebar-collapsed .db-sidebar-header img,
+    body.sidebar-collapsed .db-sidebar-header h1 { display: none !important; }
+    body.sidebar-collapsed .db-sidebar-toggle { margin-left: 0; }
 }

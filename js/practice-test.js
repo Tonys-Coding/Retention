@@ -18,8 +18,8 @@ const TYPE_LABELS = { mcq: 'Multiple choice', tf: 'True / false', fitb: 'Fill in
 
 export const getAnswerMode = () => (localStorage.getItem(MODE_KEY) === 'end' ? 'end' : 'immediate');
 
-/** The quiz deck icon: the deck shape as a test sheet with answer boxes (same solid style as the deck icon). */
-export const quizDeckIcon = (width = 16, height = 19) => `<svg class="db-deck-ico" width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="currentColor" opacity=".35"></rect><rect x="0" y="0" width="24" height="32" fill="currentColor"></rect><rect x="5" y="6" width="5" height="5" fill="var(--icon-hole, var(--bg-secondary))"></rect><rect x="5" y="14" width="5" height="5" fill="none" stroke="var(--icon-hole, var(--bg-secondary))" stroke-width="2"></rect><rect x="5" y="22" width="5" height="5" fill="none" stroke="var(--icon-hole, var(--bg-secondary))" stroke-width="2"></rect><path d="M13 8.5h6M13 16.5h6M13 24.5h6" stroke="var(--icon-hole, var(--bg-secondary))" stroke-width="2.2"></path></svg>`;
+/** The quiz deck icon: the deck shape as a test sheet with answer boxes . */
+export const quizDeckIcon = (width = 16, height = 19) => `<svg width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect><rect x="5" y="6" width="5" height="5" fill="var(--text-primary)"></rect><rect x="5" y="14" width="5" height="5" fill="none" stroke="var(--text-primary)" stroke-width="2"></rect><rect x="5" y="22" width="5" height="5" fill="none" stroke="var(--text-primary)" stroke-width="2"></rect><path d="M13 8.5h6M13 16.5h6M13 24.5h6" stroke="var(--text-primary)" stroke-width="2.2"></path></svg>`;
 
 // ─── Grading ─────────────────────────────────────────────────────────
 /** Accepted answers for a fill-in-the-blank question ("TCP|Transmission Control Protocol"). */

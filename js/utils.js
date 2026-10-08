@@ -102,7 +102,6 @@ export const folderSummary = (folderId, decks, folders) => {
 };
 
 /**
- * The deck icon: a solid card with a stacked shadow card behind it. It is drawn in currentColor, so it
- * follows the text color of whatever it sits in (and inverts on the selected sidebar row).
+ * The flashcard deck icon: an outlined card with a hard shadow at the bottom right.
  */
-export const deckIconSvg = (width = 16, height = 19) => `<svg class="db-deck-ico" width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="currentColor" opacity=".35"></rect><rect x="0" y="0" width="24" height="32" fill="currentColor"></rect><path d="M5 9h14M5 16h14M5 23h9" stroke="var(--icon-hole, var(--bg-secondary))" stroke-width="2.4" fill="none"></path></svg>`;
+export const deckIconSvg = (width = 16, height = 19) => `<svg width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>`;

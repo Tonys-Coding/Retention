@@ -194,7 +194,7 @@ async function init() {
         btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
         btn.setAttribute('aria-label', btn.title);
     };
-    $('btn-sidebar-toggle').onclick = () => { localStorage.setItem(SIDEBAR_KEY, document.body.classList.contains('sidebar-collapsed') ? '0' : '1'); applySidebar(); };
+    $('btn-sidebar-toggle').onclick = (e) => { e.stopPropagation(); localStorage.setItem(SIDEBAR_KEY, document.body.classList.contains('sidebar-collapsed') ? '0' : '1'); applySidebar(); };
     narrow.addEventListener('change', applySidebar);
     applySidebar();
     $('db-stat-today-card').onclick = showProgress;

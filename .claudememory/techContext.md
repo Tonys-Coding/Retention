@@ -19,7 +19,7 @@
 ## Deployment Strategy
 - **Web/PWA:** GitHub Pages serves the **`gh-pages`** branch (a plain mirror of `main`) at `https://Tonys-Coding.github.io/Retention/dashboard.html`.
 - **Extension:** loaded unpacked from the repo root (or Chrome Web Store); click **Reload** on `chrome://extensions` after changes.
-- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v59`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
+- **Cache busting (important):** bump `CACHE_NAME` in `sw.js` (currently `retention-v60`) on every shipped change, otherwise PWA users keep stale files. CSS/JS URLs carry `?v=27` in `dashboard.html` and `sw.js`.
 - **No production DB:** all data is local to each device; Drive backup is the only cloud copy.
 
 ## Tooling
