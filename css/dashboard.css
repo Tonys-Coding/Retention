@@ -237,14 +237,6 @@ body > .maze-bg {
     min-width: 0;
 }
 
-/* Folders keep their own compact height instead of stretching to the tallest deck in the row */
-.db-card--folder {
-    align-self: start;
-}
-
-.db-card--folder .db-card-header {
-    margin-bottom: 0;
-}
 
 .db-card-header {
     display: flex;
@@ -1563,9 +1555,7 @@ body.theme-tatooine .db-main {
     .tl-shelf:not(.is-reordering) .tl-chip {
         flex-shrink: 0;
     }
-    .db-sidebar-themes {
-        display: none;
-    }
+    /* (Progress and Themes stay in the bottom bar, see the mobile block at the end) */
 }
 
 @media (hover: none) {
@@ -2003,3 +1993,77 @@ body.scenery-mode .db-main {
 .pg-dk-btn { margin-top: auto; }
 .pg-attempt { max-width: 84px; }
 .pg-tile-sub { overflow-wrap: anywhere; }
+
+
+/* ===== LAYOUT CONSISTENCY ===== */
+:root { --db-header-h: 78px; }
+
+/* Logo header and page toolbar share one height, so their bottom borders form a single straight line */
+@media (min-width: 701px) {
+    .db-sidebar-header, .db-toolbar { height: var(--db-header-h); min-height: var(--db-header-h); padding-top: 0; padding-bottom: 0; }
+    .db-sidebar-header { padding-left: 24px; padding-right: 24px; }
+}
+.db-sidebar-header img { display: block; flex-shrink: 0; }
+.db-sidebar-header h1 { line-height: 1; }
+.db-toolbar h2 { line-height: 1.1; }
+
+/* One fixed card size for folders, decks and quizzes, whatever the name length */
+.db-grid { align-items: start; }
+.db-grid-heading { grid-column: 1 / -1; grid-row: auto; height: auto !important; display: flex; align-items: center; gap: 10px; margin: 8px 0 -8px; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-secondary); }
+.db-grid-heading:first-child { margin-top: 0; }
+.db-grid-heading::after { content: ""; flex: 1; height: 3px; background: var(--border-color); opacity: .5; }
+.db-grid-heading b { order: 1; font-size: 11px; padding: 1px 7px; border: 2px solid var(--border-color); color: var(--text-primary); }
+.db-grid-heading span { order: 0; }
+.db-grid-heading::after { order: 2; }
+.db-card { height: 176px; overflow: hidden; }
+.db-card-header { min-height: 48px; }
+.db-card-meta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
+
+/* Deck icon: solid card, inverts on the selected sidebar row */
+.db-nav-item.active { --icon-hole: var(--text-primary); }
+.db-nav-item.active svg.db-deck-ico { stroke: none; }
+.db-nav-item--sub { padding-left: 44px; }
+
+/* Collapsible sidebar (desktop and tablet) */
+.db-sidebar { transition: width 0.2s ease; }
+@media (min-width: 701px) {
+    body.sidebar-collapsed .db-sidebar { width: 76px; }
+    body.sidebar-collapsed .db-sidebar-header { justify-content: center; padding-left: 0; padding-right: 0; }
+    body.sidebar-collapsed .db-sidebar-header h1,
+    body.sidebar-collapsed .db-nav-section,
+    body.sidebar-collapsed .db-nav-label,
+    body.sidebar-collapsed .db-nav-count,
+    body.sidebar-collapsed .db-nav-menu,
+    body.sidebar-collapsed .db-nav-toggle,
+    body.sidebar-collapsed .db-nav-children,
+    body.sidebar-collapsed .db-btn-label { display: none !important; }
+    body.sidebar-collapsed .db-nav-item { justify-content: center; padding: 14px 0; }
+    body.sidebar-collapsed .db-sidebar-footer { padding: 12px 10px !important; }
+    body.sidebar-collapsed .db-sidebar-footer button { padding-left: 0; padding-right: 0; }
+    body.sidebar-collapsed .db-sidebar-nav { overflow-x: hidden; }
+}
+@media (max-width: 700px) {
+    #btn-sidebar-toggle { display: none; }
+    /* bottom bar: Progress | Themes | Add New in one row */
+    .db-sidebar-footer { flex-direction: row !important; align-items: stretch; gap: 8px !important; }
+    .db-sidebar-themes { display: flex !important; width: auto; flex: 1; min-height: 46px; padding: 0 8px; }
+    .db-sidebar-footer .dropdown { flex: 1.6; }
+    .db-sidebar-footer .dropdown > button { min-height: 46px; }
+    .db-sidebar-footer .db-sidebar-themes .db-btn-label { font-size: 12px; }
+    .scenery-btn { bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+    .db-card { height: 168px; }
+}
+@media (max-width: 380px) {
+    .db-sidebar-footer .db-sidebar-themes .db-btn-label { display: none; }
+}
+
+@media (max-width: 700px) {
+    /* compact 2x2 stats on phones instead of four full-height cards */
+    .db-stats-bar { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px !important; margin-bottom: 20px; }
+    .db-stat-card { min-width: 0; padding: 12px 8px; }
+    .db-stat-value { font-size: 30px; }
+    .db-stat-label { font-size: 11px; }
+    .db-stat-ring .pg-ring { width: 56px; height: 56px; }
+    .db-sidebar-footer .dropdown > button { white-space: nowrap; font-size: 12px; padding-left: 6px; padding-right: 6px; }
+    .db-grid-heading { margin-top: 4px; }
+}

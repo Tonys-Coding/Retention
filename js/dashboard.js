@@ -4,7 +4,7 @@ import { AI_FOCUS_OPTIONS } from './ai.js';
 import { uploadToDrive, downloadFromDrive, startAutoSync, listDrivePdfs, downloadPdfFromDrive, initGoogleAuth, getAuthToken, doAutoSync, setConflictHandler, getSyncInfo, onSyncStatusChange, describeSyncInfo, conflictMessage } from './drive.js';
 import { initDB, addFolder, getFolders, getDecks, addDeck, getCardsByDeck, getCardsByFolder, recordStudyResult, recordSkip, getReviews, updateFolder, deleteFolder, updateDeck, deleteDeck, addCard, updateCard, deleteCard, getStats, reparentOrphans, getAllCards, isQuizDeck, getQuizResults } from './db.js';
 import { exportDeckToCSV } from './csv.js';
-import { escapeHtml, isCloseAnswer, pickQuickTen } from './utils.js';
+import { escapeHtml, isCloseAnswer, pickQuickTen, folderSummary, plural, deckIconSvg } from './utils.js';
 import { initTheme, toggleThemeMenu } from './themes.js';
 import { renderProgress, deckPanelHtml, masteryBarHtml, ringHtml } from './progress-view.js';
 import { loadProgressData, setGoal, checkAchievements, getGoal } from './progress-data.js';
@@ -22,7 +22,7 @@ import { openMovePicker, deleteFolderKeepContents, getLocationName, importCsvFil
 const ICON = {
     folder: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
     chevron: `<svg class="db-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
-    deck: `<svg width="16" height="19" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>`,
+    deck: deckIconSvg(),
     quiz: quizDeckIcon(),
     dots: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>`,
     trash: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`,
@@ -182,6 +182,21 @@ async function init() {
     });
     $('btn-sidebar-themes').onclick = showThemes;
     $('btn-sidebar-progress').onclick = showProgress;
+    // Collapsible sidebar: remembers your choice; with no saved choice it collapses on narrower windows
+    const SIDEBAR_KEY = 'sidebar_collapsed';
+    const narrow = matchMedia('(max-width: 1000px)');
+    const applySidebar = () => {
+        const saved = localStorage.getItem(SIDEBAR_KEY);
+        const collapsed = saved === '1' || (saved === null && narrow.matches);
+        document.body.classList.toggle('sidebar-collapsed', collapsed);
+        const btn = $('btn-sidebar-toggle');
+        btn.setAttribute('aria-expanded', String(!collapsed));
+        btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+        btn.setAttribute('aria-label', btn.title);
+    };
+    $('btn-sidebar-toggle').onclick = () => { localStorage.setItem(SIDEBAR_KEY, document.body.classList.contains('sidebar-collapsed') ? '0' : '1'); applySidebar(); };
+    narrow.addEventListener('change', applySidebar);
+    applySidebar();
     $('db-stat-today-card').onclick = showProgress;
     $('db-stat-today-card').onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showProgress(); } };
     globalThis.addEventListener('db_updated', scheduleProgressCheck);
@@ -402,6 +417,8 @@ async function refreshSidebar() {
             dom.sidebarNav.appendChild(dEl);
         }
     }
+    // Names as tooltips (they are the only label when the sidebar is collapsed to icons)
+    dom.sidebarNav.querySelectorAll('.db-nav-item').forEach((el) => { el.title = el.querySelector('.db-nav-label')?.textContent || ''; });
 }
 
 function folderMenuItems(folder) {
@@ -709,6 +726,7 @@ async function showHome() {
     }
 
     const rootFolders = folders.filter(f => !f.parentId);
+    if (rootFolders.length) dom.viewGrid.appendChild(gridHeading('Folders', rootFolders.length));
     for (const f of rootFolders) {
         const folderDecks = decks.filter(d => d.folderId === f.id);
         const dragData = { type: 'folder', id: f.id };
@@ -727,24 +745,7 @@ async function showHome() {
         ));
     }
     
-    const rootDecks = decks.filter(d => !d.folderId);
-    for (const d of rootDecks) {
-        const cards = await getCardsByDeck(d.id);
-        const quiz = isQuizDeck(d);
-        const quickStudyAction = !quiz && cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
-        const dragData = { type: 'deck', id: d.id };
-        
-        dom.viewGrid.appendChild(makeGridCard(
-            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards${cards.length ? ` · ${masteryBreakdown(cards).masteredPct}% mastered` : ''}`,
-            () => openDeckPrimary(d),
-            (e) => showDeckMenu(e, d),
-            null,
-            quickStudyAction,
-            dragData,
-            null,
-            quiz ? '' : masteryBarOf(cards)
-        ));
-    }
+    await appendDeckSections(decks.filter(d => !d.folderId), quizResults);
 }
 
 async function showFolder(folderId, folderName) {
@@ -776,6 +777,7 @@ async function showFolder(folderId, folderName) {
         return;
     }
 
+    if (childFolders.length) dom.viewGrid.appendChild(gridHeading('Folders', childFolders.length));
     for (const f of childFolders) {
         const nestedDecks = decks.filter(d => d.folderId === f.id);
         const dragData = { type: 'folder', id: f.id };
@@ -794,23 +796,7 @@ async function showFolder(folderId, folderName) {
         ));
     }
 
-    for (const d of folderDecks) {
-        const cards = await getCardsByDeck(d.id);
-        const quiz = isQuizDeck(d);
-        const quickStudyAction = !quiz && cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
-        const dragData = { type: 'deck', id: d.id };
-        
-        dom.viewGrid.appendChild(makeGridCard(
-            deckIcon(d), d.name, quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${cards.length} cards${cards.length ? ` · ${masteryBreakdown(cards).masteredPct}% mastered` : ''}`,
-            () => openDeckPrimary(d),
-            (e) => showDeckMenu(e, d),
-            null,
-            quickStudyAction,
-            dragData,
-            null,
-            quiz ? '' : masteryBarOf(cards)
-        ));
-    }
+    await appendDeckSections(folderDecks, quizResults);
 }
 
 
@@ -826,13 +812,41 @@ function setBreakableText(el, text) {
 
 // Thin mastered / learning / not-studied bar for a deck or folder card
 const masteryBarOf = (cards) => (cards.length ? masteryBarHtml(masteryBreakdown(cards), { thin: true }) : '');
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-// "8 decks · 2 folders" (folder count only when there are sub-folders): direct children
-const folderMeta = (folder, decks, folders) => {
-    const subfolders = folders.filter((x) => x.parentId === folder.id).length;
-    const deckText = plural(decks.filter((d) => d.folderId === folder.id).length, 'deck');
-    return subfolders ? `${deckText} · ${plural(subfolders, 'folder')}` : deckText;
+// "3 decks · 2 folders · 1 quiz": direct children, zero counts omitted (see folderSummary in utils.js)
+const folderMeta = (folder, decks, folders) => folderSummary(folder.id, decks, folders);
+
+const gridHeading = (title, count) => {
+    const h = document.createElement('div');
+    h.className = 'db-grid-heading';
+    h.innerHTML = `<span>${title}</span><b>${count}</b>`;
+    return h;
 };
+
+/** Appends the "Decks" and "Practice quizzes" sections of a grid (flashcard decks first, quizzes last). */
+async function appendDeckSections(list, quizResults) {
+    const flash = list.filter((d) => !isQuizDeck(d));
+    const quizzes = list.filter((d) => isQuizDeck(d));
+    for (const [title, group] of [['Decks', flash], ['Practice quizzes', quizzes]]) {
+        if (!group.length) continue;
+        dom.viewGrid.appendChild(gridHeading(title, group.length));
+        for (const d of group) {
+            const cards = await getCardsByDeck(d.id);
+            const quiz = isQuizDeck(d);
+            const quickStudyAction = !quiz && cards.length > 10 ? () => startStudyDeck(d.id, d.name, true) : null;
+            dom.viewGrid.appendChild(makeGridCard(
+                deckIcon(d), d.name,
+                quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, d.id)) : `${plural(cards.length, 'card')}${cards.length ? ` · ${masteryBreakdown(cards).masteredPct}% mastered` : ''}`,
+                () => openDeckPrimary(d),
+                (e) => showDeckMenu(e, d),
+                null,
+                quickStudyAction,
+                { type: 'deck', id: d.id },
+                null,
+                quiz ? '' : masteryBarOf(cards)
+            ));
+        }
+    }
+}
 
 function makeGridCard(icon, title, meta, onClick, onMenu, accentColor, onQuickStudy, dragData, onDrop, barHtml = '') {
     const card = document.createElement('div');

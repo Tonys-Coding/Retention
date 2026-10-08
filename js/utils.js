@@ -82,3 +82,27 @@ export const pickQuickTen = (cards, deckKey) => {
     try { localStorage.setItem(storageKey, JSON.stringify(seen)); } catch {}
     return shuffleInPlace(picked);
 };
+
+// ─── Shared labels and icons (dashboard + popup) ─────────────────────
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/**
+ * "3 decks · 2 folders · 1 quiz" for a folder's direct children. Zero counts are left out entirely,
+ * so an empty folder returns ''. Quiz decks are counted as quizzes, not decks.
+ */
+export const folderSummary = (folderId, decks, folders) => {
+    const inside = decks.filter((d) => d.folderId === folderId);
+    const quizzes = inside.filter((d) => d.kind === 'quiz').length;
+    const parts = [
+        [inside.length - quizzes, 'deck'],
+        [folders.filter((f) => f.parentId === folderId).length, 'folder'],
+        [quizzes, 'quiz', 'zes']
+    ].filter(([n]) => n > 0).map(([n, word, suffix]) => (suffix ? `${n} ${word}${n === 1 ? '' : suffix}` : plural(n, word)));
+    return parts.join(' · ');
+};
+
+/**
+ * The deck icon: a solid card with a stacked shadow card behind it. It is drawn in currentColor, so it
+ * follows the text color of whatever it sits in (and inverts on the selected sidebar row).
+ */
+export const deckIconSvg = (width = 16, height = 19) => `<svg class="db-deck-ico" width="${width}" height="${height}" viewBox="0 0 28 36" style="flex-shrink:0;overflow:visible;" aria-hidden="true"><rect x="4" y="4" width="24" height="32" fill="currentColor" opacity=".35"></rect><rect x="0" y="0" width="24" height="32" fill="currentColor"></rect><path d="M5 9h14M5 16h14M5 23h9" stroke="var(--icon-hole, var(--bg-secondary))" stroke-width="2.4" fill="none"></path></svg>`;

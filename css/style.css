@@ -2558,3 +2558,12 @@ textarea { flex-shrink: 0; min-height: 80px; }
 .pp-week div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
 .pp-week i { display: block; width: 100%; background: var(--text-primary); opacity: .8; }
 .pp-week u { text-decoration: none; font-size: 10px; font-weight: 800; color: var(--text-secondary); }
+
+
+/* Popup list section labels (match the dashboard's Folders / Decks / Practice quizzes headings) */
+.list-section-label { display: flex; align-items: center; gap: 8px; margin: 12px 0 6px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-secondary); }
+.list-section-label:first-child { margin-top: 0; }
+.list-section-label::after { content: ""; flex: 1; height: 2px; background: var(--border-color); opacity: .5; }
+.list-section-label b { order: 1; font-size: 10px; padding: 0 6px; border: 2px solid var(--border-color); color: var(--text-primary); }
+.list-section-label::after { order: 2; }
+.deck-item .deck-stats { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

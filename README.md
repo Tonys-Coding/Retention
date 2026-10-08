@@ -73,6 +73,8 @@ Alongside flashcard decks, Retention has **practice quiz decks** (with their own
 *   **Right-click quizzes:** Highlight text on any page, right-click, and choose **Make practice quiz (AI)** to turn it into a quiz deck.
 
 ###  Infinite Organization & Study Flows
+*   **Organized grids:** every folder view (and the home screen) is split into **Folders**, **Decks** and **Practice quizzes** sections, and all cards share one fixed size whatever the name length. Folder cards summarise their contents ("3 decks · 2 folders · 1 quiz", with zero counts left out).
+*   **Collapsible sidebar:** the toggle next to the page title shrinks the sidebar to an icon rail (it remembers your choice and collapses itself on narrow windows). On phones, Progress, Themes and Add New sit in the bottom bar.
 *   **Nested Folders & Drag-and-Drop:** Organize decks into folders, and nest folders within folders infinitely. Easily drag decks across your workspace.
 *   **Move To…:** Every deck and folder's ⋮ menu has a "Move to…" option that opens a tree of your entire workspace, so you can relocate anything in one tap (works on desktop and mobile, where drag-and-drop isn't practical).
 *   **Folder colors:** The New/Edit Folder window shows a live folder preview, a custom color picker and one-tap quick colors.

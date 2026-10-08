@@ -1,7 +1,7 @@
 import { initDB, addFolder, getFolders, updateFolder, deleteFolder, addDeck, getDecks, deleteDeck, addCard, getCardsByDeck, getCardsByFolder, deleteCard, updateCard, updateDeck, getStats, recordStudyResult, recordSkip, reparentOrphans, isQuizDeck, getQuizResults } from './db.js';
 import { openMovePicker, deleteFolderKeepContents, importCsvFiles, describeCsvImport } from './workspace.js';
 import { exportDeckToCSV } from './csv.js';
-import { escapeHtml, isCloseAnswer, pickQuickTen, shuffleInPlace } from './utils.js';
+import { escapeHtml, isCloseAnswer, pickQuickTen, shuffleInPlace, folderSummary, plural, deckIconSvg } from './utils.js';
 import { loadProgressData, checkAchievements } from './progress-data.js';
 import { buildDayMap, summarize, masteryBreakdown, dailySeries, formatDuration } from './stats.js';
 import { ringHtml, masteryBarHtml } from './progress-view.js';
@@ -355,7 +355,9 @@ const loadDecks = async (searchQuery = '') => {
         list.appendChild(backEl);
     }
     
+    const sectionLabel = (text, n) => { const d = document.createElement('div'); d.className = 'list-section-label'; d.innerHTML = `<span>${text}</span><b>${n}</b>`; list.appendChild(d); };
     // Render Folders
+    if (folders.length) sectionLabel('Folders', folders.length);
     for (const folder of folders) {
         const el = document.createElement('div');
         el.className = 'deck-item';
@@ -363,7 +365,10 @@ const loadDecks = async (searchQuery = '') => {
         el.innerHTML = `
             <div class="deck-item-info" title="Open Folder" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="${folder.color || 'var(--bg-secondary)'}" stroke="${folder.color || 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                <div class="deck-title-text">${escapeHtml(folder.name)}</div>
+                <div style="min-width: 0;">
+                    <div class="deck-title-text">${escapeHtml(folder.name)}</div>
+                    ${folderSummary(folder.id, allDecks, allFolders) ? `<div class="deck-stats">${folderSummary(folder.id, allDecks, allFolders)}</div>` : ''}
+                </div>
             </div>
             <div class="dropdown">
                 <button class="icon-btn btn-deck-menu" data-id="${folder.id}" style="display: flex; align-items: center; justify-content: center;">
@@ -501,7 +506,12 @@ const loadDecks = async (searchQuery = '') => {
     }
     
     // Render Decks
-    for (const deck of decks) {
+    const flashDecks = decks.filter((d) => !isQuizDeck(d));
+    const quizDecks = decks.filter((d) => isQuizDeck(d));
+    let labelled = { Decks: false, 'Practice quizzes': false };
+    for (const deck of [...flashDecks, ...quizDecks]) {
+        const group = isQuizDeck(deck) ? 'Practice quizzes' : 'Decks';
+        if (!labelled[group]) { labelled[group] = true; sectionLabel(group, group === 'Decks' ? flashDecks.length : quizDecks.length); }
         const cards = await getCardsByDeck(deck.id);
         const mastered = cards.filter(c => c.status === 'mastered').length;
         const quiz = isQuizDeck(deck);
@@ -510,10 +520,10 @@ const loadDecks = async (searchQuery = '') => {
         el.className = 'deck-item';
         el.innerHTML = `
             <div class="deck-item-info" title="${quiz ? 'Click to take the practice test' : 'Click to Study'}" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-                ${quiz ? quizDeckIcon(20, 24) : '<svg width="20" height="24" viewBox="0 0 28 36" style="flex-shrink: 0; overflow: visible;"><rect x="4" y="4" width="24" height="32" fill="var(--shadow-color)"></rect><rect x="0" y="0" width="24" height="32" fill="var(--bg-secondary)" stroke="var(--text-primary)" stroke-width="3"></rect></svg>'}
+                ${quiz ? quizDeckIcon(20, 24) : deckIconSvg(20, 24)}
                 <div style="min-width: 0;">
                     <div class="deck-title-text">${escapeHtml(deck.name)}</div>
-                    <div class="deck-stats">${quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, deck.id)) : `${cards.length} cards | ${mastered} mastered`}</div>
+                    <div class="deck-stats">${quiz ? quizDeckMeta(cards.length, summarizeAttempts(quizResults, deck.id)) : `${plural(cards.length, 'card')} | ${mastered} mastered`}</div>
                 </div>
             </div>
             <div class="dropdown">
