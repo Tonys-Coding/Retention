@@ -50,11 +50,12 @@ const fmtDate = (date) => {
     const [y, m, d] = date.split('-').map(Number);
     return new Date(y, m - 1, d, 12).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 };
+const fmtUs = (date) => { const [y, m, d] = date.split('-'); return `${m}/${d}/${y}`; };
 const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 // ─── Charts ──────────────────────────────────────────────────────────
 const heatmapSvg = (cols, selected) => {
-    const cell = 13, gap = 3, left = 28, top = 18;
+    const cell = 15, gap = 4, left = 32, top = 20;
     const width = left + cols.length * (cell + gap), height = top + 7 * (cell + gap);
     let months = '', lastMonth = -1;
     const cells = cols.map((col, x) => {
@@ -64,7 +65,7 @@ const heatmapSvg = (cols, selected) => {
             `<rect class="pg-hm l${d.level}${d.date === selected ? ' is-selected' : ''}" data-date="${d.date}" x="${left + x * (cell + gap)}" y="${top + y * (cell + gap)}" width="${cell}" height="${cell}" rx="2"></rect>`)).join('');
     }).join('');
     const labels = [1, 3, 5].map((i) => `<text x="0" y="${top + i * (cell + gap) + 10}" class="pg-axis">${WEEKDAYS[i]}</text>`).join('');
-    return `<svg class="pg-heatmap" viewBox="0 0 ${width} ${height}" width="${Math.round(width * 1.55)}" role="img" aria-label="Study activity over the last six months. Hover or tap a day for details.">${months}${labels}${cells}</svg>`;
+    return `<svg class="pg-heatmap" viewBox="0 0 ${width} ${height}" width="100%" role="img" aria-label="Study activity over the last six months. Hover or tap a day for details.">${months}${labels}${cells}</svg>`;
 };
 
 const dayPanelHtml = (d, today) => {
@@ -81,9 +82,16 @@ const dayPanelHtml = (d, today) => {
             <div><b>${d.ms ? formatDuration(d.ms) : '–'}</b><span>study time</span></div>
             ${d.first ? `<div><b>${fmtTime(d.first)}</b><span>${d.last - d.first > 60000 ? `to ${fmtTime(d.last)}` : 'first answer'}</span></div>` : ''}
         </div>
-        ${d.decks.length ? `<div class="pg-day-decks"><span class="pg-day-sub">Decks studied</span>${d.decks.slice(0, 5).map((k) => `<div><span>${escapeHtml(k.name)}</span><b>${k.count}</b></div>`).join('')}${d.decks.length > 5 ? `<div class="pg-day-more">+${d.decks.length - 5} more</div>` : ''}</div>` : ''}
+        ${d.decks.length ? `<div class="pg-day-decks"><span class="pg-day-sub">Decks studied</span>${d.decks.slice(0, 4).map((k) => `<div><span>${escapeHtml(k.name)}</span><b>${k.count}</b></div>`).join('')}${d.decks.length > 4 ? `<div class="pg-day-more">+${d.decks.length - 4} more</div>` : ''}</div>` : ''}
         ${d.legacy ? '<p class="pg-day-note">Only daily totals exist for this day (detailed tracking started later).</p>' : ''}`;
 };
+
+const weekCell = (label, value, delta, unit = '%') => `<div class="pg-week-cell"><span>${label}</span><b>${value}</b>${delta == null ? '<em class="pg-delta">–</em>' : `<em class="pg-delta ${delta > 0 ? 'is-up' : delta < 0 ? 'is-down' : ''}">${signed(delta, unit)} vs last week</em>`}</div>`;
+const weeklyHtml = (w) => `<div class="pg-week"><div class="pg-types-title">Last 7 days vs the 7 before</div><div class="pg-week-grid">
+    ${weekCell('Answers', w.cur.reviews, w.reviewsDelta)}
+    ${weekCell('Accuracy', w.cur.accuracy == null ? '–' : w.cur.accuracy + '%', w.accuracyDelta, ' pts')}
+    ${weekCell('Study time', formatDuration(w.cur.ms), w.msDelta)}
+    ${weekCell('Active days', `${w.cur.days} / 7`, w.cur.days - w.prev.days, '')}</div></div>`;
 
 const trendSvg = (series, rolling) => {
     const w = 640, h = 200, padL = 30, padR = 30, padB = 22, padT = 10;
@@ -115,7 +123,7 @@ const barRow = (labels, items, fmt) => {
 const section = (title, body, { sub = '', cls = '', actions = '', id = '' } = {}) =>
     `<section class="pg-card ${cls}"${id ? ` id="${id}"` : ''}><div class="pg-card-head"><div><h3 class="pg-h">${title}</h3>${sub ? `<p class="pg-sub">${sub}</p>` : ''}</div>${actions}</div>${body}</section>`;
 
-const insightsHtml = (list) => (list.length ? `<div class="pg-insights">${list.map((i, n) => `<div class="pg-insight pg-insight--${i.tone}"><span class="pg-insight-dot" aria-hidden="true"></span><span>${escapeHtml(i.text)}</span>${i.action ? `<button type="button" class="secondary pg-insight-btn" data-pg="insight" data-n="${n}">${escapeHtml(i.action.label)}</button>` : ''}</div>`).join('')}</div>` : '');
+const insightsHtml = (list) => (list.length ? `<section class="pg-board" aria-label="Insights"><h3 class="pg-board-title">Insights</h3><ul class="pg-board-list">${list.map((i, n) => `<li class="pg-board-item pg-board-item--${i.tone}"><span class="pg-insight-dot" aria-hidden="true"></span><span class="pg-board-text">${escapeHtml(i.text)}</span>${i.action ? `<button type="button" class="secondary pg-insight-btn" data-pg="insight" data-n="${n}">${escapeHtml(i.action.label)}</button>` : ''}</li>`).join('')}</ul></section>` : '');
 
 const attemptsChart = (d) => {
     const cls = (p) => (p >= 80 ? 'is-ok' : p >= 50 ? 'is-mid' : 'is-low');
@@ -154,7 +162,7 @@ const achievementsGrid = (unlocked) => `<div class="pg-achievements">${ACHIEVEME
     return `<div class="pg-ach${when ? ' is-unlocked' : ''}" title="${escapeHtml(a.desc)}"><div class="pg-ach-icon" aria-hidden="true">${when
         ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
         : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'}</div>
-        <div class="pg-ach-name">${escapeHtml(a.name)}</div><div class="pg-ach-desc">${when ? `Unlocked ${when}` : escapeHtml(a.desc)}</div></div>`;
+        <div class="pg-ach-name">${escapeHtml(a.name)}</div><div class="pg-ach-desc">${when ? `Unlocked ${fmtUs(when)}` : escapeHtml(a.desc)}</div></div>`;
 }).join('')}</div>`;
 
 // ─── Deck mastery explorer (bottom of the page) ──────────────────────
@@ -272,7 +280,7 @@ export const renderProgress = (container, ctx, handlers = {}) => {
     const weekly = weeklyComparison(dayMap, today);
     const mastery = masteryBreakdown(ctx.cards);
     const patterns = timePatterns(ctx.reviews);
-    const hardest = hardestCards(ctx.reviews, ctx.cards, { limit: 10 });
+    const hardest = hardestCards(ctx.reviews, ctx.cards, { limit: 5 });
     const quiz = quizStats(ctx.quizResults, ctx.decks, ctx.cards);
     const deckAgg = deckAggregates(ctx.cards, ctx.reviews);
     const byDate = groupByDate(ctx.reviews);
@@ -286,6 +294,7 @@ export const renderProgress = (container, ctx, handlers = {}) => {
     const lastActive = [...dayMap.keys()].filter((d) => d <= today).sort().pop() || today;
     const selected = state.pinnedDay && state.pinnedDay <= today ? state.pinnedDay : null;
     const hourLabel = (i) => `${i % 12 || 12}${i < 12 ? 'a' : 'p'}`;
+    const busiest = patterns.weekdays.map((w, i) => ({ ...w, name: ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'][i] })).sort((a, b) => b.count - a.count)[0];
     const bestHour = patterns.hours.map((h, i) => ({ ...h, i })).filter((h) => h.know + h.forgot >= 5).sort((a, b) => b.accuracy - a.accuracy || b.count - a.count)[0];
 
     const todayTile = `<div class="pg-tile pg-tile--ring"><div class="pg-tile-ring">${ringHtml(Math.min(summary.today, 9999), goal, 92)}</div><div class="pg-tile-label">Today</div><div class="pg-tile-sub">${summary.goalMet ? 'Daily goal reached' : `${Math.max(0, goal - summary.today)} to reach your goal`}</div></div>`;
@@ -319,12 +328,12 @@ export const renderProgress = (container, ctx, handlers = {}) => {
         ${tiles}
         ${section('Activity', `<div class="pg-activity"><div class="pg-heat-wrap" id="pg-heat">${heatmapSvg(heatmap(dayMap, today), selected)}<div class="pg-hm-legend"><span>Less</span>${[0, 1, 2, 3, 4].map((l) => `<i class="pg-hm l${l}"></i>`).join('')}<span>More</span></div></div><aside class="pg-daypanel" id="pg-daypanel" aria-live="polite"></aside></div>`, { sub: 'Cards answered per day, last 6 months. Hover a day for details, click to pin it.' })}
         <div class="pg-cols">
-            ${section('Cards per day', `<div class="pg-legend pg-legend--top"><span><i class="pg-dot is-bar"></i>Cards answered</span><span><i class="pg-dot is-line"></i>7-day accuracy</span></div>${trendSvg(series, rollingAccuracy(dailySeries(dayMap, state.range + 6, today), 7).slice(6))}`, { actions: `<div class="pg-chips">${rangeBtns}</div>` })}
+            ${section('Cards per day', `<div class="pg-legend pg-legend--top"><span><i class="pg-dot is-bar"></i>Cards answered</span><span><i class="pg-dot is-line"></i>7-day accuracy</span></div>${trendSvg(series, rollingAccuracy(dailySeries(dayMap, state.range + 6, today), 7).slice(6))}${weeklyHtml(weekly)}`, { actions: `<div class="pg-chips">${rangeBtns}</div>` })}
             ${section('Mastery', masteryBody, { sub: `${mastery.masteredPct}% of ${mastery.total.toLocaleString()} cards mastered` })}
         </div>
         <div class="pg-cols">
             ${section('Hardest cards', hardestSection(hardest, deckName))}
-            ${section('When you study best', (patterns.hours.some((h) => h.count) ? barRow(Array.from({ length: 24 }, (_, i) => (i % 3 === 0 ? hourLabel(i) : '')), patterns.hours, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + barRow(WEEKDAYS, patterns.weekdays, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + (bestHour ? `<p class="pg-note">You are most accurate around <b>${hourLabel(bestHour.i)}</b> (${bestHour.accuracy}%).</p>` : '') : '<p class="pg-empty">Patterns appear after you have studied a bit.</p>'), { sub: 'By hour of day and day of week' })}
+            ${section('When you study best', (patterns.hours.some((h) => h.count) ? barRow(Array.from({ length: 24 }, (_, i) => (i % 3 === 0 ? hourLabel(i) : '')), patterns.hours, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + barRow(WEEKDAYS, patterns.weekdays, (h) => `${h.count} cards${h.accuracy == null ? '' : ` · ${h.accuracy}%`}`) + (bestHour ? `<p class="pg-note">You are most accurate around <b>${hourLabel(bestHour.i)}</b> (${bestHour.accuracy}%).</p>` : '') + (busiest && busiest.count ? `<p class="pg-note">Your busiest day is <b>${busiest.name}</b> (${busiest.count.toLocaleString()} answers).</p>` : '') : '<p class="pg-empty">Patterns appear after you have studied a bit.</p>'), { sub: 'By hour of day and day of week' })}
         </div>
         ${section('Practice quizzes', quizSection(quiz))}
         ${section('Milestones', achievementsGrid(unlocked) + `<div class="pg-records"><span>Best day <b>${summary.bestDay ? `${summary.bestDay.reviews} cards` : '–'}</b></span><span>Longest streak <b>${summary.longestStreak} days</b></span><span>Best quiz <b>${quiz.attempts ? quiz.best + '%' : '–'}</b></span></div>`, { sub: `${Object.keys(unlocked).length} of ${ACHIEVEMENTS.length} unlocked` })}

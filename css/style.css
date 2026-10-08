@@ -922,13 +922,13 @@ button.primary:hover {
 }
 
 button.danger {
-    background: #ff4444;
+    background: #d9534f;
     color: #ffffff;
-    border-color: #ff4444;
+    border-color: #d9534f;
 }
 button.danger:hover {
-    background: #cc0000;
-    border-color: #cc0000;
+    background: #b3342f;
+    border-color: #b3342f;
 }
 
 button.icon-btn {
@@ -1446,7 +1446,7 @@ textarea { flex-shrink: 0; min-height: 80px; }
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 1px;
-    background: var(--bg-primary);
+    background: var(--bg-secondary);
     color: var(--text-secondary);
     border: none;
     cursor: pointer;
@@ -1460,7 +1460,7 @@ textarea { flex-shrink: 0; min-height: 80px; }
 
 .mode-btn.active {
     background: var(--text-primary);
-    color: var(--bg-primary);
+    color: var(--bg-secondary);
 }
 
 /* Brutalist Scrollbar */
