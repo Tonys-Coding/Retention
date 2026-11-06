@@ -255,7 +255,7 @@ if (!ONLY || ONLY === '4') {
 if (!ONLY || ONLY === '5') {
   const {ctx, page} = await newPage('matcha');
   await page.click('#btn-sidebar-themes'); await page.waitForTimeout(1200);
-  await page.evaluate(() => { const t = [...document.querySelectorAll('.tl-group-title')].find((n) => n.textContent.startsWith('Landscapes')); const body = document.querySelector('.db-body'); body.scrollTo(0, body.scrollTop + t.getBoundingClientRect().top - 130); });
+  await page.evaluate(() => { const t = [...document.querySelectorAll('.tl-group-title')].find((n) => n.textContent.startsWith('Cozy')); const body = document.querySelector('.db-body'); body.scrollTo(0, body.scrollTop + t.getBoundingClientRect().top - 130); });
   await page.waitForTimeout(800);
   await shoot(page, '05-themes-library');
   await ctx.close();
