@@ -251,16 +251,13 @@ if (!ONLY || ONLY === '4') {
   await shoot(page, '04-progress-insights');
   await ctx.close();
 }
-// 5 — Animated theme (City Lights), collapsed sidebar so the whole skyline shows
+// 5 — Themes library (Matcha): favorites shelf, collections, live previews, Animated badges
 if (!ONLY || ONLY === '5') {
-  const {ctx, page} = await newPage('city');
-  await page.evaluate(() => localStorage.setItem('sidebar_collapsed', '1'));
-  await page.reload();
-  await page.addStyleTag({content: '#btn-scenery, #db-toast { display: none !important; }'});
-  await page.waitForTimeout(1500);
-  await page.locator('.db-card', {hasText: 'Computer Networks'}).first().click(); await page.waitForTimeout(500);
-  await page.locator('.db-card', {hasText: 'Exam Prep'}).first().click(); await page.waitForTimeout(2500);
-  await shoot(page, '05-animated-theme-city-lights');
+  const {ctx, page} = await newPage('matcha');
+  await page.click('#btn-sidebar-themes'); await page.waitForTimeout(1200);
+  await page.evaluate(() => { const t = [...document.querySelectorAll('.tl-group-title')].find((n) => n.textContent.startsWith('Landscapes')); const body = document.querySelector('.db-body'); body.scrollTo(0, body.scrollTop + t.getBoundingClientRect().top - 130); });
+  await page.waitForTimeout(800);
+  await shoot(page, '05-themes-library');
   await ctx.close();
 }
 await browser.close();
